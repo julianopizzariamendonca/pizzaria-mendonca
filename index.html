@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pizzaria Mendonça - Gestão</title>
+    
+    <!-- Meta Tags PWA / Mobile -->
+    <meta name="theme-color" content="#1A1A1A">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mendonça Gestão">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3132/3132693.png">
+
+    <!-- CDNs -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mendonca: {
+                            black: '#1A1A1A',
+                            red: '#E63946',
+                            green: '#2E7D32',
+                            gold: '#F9A825',
+                            cream: '#FFF3E0'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card { background: white; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); padding: 1rem; }
+        input, select { width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 0.375rem; margin-top: 0.25rem; font-size: 0.95rem; }
+        button.btn { padding: 0.625rem 1rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-red { background: #E63946; color: white; } .btn-red:hover { background: #c5303c; }
+        .btn-green { background: #2E7D32; color: white; } .btn-green:hover { background: #246328; }
+        .btn-gold { background: #F9A825; color: #1A1A1A; } .btn-gold:hover { background: #d6901c; }
+        table { width: 100%; text-align: left; border-collapse: collapse; font-size: 0.875rem; }
+        th, td { padding: 0.625rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+        th { background: #FFF3E0; color: #1A1A1A; font-weight: 600; }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen overflow-hidden text-gray-800">
+
+    <!-- Header Mobile com Hamburguer -->
+    <header class="md:hidden bg-mendonca-black text-white p-4 flex justify-between items-center z-20 shadow-md">
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-pizza-slice text-mendonca-gold text-xl"></i>
+            <span class="font-bold text-lg text-mendonca-gold">Mendonça</span>
+        </div>
+        <button onclick="toggleMobileMenu()" class="text-white text-2xl focus:outline-none p-1">
+            <i class="fas fa-bars" id="menuIcon"></i>
+        </button>
+    </header>
+
+    <!-- Overlay Mobile -->
+    <div id="mobileOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
+
+    <!-- Sidebar / Nav -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-in-out w-64 bg-mendonca-black text-white flex flex-col h-full shadow-xl z-30">
+        <div class="p-6 text-center border-b border-gray-700 hidden md:block">
+            <h1 class="text-2xl font-bold text-mendonca-gold">Mendonça</h1>
+            <p class="text-xs text-gray-400">Gestão de Pizzaria</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1.5">
+            <button onclick="nav('dashboard')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-chart-line w-6"></i> Dashboard</button>
+            <button onclick="nav('pdv')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cash-register w-6"></i> Lançar Venda</button>
+            <button onclick="nav('vendas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-shopping-cart w-6"></i> Histórico Vendas</button>
+            <button onclick="nav('produtos')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-pizza-slice w-6"></i> Produtos & CMV</button>
+            <button onclick="nav('despesas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-file-invoice-dollar w-6"></i> Despesas Fixas</button>
+            <button onclick="nav('custosVariaveis')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-receipt w-6"></i> Custos Variáveis</button>
+            <button onclick="nav('ingredientes')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cubes w-6"></i> Ingredientes</button>
+            <button onclick="nav('fichaTecnica')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-clipboard-list w-6"></i> Ficha Técnica</button>
+            <button onclick="nav('dre')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-calculator w-6"></i> DRE & Resultado</button>
+            <button onclick="nav('config')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cog w-6"></i> Configurações</button>
+        </nav>
+        <div class="p-4 border-t border-gray-700">
+            <button onclick="exportarDados()" class="w-full text-left p-2 rounded hover:bg-gray-800 text-sm flex items-center"><i class="fas fa-download w-6"></i> Backup JSON</button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 h-full overflow-y-auto bg-gray-50 p-4 md:p-8">
+        
+        <!-- Alertas -->
+        <div id="alertsContainer" class="mb-4 space-y-2"></div>
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="tab-content active">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Visão Geral (Mês Atual)</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <div class="card border-l-4 border-blue-500">
+                    <p class="text-xs text-gray-500">Faturamento Líq.</p>
+                    <h3 class="text-lg md:text-2xl font-bold" id="dash-fat">R$ 0,00</h3>
+                </div>
+                <div class="card border-l-4 border-mendonca-red">
+                    <p class="text-xs text-gray-500">Custo Total</p>
+                    <h3 class="text-lg md:text-2xl font-bold" id="dash-cmv">R$ 0,00</h3>
+                </div>
+                <div class="card border-l-4 border-mendonca-gold">
+                    <p class="text-xs text-gray-500">Despesas Fixas</p>
+                    <h3 class="text-lg md:text-2xl font-bold" id="dash-fixas">R$ 0,00</h3>
+                </div>
+                <div class="card border-l-4 border-mendonca-green">
+                    <p class="text-xs text-gray-500">Lucro Líquido</p>
+                    <h3 class="text-lg md:text-2xl font-bold" id="dash-lucro">R$ 0,00</h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="font-bold mb-4 text-sm md:text-base">Distribuição do Faturamento</h3>
+                    <canvas id="chartDist"></canvas>
+                </div>
+                <div class="card">
+                    <h3 class="font-bold mb-4 text-sm md:text-base">Top Pizzas Mais Lucrativas (R$)</h3>
+                    <canvas id="chartTopPizzas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: LANÇAR VENDA (PDV) -->
+        <div id="view-pdv" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Lançamento Rápido de Venda</h2>
+            <div class="card max-w-2xl mx-auto">
+                <form id="formVenda" onsubmit="salvarVenda(event)">
+                    <input type="hidden" id="vendaId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                        <div>
+                            <label class="text-xs font-semibold">Data</label>
+                            <input type="date" id="vendaData" required>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Produto</label>
+                            <!-- PESQUISA COM LUPA -->
+                            <div class="relative mt-1">
+                                <input type="text" id="vendaBuscaProduto" oninput="filtrarProdutosVenda()" placeholder="Pesquisar produto..." class="pl-8 text-sm mt-0 mb-1">
+                                <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-sm"></i>
+                            </div>
+                            <select id="vendaProduto" required></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Quantidade</label>
+                            <input type="number" id="vendaQtd" value="1" min="0.01" step="0.01" required>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Canal de Vendas</label>
+                            <select id="vendaCanal" required>
+                                <option value="Brendi/Site">Brendi/Site</option>
+                                <option value="Delivery Much">Delivery Much</option>
+                                <option value="Atendente">Atendente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Forma de Pagamento</label>
+                            <select id="vendaFormaPagamento" required></select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Desconto Concedido (R$)</label>
+                            <input type="number" id="vendaDesconto" step="0.01" value="0">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="text-xs font-semibold">Custo de Entrega Assumido pela Loja (R$)</label>
+                            <input type="number" id="vendaEntrega" step="0.01" value="0">
+                        </div>
+                    </div>
+                    <button type="submit" id="btnSalvarVenda" class="btn btn-green mt-6 w-full text-lg">Registrar Venda</button>
+                    <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-400 text-white mt-2 w-full hidden">Cancelar Edição</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: PRODUTOS -->
+        <div id="view-produtos" class="tab-content">
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Produtos e Custos</h2>
+                <button onclick="mostrarFormProduto()" class="btn btn-red text-sm">+ Novo</button>
+            </div>
+            
+            <div id="formProdutoContainer" class="card mb-6 hidden bg-mendonca-cream border border-mendonca-gold">
+                <h3 class="font-bold mb-4" id="formProdTitle">Novo Produto</h3>
+                <form id="formProduto" onsubmit="salvarProduto(event)">
+                    <input type="hidden" id="prodId">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div><label class="text-xs font-semibold">Nome</label><input type="text" id="prodNome" required></div>
+                        <div><label class="text-xs font-semibold">Categoria</label>
+                            <select id="prodCat">
+                                <option value="Pizza">Pizza</option>
+                                <option value="Bebida">Bebida</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div><label class="text-xs font-semibold">Preço Venda (R$)</label><input type="number" step="0.01" id="prodPreco" required></div>
+                        <div><label class="text-xs font-semibold">Custo Ingredientes (R$)</label><input type="number" step="0.01" id="prodCustoIng" required></div>
+                        <div><label class="text-xs font-semibold">Custo Embalagem (R$)</label><input type="number" step="0.01" id="prodCustoEmb" required></div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button type="submit" class="btn btn-green flex-1">Salvar</button>
+                        <button type="button" onclick="fecharFormProduto()" class="btn bg-gray-400 text-white flex-1">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card overflow-x-auto">
+                <table id="tabelaProdutos">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Categoria</th>
+                            <th>Preço Venda</th>
+                            <th>Custo Total</th>
+                            <th>Lucro Bruto</th>
+                            <th>Margem</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: DESPESAS FIXAS -->
+        <div id="view-despesas" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Despesas Fixas</h2>
+            <div class="card mb-4">
+                <form id="formDespesa" onsubmit="salvarDespesa(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <input type="hidden" id="despId">
+                    <div>
+                        <label class="text-xs font-semibold">Descrição</label>
+                        <input type="text" id="despNome" placeholder="Ex: Aluguel" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Valor (R$)</label>
+                        <input type="number" step="0.01" id="despValor" required>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" id="btnSalvarDesp" class="btn btn-green flex-1">Adicionar</button>
+                        <button type="button" id="btnCancelarEdicaoDesp" onclick="cancelarEdicaoDespesa()" class="btn bg-gray-400 text-white hidden">X</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card overflow-x-auto">
+                <table id="tabelaDespesas">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Valor Mensal</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: CUSTOS VARIÁVEIS -->
+        <div id="view-custosVariaveis" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Custos Variáveis (Cupons)</h2>
+            <div class="card mb-6">
+                <form id="formCustoVar" onsubmit="salvarCustoVariavel(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <input type="hidden" id="custoVarId">
+                    <div>
+                        <label class="text-xs font-semibold">Data Compra</label>
+                        <input type="date" id="custoVarData" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Mercado / Loja</label>
+                        <input type="text" id="custoVarLocal" placeholder="Ex: Mercado X" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Valor Cupom (R$)</label>
+                        <input type="number" step="0.01" id="custoVarValor" required>
+                    </div>
+                    <div class="md:col-span-3 flex gap-2">
+                        <button type="submit" id="btnSalvarCustoVar" class="btn btn-green flex-1">Registrar Cupom</button>
+                        <button type="button" id="btnCancelarCustoVar" onclick="cancelarEdicaoCustoVariavel()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card overflow-x-auto">
+                <table id="tabelaCustosVariaveis">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Estabelecimento</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: INGREDIENTES -->
+        <div id="view-ingredientes" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Ingredientes</h2>
+            <div class="card mb-6">
+                <form id="formIngrediente" onsubmit="salvarIngrediente(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                    <input type="hidden" id="ingId">
+                    <div>
+                        <label class="text-xs font-semibold">Nome Ingrediente</label>
+                        <input type="text" id="ingNome" placeholder="Ex: Mussarela" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Unidade</label>
+                        <select id="ingUnidade" required>
+                            <option value="g">Grama (g)</option>
+                            <option value="ml">Mililitro (ml)</option>
+                            <option value="un">Unidade (un)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Qtd Embalagem</label>
+                        <input type="number" step="0.01" id="ingQtdEmb" placeholder="Ex: 1000" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Preço Pago (R$)</label>
+                        <input type="number" step="0.01" id="ingPrecoEmb" placeholder="Ex: 35.00" required>
+                    </div>
+                    <div class="md:col-span-2 lg:col-span-4 flex gap-2">
+                        <button type="submit" id="btnSalvarIng" class="btn btn-green flex-1">Cadastrar Ingrediente</button>
+                        <button type="button" id="btnCancelarIng" onclick="cancelarEdicaoIngrediente()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card overflow-x-auto">
+                <table id="tabelaIngredientes">
+                    <thead>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Embalagem</th>
+                            <th>Preço Pago</th>
+                            <th>Custo Unit.</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: FICHA TÉCNICA -->
+        <div id="view-fichaTecnica" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Ficha Técnica</h2>
+            
+            <div class="card mb-6">
+                <div class="mb-4">
+                    <label class="font-bold text-sm text-mendonca-black">Selecione o Produto:</label>
+                    <select id="fichaProdutoSelect" onchange="renderFichaTecnica()" class="text-base p-2 font-semibold text-mendonca-red border-2 border-mendonca-gold mt-1"></select>
+                </div>
+
+                <form id="formFichaItem" onsubmit="adicionarItemFicha(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-mendonca-cream p-3 rounded">
+                    <div>
+                        <label class="text-xs font-semibold">Ingrediente</label>
+                        <select id="fichaIngredienteSelect" required></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Qtd Utilizada</label>
+                        <input type="number" step="0.01" id="fichaQtd" placeholder="Ex: 250" required>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-green w-full"><i class="fas fa-plus mr-1"></i>Adicionar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card overflow-x-auto">
+                <table id="tabelaFichaTecnica">
+                    <thead>
+                        <tr>
+                            <th>Ingrediente</th>
+                            <th>Qtd. Usada</th>
+                            <th>Custo Unit.</th>
+                            <th>Subtotal</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="mt-4 p-3 bg-gray-100 rounded flex justify-between items-center">
+                    <span class="font-bold text-sm md:text-base">CMV Total da Pizza:</span>
+                    <span id="fichaTotalCusto" class="font-bold text-xl text-mendonca-red">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: RESULTADOS E DRE -->
+        <div id="view-dre" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">DRE & Resultado</h2>
+            <div class="card max-w-2xl mx-auto text-sm">
+                <div class="flex justify-between border-b pb-2 mb-2 font-bold">
+                    <span>1. Faturamento Bruto</span><span id="dreFatBruto" class="text-green-600">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
+                    <span>(-) Descontos Concedidos</span><span id="dreDesc">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 font-bold bg-gray-100 p-1.5">
+                    <span>2. Faturamento Líquido</span><span id="dreFatLiq">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
+                    <span>(-) CMV Ingredientes</span><span id="dreCmv">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
+                    <span>(-) Embalagens</span><span id="dreEmb">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
+                    <span>(-) Custos Variáveis (Cupons)</span><span id="dreCustosVar">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 font-bold bg-gray-100 p-1.5">
+                    <span>3. Lucro Bruto</span><span id="dreLucroBruto">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
+                    <span>(-) Taxas Meios Pgto</span><span id="dreTaxas">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
+                    <span>(-) Custo Entrega Loja</span><span id="dreEntregas">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 font-bold bg-mendonca-cream p-1.5">
+                    <span>4. Margem Contribuição</span><span id="dreMargemCont">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
+                    <span>(-) Despesas Fixas</span><span id="dreFixas">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between font-bold text-lg p-2.5 bg-gray-800 text-white rounded">
+                    <span>5. LUCRO LÍQUIDO</span><span id="dreLucroLiq">R$ 0,00</span>
+                </div>
+                
+                <div class="mt-4 p-3 bg-blue-50 rounded text-xs md:text-sm space-y-1">
+                    <p>Margem Líquida: <span id="indMargemLiq" class="font-bold">0%</span></p>
+                    <p>CMV Geral: <span id="indCmvPerc" class="font-bold">0%</span></p>
+                    <p>Ponto de Equilíbrio: <span id="indPontoEquilibrio" class="font-bold text-blue-700">R$ 0,00</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VIEW: HISTÓRICO DE VENDAS -->
+        <div id="view-vendas" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Histórico de Vendas</h2>
+            <div class="card overflow-x-auto">
+                <table id="tabelaVendas">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Produto</th>
+                            <th>Qtd</th>
+                            <th>Canal</th>
+                            <th>Pagamento</th>
+                            <th>Bruto</th>
+                            <th>Taxa</th>
+                            <th>Líquido</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: CONFIGURAÇÕES -->
+        <div id="view-config" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Configurações & Taxas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card">
+                    <h3 class="text-base font-bold mb-3 border-b pb-2"><i class="fas fa-credit-card mr-1"></i> Formas de Pagamento</h3>
+                    <form id="formFormaPagamento" onsubmit="salvarFormaPagamento(event)" class="mb-4">
+                        <input type="hidden" id="fpId">
+                        <div class="grid grid-cols-1 gap-2">
+                            <div><label class="text-xs">Nome</label><input type="text" id="fpNome" placeholder="Ex: Pix" required></div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div><label class="text-xs">Taxa (%)</label><input type="number" step="0.01" id="fpTaxa" value="0" required></div>
+                                <div><label class="text-xs">Taxa Fixa (R$)</label><input type="number" step="0.01" id="fpTaxaFixa" value="0.00" required></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex gap-2">
+                            <button type="submit" id="btnSalvarFP" class="btn btn-green w-full text-xs">Salvar Forma</button>
+                            <button type="button" id="btnCancelarFP" onclick="cancelarEdicaoFP()" class="btn bg-gray-400 text-white text-xs hidden">X</button>
+                        </div>
+                    </form>
+
+                    <div class="overflow-x-auto">
+                        <table id="tabelaFormasPagamento">
+                            <thead>
+                                <tr>
+                                    <th>Forma</th>
+                                    <th>Taxa %</th>
+                                    <th>Taxa Fixa</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card space-y-3 h-fit">
+                    <h3 class="text-base font-bold mb-2 border-b pb-2"><i class="fas fa-sliders-h mr-1"></i> Metas do Negócio</h3>
+                    <div><label class="text-xs font-semibold">CMV Máximo (%)</label><input type="number" id="cfgCmv" value="30"></div>
+                    <div><label class="text-xs font-semibold">Meta Margem Líquida (%)</label><input type="number" id="cfgMargem" value="20"></div>
+                    <button onclick="salvarConfig()" class="btn btn-gold w-full mt-2">Salvar Metas</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- MOBILE MENU TOGGLE ---
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            const icon = document.getElementById('menuIcon');
+            
+            const isOpen = !sidebar.classList.contains('-translate-x-full');
+            if (isOpen) {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                icon.className = 'fas fa-bars';
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                icon.className = 'fas fa-times';
+            }
+        }
+
+        // --- BANCO DE DADOS LOCAL (localStorage) ---
+        let db = {
+            produtos: [],
+            vendas: [],
+            despesas: [],
+            custosVariaveis: [],
+            formasPagamento: [],
+            ingredientes: [],
+            fichasTecnicas: {},
+            config: { cmvMax: 30, margemMin: 20 }
+        };
+
+        let chartDistInstance = null;
+        let chartTopPizzasInstance = null;
+
+        function init() {
+            let localData = localStorage.getItem('mendoncaDB');
+            if (localData) {
+                db = JSON.parse(localData);
+                if (!db.custosVariaveis) db.custosVariaveis = [];
+                if (!db.ingredientes) db.ingredientes = [];
+                if (!db.fichasTecnicas) db.fichasTecnicas = {};
+                if (!db.formasPagamento || db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+            } else {
+                gerarDadosFicticios();
+            }
+            atualizarTudo();
+        }
+
+        function salvarBD() {
+            localStorage.setItem('mendoncaDB', JSON.stringify(db));
+            atualizarTudo();
+        }
+
+        function nav(viewId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            if (window.innerWidth < 768) {
+                toggleMobileMenu();
+            }
+        }
+
+        function atualizarTudo() {
+            renderIngredientes();
+            renderFichaTecnica();
+            renderProdutos();
+            renderVendas();
+            renderDespesas();
+            renderCustosVariaveis();
+            renderFormasPagamento();
+            renderDashboardEDRE();
+            preencherSelectProdutos();
+            preencherSelectFormasPagamento();
+            verificarAlertas();
+        }
+
+        // --- INGREDIENTES ---
+        function salvarIngrediente(e) {
+            e.preventDefault();
+            let id = document.getElementById('ingId').value;
+            let ing = {
+                id: id ? id : Date.now().toString(),
+                nome: document.getElementById('ingNome').value,
+                unidade: document.getElementById('ingUnidade').value,
+                qtdEmbalagem: parseFloat(document.getElementById('ingQtdEmb').value) || 1,
+                precoEmbalagem: parseFloat(document.getElementById('ingPrecoEmb').value) || 0
+            };
+
+            if (id) {
+                let idx = db.ingredientes.findIndex(x => x.id == id);
+                if (idx !== -1) db.ingredientes[idx] = ing;
+            } else {
+                db.ingredientes.push(ing);
+            }
+
+            for (let prodId in db.fichasTecnicas) recalcularCustoProdutoFicha(prodId);
+            salvarBD();
+            cancelarEdicaoIngrediente();
+        }
+
+        function editarIngrediente(id) {
+            let ing = db.ingredientes.find(x => x.id == id);
+            if (!ing) return;
+            document.getElementById('ingId').value = ing.id;
+            document.getElementById('ingNome').value = ing.nome;
+            document.getElementById('ingUnidade').value = ing.unidade;
+            document.getElementById('ingQtdEmb').value = ing.qtdEmbalagem;
+            document.getElementById('ingPrecoEmb').value = ing.precoEmbalagem;
+            document.getElementById('btnSalvarIng').innerText = "Atualizar Ingrediente";
+            document.getElementById('btnCancelarIng').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoIngrediente() {
+            document.getElementById('formIngrediente').reset();
+            document.getElementById('ingId').value = '';
+            document.getElementById('btnSalvarIng').innerText = "Cadastrar Ingrediente";
+            document.getElementById('btnCancelarIng').classList.add('hidden');
+        }
+
+        function excluirIngrediente(id) {
+            if (confirm("Deseja excluir este ingrediente?")) {
+                db.ingredientes = db.ingredientes.filter(x => x.id != id);
+                for (let prodId in db.fichasTecnicas) {
+                    db.fichasTecnicas[prodId] = db.fichasTecnicas[prodId].filter(item => item.ingredienteId != id);
+                    recalcularCustoProdutoFicha(prodId);
+                }
+                salvarBD();
+            }
+        }
+
+        function renderIngredientes() {
+            const tbody = document.querySelector('#tabelaIngredientes tbody');
+            if(!tbody) return;
+            tbody.innerHTML = (db.ingredientes || []).map(ing => {
+                let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
+                return `<tr>
+                    <td class="font-semibold">${ing.nome}</td>
+                    <td>${ing.qtdEmbalagem} ${ing.unidade}</td>
+                    <td>R$ ${ing.precoEmbalagem.toFixed(2)}</td>
+                    <td class="font-bold text-green-700">R$ ${custoUnit.toFixed(4)}</td>
+                    <td>
+                        <button onclick="editarIngrediente('${ing.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirIngrediente('${ing.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- FICHA TÉCNICA ---
+        function adicionarItemFicha(e) {
+            e.preventDefault();
+            let prodId = document.getElementById('fichaProdutoSelect').value;
+            let ingId = document.getElementById('fichaIngredienteSelect').value;
+            let qtd = parseFloat(document.getElementById('fichaQtd').value) || 0;
+
+            if (!prodId || !ingId || qtd <= 0) return;
+            if (!db.fichasTecnicas) db.fichasTecnicas = {};
+            if (!db.fichasTecnicas[prodId]) db.fichasTecnicas[prodId] = [];
+
+            let idx = db.fichasTecnicas[prodId].findIndex(x => x.ingredienteId == ingId);
+            if (idx !== -1) {
+                db.fichasTecnicas[prodId][idx].quantidade += qtd;
+            } else {
+                db.fichasTecnicas[prodId].push({ ingredienteId: ingId, quantidade: qtd });
+            }
+
+            recalcularCustoProdutoFicha(prodId);
+            salvarBD();
+            document.getElementById('fichaQtd').value = '';
+        }
+
+        function removerItemFicha(prodId, ingId) {
+            if (db.fichasTecnicas && db.fichasTecnicas[prodId]) {
+                db.fichasTecnicas[prodId] = db.fichasTecnicas[prodId].filter(x => x.ingredienteId != ingId);
+                recalcularCustoProdutoFicha(prodId);
+                salvarBD();
+            }
+        }
+
+        function recalcularCustoProdutoFicha(prodId) {
+            if (!db.fichasTecnicas || !db.fichasTecnicas[prodId]) return;
+            let custoTotalIng = 0;
+            db.fichasTecnicas[prodId].forEach(item => {
+                let ing = (db.ingredientes || []).find(x => x.id == item.ingredienteId);
+                if (ing && ing.qtdEmbalagem > 0) {
+                    custoTotalIng += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
+                }
+            });
+            let prod = db.produtos.find(p => p.id == prodId);
+            if (prod) prod.custoIng = Math.round(custoTotalIng * 100) / 100;
+        }
+
+        function renderFichaTecnica() {
+            const selProd = document.getElementById('fichaProdutoSelect');
+            if(!selProd) return;
+            let selectedProdId = selProd.value;
+            selProd.innerHTML = (db.produtos || []).map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            if (selectedProdId && db.produtos.some(p => p.id == selectedProdId)) selProd.value = selectedProdId;
+
+            let prodId = selProd.value;
+            const selIng = document.getElementById('fichaIngredienteSelect');
+            if(selIng) {
+                selIng.innerHTML = (db.ingredientes || []).map(i => {
+                    let c = i.qtdEmbalagem > 0 ? (i.precoEmbalagem / i.qtdEmbalagem) : 0;
+                    return `<option value="${i.id}">${i.nome} (R$ ${c.toFixed(4)}/${i.unidade})</option>`;
+                }).join('');
+            }
+
+            const tbody = document.querySelector('#tabelaFichaTecnica tbody');
+            let totalCusto = 0;
+
+            if (prodId && db.fichasTecnicas && db.fichasTecnicas[prodId] && db.fichasTecnicas[prodId].length > 0) {
+                tbody.innerHTML = db.fichasTecnicas[prodId].map(item => {
+                    let ing = (db.ingredientes || []).find(x => x.id == item.ingredienteId);
+                    if (!ing) return '';
+                    let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
+                    let subtotal = custoUnit * item.quantidade;
+                    totalCusto += subtotal;
+                    return `<tr>
+                        <td class="font-semibold">${ing.nome}</td>
+                        <td>${item.quantidade} ${ing.unidade}</td>
+                        <td>R$ ${custoUnit.toFixed(4)}</td>
+                        <td class="font-bold text-green-700">R$ ${subtotal.toFixed(2)}</td>
+                        <td><button onclick="removerItemFicha('${prodId}', '${ing.id}')" class="text-red-600"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+                }).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-4">Nenhum ingrediente vinculado.</td></tr>`;
+            }
+            document.getElementById('fichaTotalCusto').innerText = `R$ ${totalCusto.toFixed(2)}`;
+        }
+
+        // --- FORMAS DE PAGAMENTO ---
+        function formatarTextoTaxa(taxaPerc, taxaFixa) {
+            let pStr = (taxaPerc || 0).toFixed(2) + '%';
+            let fStr = 'R$ ' + (taxaFixa || 0).toFixed(2);
+            if (taxaPerc > 0 && taxaFixa > 0) return `${pStr} + ${fStr}`;
+            if (taxaPerc > 0) return pStr;
+            if (taxaFixa > 0) return fStr;
+            return 'Isento';
+        }
+
+        function preencherSelectFormasPagamento() {
+            const sel = document.getElementById('vendaFormaPagamento');
+            sel.innerHTML = db.formasPagamento.map(fp => `<option value="${fp.id}">${fp.nome} (${formatarTextoTaxa(fp.taxaPerc, fp.taxaFixa)})</option>`).join('');
+        }
+
+        function salvarFormaPagamento(e) {
+            e.preventDefault();
+            let id = document.getElementById('fpId').value;
+            let fp = {
+                id: id ? id : Date.now().toString(),
+                nome: document.getElementById('fpNome').value,
+                taxaPerc: parseFloat(document.getElementById('fpTaxa').value) || 0,
+                taxaFixa: parseFloat(document.getElementById('fpTaxaFixa').value) || 0
+            };
+            if (id) {
+                let idx = db.formasPagamento.findIndex(x => x.id == id);
+                if (idx !== -1) db.formasPagamento[idx] = fp;
+            } else {
+                db.formasPagamento.push(fp);
+            }
+            salvarBD();
+            cancelarEdicaoFP();
+        }
+
+        function editarFormaPagamento(id) {
+            let fp = db.formasPagamento.find(x => x.id == id);
+            if (!fp) return;
+            document.getElementById('fpId').value = fp.id;
+            document.getElementById('fpNome').value = fp.nome;
+            document.getElementById('fpTaxa').value = fp.taxaPerc || 0;
+            document.getElementById('fpTaxaFixa').value = fp.taxaFixa || 0;
+            document.getElementById('btnSalvarFP').innerText = "Atualizar";
+            document.getElementById('btnCancelarFP').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoFP() {
+            document.getElementById('formFormaPagamento').reset();
+            document.getElementById('fpId').value = '';
+            document.getElementById('btnSalvarFP').innerText = "Salvar Forma";
+            document.getElementById('btnCancelarFP').classList.add('hidden');
+        }
+
+        function excluirFormaPagamento(id) {
+            if (confirm("Deseja excluir esta forma de pagamento?")) {
+                db.formasPagamento = db.formasPagamento.filter(x => x.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderFormasPagamento() {
+            const tbody = document.querySelector('#tabelaFormasPagamento tbody');
+            tbody.innerHTML = db.formasPagamento.map(fp => `<tr>
+                <td class="font-semibold">${fp.nome}</td>
+                <td>${(fp.taxaPerc || 0).toFixed(2)}%</td>
+                <td>R$ ${(fp.taxaFixa || 0).toFixed(2)}</td>
+                <td>
+                    <button onclick="editarFormaPagamento('${fp.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirFormaPagamento('${fp.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        }
+
+        function gerarFormasPagamentoPadrao() {
+            db.formasPagamento = [
+                { id: '1', nome: 'Pix', taxaPerc: 0.50, taxaFixa: 0.40 },
+                { id: '2', nome: 'Dinheiro', taxaPerc: 0, taxaFixa: 0 },
+                { id: '3', nome: 'Cartão Crédito', taxaPerc: 3.49, taxaFixa: 0 },
+                { id: '4', nome: 'Cartão Débito', taxaPerc: 1.49, taxaFixa: 0 },
+                { id: '5', nome: 'iFood Online', taxaPerc: 23.00, taxaFixa: 0 }
+            ];
+        }
+
+        // --- PRODUTOS E BUSCA COM LUPA ---
+        function filtrarProdutosVenda() {
+            const busca = (document.getElementById('vendaBuscaProduto')?.value || '').toLowerCase().trim();
+            const sel = document.getElementById('vendaProduto');
+            if (!sel) return;
+
+            const produtosFiltrados = (db.produtos || []).filter(p => p.nome.toLowerCase().includes(busca));
+            if (produtosFiltrados.length === 0) {
+                sel.innerHTML = `<option value="">Nenhum produto encontrado</option>`;
+            } else {
+                sel.innerHTML = produtosFiltrados.map(p => `<option value="${p.id}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`).join('');
+            }
+        }
+
+        function preencherSelectProdutos() {
+            const buscaInput = document.getElementById('vendaBuscaProduto');
+            if (buscaInput) buscaInput.value = '';
+            filtrarProdutosVenda();
+        }
+
+        function mostrarFormProduto(id = null) {
+            document.getElementById('formProdutoContainer').classList.remove('hidden');
+            if(id) {
+                let p = db.produtos.find(x => x.id == id);
+                document.getElementById('prodId').value = p.id;
+                document.getElementById('prodNome').value = p.nome;
+                document.getElementById('prodPreco').value = p.preco;
+                document.getElementById('prodCustoIng').value = p.custoIng;
+                document.getElementById('prodCustoEmb').value = p.custoEmb;
+                document.getElementById('prodCat').value = p.categoria;
+                document.getElementById('formProdTitle').innerText = 'Editar Produto';
+            } else {
+                document.getElementById('formProduto').reset();
+                document.getElementById('prodId').value = '';
+                document.getElementById('formProdTitle').innerText = 'Novo Produto';
+            }
+        }
+
+        function fecharFormProduto() { document.getElementById('formProdutoContainer').classList.add('hidden'); }
+
+        function salvarProduto(e) {
+            e.preventDefault();
+            let id = document.getElementById('prodId').value;
+            let produto = {
+                id: id ? id : Date.now().toString(),
+                nome: document.getElementById('prodNome').value,
+                categoria: document.getElementById('prodCat').value,
+                preco: parseFloat(document.getElementById('prodPreco').value),
+                custoIng: parseFloat(document.getElementById('prodCustoIng').value),
+                custoEmb: parseFloat(document.getElementById('prodCustoEmb').value)
+            };
+            if(id) {
+                let idx = db.produtos.findIndex(x => x.id == id);
+                db.produtos[idx] = produto;
+            } else {
+                db.produtos.push(produto);
+            }
+            fecharFormProduto();
+            salvarBD();
+        }
+
+        function excluirProduto(id) {
+            if(confirm("Deseja excluir este produto?")) {
+                db.produtos = db.produtos.filter(p => p.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderProdutos() {
+            const tbody = document.querySelector('#tabelaProdutos tbody');
+            tbody.innerHTML = db.produtos.map(p => {
+                let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
+                let lucro = p.preco - custoTotal;
+                let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
+                let trClass = margem < db.config.margemMin ? "bg-red-50 text-red-800" : "";
+                return `<tr class="${trClass}">
+                    <td class="font-semibold">${p.nome}</td>
+                    <td>${p.categoria}</td>
+                    <td>R$ ${p.preco.toFixed(2)}</td>
+                    <td>R$ ${custoTotal.toFixed(2)}</td>
+                    <td>R$ ${lucro.toFixed(2)}</td>
+                    <td class="font-bold">${margem.toFixed(1)}%</td>
+                    <td>
+                        <button onclick="mostrarFormProduto('${p.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirProduto('${p.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- VENDAS ---
+        function salvarVenda(e) {
+            e.preventDefault();
+            let id = document.getElementById('vendaId').value;
+            let prodId = document.getElementById('vendaProduto').value;
+            if (!prodId) { alert("Selecione um produto."); return; }
+
+            let prod = db.produtos.find(p => p.id == prodId);
+            let formaPagId = document.getElementById('vendaFormaPagamento').value;
+
+            let venda = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('vendaData').value,
+                produtoId: prodId,
+                produtoNome: prod ? prod.nome : 'Produto',
+                quantidade: parseFloat(document.getElementById('vendaQtd').value),
+                precoUnitario: prod ? prod.preco : 0,
+                custoIngUnitario: prod ? prod.custoIng : 0,
+                custoEmbUnitario: prod ? prod.custoEmb : 0,
+                canal: document.getElementById('vendaCanal').value,
+                formaPagamentoId: formaPagId,
+                desconto: parseFloat(document.getElementById('vendaDesconto').value) || 0,
+                entregaLoja: parseFloat(document.getElementById('vendaEntrega').value) || 0
+            };
+
+            if(id) {
+                let idx = db.vendas.findIndex(x => x.id == id);
+                if(idx !== -1) db.vendas[idx] = venda;
+            } else {
+                db.vendas.push(venda);
+            }
+
+            cancelarEdicaoVenda();
+            salvarBD();
+        }
+
+        function editarVenda(id) {
+            let v = db.vendas.find(x => x.id == id);
+            if(!v) return;
+
+            document.getElementById('vendaBuscaProduto').value = '';
+            filtrarProdutosVenda();
+
+            document.getElementById('vendaId').value = v.id;
+            document.getElementById('vendaData').value = v.data;
+            document.getElementById('vendaProduto').value = v.produtoId;
+            document.getElementById('vendaQtd').value = v.quantidade;
+            document.getElementById('vendaCanal').value = v.canal;
+            document.getElementById('vendaFormaPagamento').value = v.formaPagamentoId || '';
+            document.getElementById('vendaDesconto').value = v.desconto || 0;
+            document.getElementById('vendaEntrega').value = v.entregaLoja || 0;
+
+            document.getElementById('btnSalvarVenda').innerText = 'Atualizar Venda';
+            document.getElementById('btnCancelarEdicaoVenda').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoVenda() {
+            document.getElementById('formVenda').reset();
+            document.getElementById('vendaId').value = '';
+            document.getElementById('vendaData').valueAsDate = new Date();
+            document.getElementById('vendaBuscaProduto').value = '';
+            filtrarProdutosVenda();
+            document.getElementById('btnSalvarVenda').innerText = 'Registrar Venda';
+            document.getElementById('btnCancelarEdicaoVenda').classList.add('hidden');
+        }
+
+        function excluirVenda(id) {
+            if(confirm("Deseja excluir esta venda?")) {
+                db.vendas = db.vendas.filter(v => v.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderVendas() {
+            const tbody = document.querySelector('#tabelaVendas tbody');
+            tbody.innerHTML = db.vendas.map(v => {
+                let valorBruto = (v.quantidade * v.precoUnitario) - (v.desconto || 0);
+                let fp = db.formasPagamento.find(x => x.id == v.formaPagamentoId);
+                let taxaCalculada = 0;
+                let nomeFP = 'N/A';
+
+                if (fp) {
+                    nomeFP = fp.nome;
+                    taxaCalculada = (valorBruto * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
+                }
+
+                let liqComTaxa = valorBruto - taxaCalculada;
+
+                return `<tr>
+                    <td>${v.data}</td>
+                    <td class="font-semibold">${v.produtoNome}</td>
+                    <td>${v.quantidade}</td>
+                    <td>${v.canal}</td>
+                    <td>${nomeFP}</td>
+                    <td>R$ ${valorBruto.toFixed(2)}</td>
+                    <td class="text-red-600">R$ ${taxaCalculada.toFixed(2)}</td>
+                    <td class="font-bold text-green-700">R$ ${liqComTaxa.toFixed(2)}</td>
+                    <td>
+                        <button onclick="editarVenda('${v.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirVenda('${v.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- DESPESAS ---
+        function salvarDespesa(e) {
+            e.preventDefault();
+            let id = document.getElementById('despId').value;
+            let despesa = {
+                id: id ? id : Date.now().toString(),
+                nome: document.getElementById('despNome').value,
+                valor: parseFloat(document.getElementById('despValor').value)
+            };
+            if(id) {
+                let idx = db.despesas.findIndex(x => x.id == id);
+                db.despesas[idx] = despesa;
+            } else {
+                db.despesas.push(despesa);
+            }
+            cancelarEdicaoDespesa();
+            salvarBD();
+        }
+
+        function editarDespesa(id) {
+            let d = db.despesas.find(x => x.id == id);
+            if(!d) return;
+            document.getElementById('despId').value = d.id;
+            document.getElementById('despNome').value = d.nome;
+            document.getElementById('despValor').value = d.valor;
+            document.getElementById('btnSalvarDesp').innerText = "Atualizar";
+            document.getElementById('btnCancelarEdicaoDesp').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoDespesa() {
+            document.getElementById('formDespesa').reset();
+            document.getElementById('despId').value = '';
+            document.getElementById('btnSalvarDesp').innerText = "Adicionar";
+            document.getElementById('btnCancelarEdicaoDesp').classList.add('hidden');
+        }
+
+        function excluirDespesa(id) {
+            if(confirm("Deseja excluir esta despesa?")) {
+                db.despesas = db.despesas.filter(d => d.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderDespesas() {
+            const tbody = document.querySelector('#tabelaDespesas tbody');
+            tbody.innerHTML = db.despesas.map(d => `<tr>
+                <td class="font-semibold">${d.nome}</td>
+                <td>R$ ${d.valor.toFixed(2)}</td>
+                <td>
+                    <button onclick="editarDespesa('${d.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirDespesa('${d.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        }
+
+        // --- CUSTOS VARIÁVEIS ---
+        function salvarCustoVariavel(e) {
+            e.preventDefault();
+            let id = document.getElementById('custoVarId').value;
+            let cVar = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('custoVarData').value,
+                local: document.getElementById('custoVarLocal').value,
+                valor: parseFloat(document.getElementById('custoVarValor').value)
+            };
+            if (id) {
+                let idx = db.custosVariaveis.findIndex(x => x.id == id);
+                if (idx !== -1) db.custosVariaveis[idx] = cVar;
+            } else {
+                db.custosVariaveis.push(cVar);
+            }
+            cancelarEdicaoCustoVariavel();
+            salvarBD();
+        }
+
+        function editarCustoVariavel(id) {
+            let cv = db.custosVariaveis.find(x => x.id == id);
+            if(!cv) return;
+            document.getElementById('custoVarId').value = cv.id;
+            document.getElementById('custoVarData').value = cv.data;
+            document.getElementById('custoVarLocal').value = cv.local;
+            document.getElementById('custoVarValor').value = cv.valor;
+            document.getElementById('btnSalvarCustoVar').innerText = "Atualizar Cupom";
+            document.getElementById('btnCancelarCustoVar').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoCustoVariavel() {
+            document.getElementById('formCustoVar').reset();
+            document.getElementById('custoVarId').value = '';
+            document.getElementById('custoVarData').valueAsDate = new Date();
+            document.getElementById('btnSalvarCustoVar').innerText = "Registrar Cupom";
+            document.getElementById('btnCancelarCustoVar').classList.add('hidden');
+        }
+
+        function excluirCustoVariavel(id) {
+            if(confirm("Deseja excluir este registro?")) {
+                db.custosVariaveis = db.custosVariaveis.filter(x => x.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderCustosVariaveis() {
+            const tbody = document.querySelector('#tabelaCustosVariaveis tbody');
+            tbody.innerHTML = (db.custosVariaveis || []).map(cv => `<tr>
+                <td>${cv.data}</td>
+                <td class="font-semibold">${cv.local}</td>
+                <td class="text-red-600 font-bold">R$ ${cv.valor.toFixed(2)}</td>
+                <td>
+                    <button onclick="editarCustoVariavel('${cv.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirCustoVariavel('${cv.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        }
+
+        // --- DASHBOARD & DRE ---
+        function renderDashboardEDRE() {
+            let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
+
+            db.vendas.forEach(v => {
+                let bruto = v.quantidade * v.precoUnitario;
+                fatBruto += bruto;
+                descontos += (v.desconto || 0);
+                cmvTotal += v.quantidade * (v.custoIngUnitario || 0);
+                embTotal += v.quantidade * (v.custoEmbUnitario || 0);
+                entregasTotal += (v.entregaLoja || 0);
+
+                let valorComDesc = bruto - (v.desconto || 0);
+                let fp = db.formasPagamento.find(x => x.id == v.formaPagamentoId);
+                if (fp) {
+                    taxasTotal += (valorComDesc * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
+                }
+            });
+
+            let fatLiquido = fatBruto - descontos;
+            let custosVarTotal = (db.custosVariaveis || []).reduce((acc, cv) => acc + cv.valor, 0);
+            let lucroBruto = fatLiquido - cmvTotal - embTotal - custosVarTotal;
+            let margemContrib = lucroBruto - taxasTotal - entregasTotal;
+            let despesasFixas = db.despesas.reduce((acc, d) => acc + d.valor, 0);
+            let lucroLiquido = margemContrib - despesasFixas;
+
+            document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
+            document.getElementById('dreDesc').innerText = `R$ ${descontos.toFixed(2)}`;
+            document.getElementById('dreFatLiq').innerText = `R$ ${fatLiquido.toFixed(2)}`;
+            document.getElementById('dreCmv').innerText = `R$ ${cmvTotal.toFixed(2)}`;
+            document.getElementById('dreEmb').innerText = `R$ ${embTotal.toFixed(2)}`;
+            document.getElementById('dreCustosVar').innerText = `R$ ${custosVarTotal.toFixed(2)}`;
+            document.getElementById('dreLucroBruto').innerText = `R$ ${lucroBruto.toFixed(2)}`;
+            document.getElementById('dreTaxas').innerText = `R$ ${taxasTotal.toFixed(2)}`;
+            document.getElementById('dreEntregas').innerText = `R$ ${entregasTotal.toFixed(2)}`;
+            document.getElementById('dreMargemCont').innerText = `R$ ${margemContrib.toFixed(2)}`;
+            document.getElementById('dreFixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
+            document.getElementById('dreLucroLiq').innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+
+            let margemLiqPerc = fatLiquido > 0 ? (lucroLiquido / fatLiquido) * 100 : 0;
+            let cmvPerc = fatLiquido > 0 ? ((cmvTotal + embTotal + custosVarTotal) / fatLiquido) * 100 : 0;
+            let indiceMargemContrib = fatLiquido > 0 ? (margemContrib / fatLiquido) : 0;
+            let pontoEquilibrio = indiceMargemContrib > 0 ? (despesasFixas / indiceMargemContrib) : 0;
+
+            document.getElementById('indMargemLiq').innerText = `${margemLiqPerc.toFixed(1)}%`;
+            document.getElementById('indCmvPerc').innerText = `${cmvPerc.toFixed(1)}%`;
+            document.getElementById('indPontoEquilibrio').innerText = `R$ ${pontoEquilibrio.toFixed(2)}`;
+
+            document.getElementById('dash-fat').innerText = `R$ ${fatLiquido.toFixed(2)}`;
+            document.getElementById('dash-cmv').innerText = `R$ ${(cmvTotal + embTotal + custosVarTotal).toFixed(2)}`;
+            document.getElementById('dash-fixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
+            document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+
+            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquido);
+        }
+
+        function renderGraficos(fat, cmv, taxas, fixas, lucro) {
+            if(chartDistInstance) chartDistInstance.destroy();
+            if(chartTopPizzasInstance) chartTopPizzasInstance.destroy();
+
+            const ctx1 = document.getElementById('chartDist').getContext('2d');
+            chartDistInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Custos/CMV', 'Taxas/Entrega', 'Fixas', 'Lucro Líq.'],
+                    datasets: [{
+                        data: [cmv, taxas, fixas, Math.max(0, lucro)],
+                        backgroundColor: ['#E63946', '#F9A825', '#1A1A1A', '#2E7D32']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+
+            let lucrosPorProd = {};
+            db.vendas.forEach(v => {
+                let lucroUnit = v.precoUnitario - v.custoIngUnitario - v.custoEmbUnitario;
+                let totalLucro = (lucroUnit * v.quantidade) - (v.desconto || 0);
+                lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
+            });
+
+            let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            const ctx2 = document.getElementById('chartTopPizzas').getContext('2d');
+            chartTopPizzasInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(x => x[0]),
+                    datasets: [{
+                        label: 'Lucro (R$)',
+                        data: sorted.map(x => x[1]),
+                        backgroundColor: '#2E7D32'
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function verificarAlertas() {
+            let container = document.getElementById('alertsContainer');
+            container.innerHTML = '';
+            db.produtos.forEach(p => {
+                let custoTotal = p.custoIng + p.custoEmb;
+                let lucro = p.preco - custoTotal;
+                let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
+                if(margem < db.config.margemMin) {
+                    container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-xs rounded">
+                        <strong>Atenção:</strong> <b>${p.nome}</b> está com margem de <b>${margem.toFixed(1)}%</b>.
+                    </div>`;
+                }
+            });
+        }
+
+        function salvarConfig() {
+            db.config.cmvMax = parseFloat(document.getElementById('cfgCmv').value);
+            db.config.margemMin = parseFloat(document.getElementById('cfgMargem').value);
+            salvarBD();
+            alert("Metas atualizadas!");
+        }
+
+        function exportarDados() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `mendonca_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function gerarDadosFicticios() {
+            gerarFormasPagamentoPadrao();
+            db.ingredientes = [
+                { id: 'ing1', nome: 'Massa de Pizza', unidade: 'un', qtdEmbalagem: 1, precoEmbalagem: 2.50 },
+                { id: 'ing2', nome: 'Mussarela', unidade: 'g', qtdEmbalagem: 1000, precoEmbalagem: 35.00 },
+                { id: 'ing3', nome: 'Calabresa', unidade: 'g', qtdEmbalagem: 1000, precoEmbalagem: 28.00 }
+            ];
+
+            db.produtos = [
+                { id: 'p1', nome: 'Calabresa Tradicional (M)', categoria: 'Pizza', preco: 49.90, custoIng: 21.20, custoEmb: 3.50 },
+                { id: 'p2', nome: 'Pizza Mussarela (G)', categoria: 'Pizza', preco: 50.00, custoIng: 15.00, custoEmb: 3.50 }
+            ];
+
+            db.fichasTecnicas = {
+                'p1': [
+                    { ingredienteId: 'ing1', quantidade: 1 },
+                    { ingredienteId: 'ing2', quantidade: 300 },
+                    { ingredienteId: 'ing3', quantidade: 250 }
+                ]
+            };
+
+            db.despesas = [
+                { id: 'd1', nome: 'Aluguel', valor: 2500.00 },
+                { id: 'd2', nome: 'Energia Elétrica', valor: 850.00 }
+            ];
+
+            db.custosVariaveis = [];
+            db.vendas = [];
+            salvarBD();
+        }
+
+        window.onload = function() {
+            document.getElementById('vendaData').valueAsDate = new Date();
+            document.getElementById('custoVarData').valueAsDate = new Date();
+            init();
+
+            // Registro do Service Worker para PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => console.log('PWA Service Worker Ativo!'))
+                    .catch(err => console.log('Erro PWA:', err));
+            }
+        };
+    </script>
+</body>
+</html>
