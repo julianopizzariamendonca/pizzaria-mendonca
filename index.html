@@ -85,6 +85,7 @@
             <button onclick="nav('produtos')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-pizza-slice w-6"></i> Produtos & CMV</button>
             <button onclick="nav('despesas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-file-invoice-dollar w-6"></i> Despesas Fixas</button>
             <button onclick="nav('custosVariaveis')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-receipt w-6"></i> Custos Variáveis</button>
+            <button onclick="nav('despesasPessoais')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-user-tag w-6"></i> Despesas Pessoais</button>
             <button onclick="nav('ingredientes')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cubes w-6"></i> Ingredientes</button>
             <button onclick="nav('fichaTecnica')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-clipboard-list w-6"></i> Ficha Técnica</button>
             <button onclick="nav('dre')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-calculator w-6"></i> DRE & Resultado</button>
@@ -235,16 +236,16 @@
 
         <!-- VIEW: DESPESAS FIXAS -->
         <div id="view-despesas" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Despesas Fixas</h2>
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Despesas Fixas (Inclusos Pró-Labore)</h2>
             <div class="card mb-4">
                 <form id="formDespesa" onsubmit="salvarDespesa(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="despId">
                     <div>
-                        <label class="text-xs font-semibold">Descrição</label>
-                        <input type="text" id="despNome" placeholder="Ex: Aluguel" required>
+                        <label class="text-xs font-semibold">Descrição (Ex: Aluguel, Pró-Labore)</label>
+                        <input type="text" id="despNome" placeholder="Ex: Pró-Labore Juliano" required>
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Valor (R$)</label>
+                        <label class="text-xs font-semibold">Valor Mensal (R$)</label>
                         <input type="number" step="0.01" id="despValor" required>
                     </div>
                     <div class="flex gap-2">
@@ -297,6 +298,48 @@
                         <tr>
                             <th>Data</th>
                             <th>Estabelecimento</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: DESPESAS PESSOAIS -->
+        <div id="view-despesasPessoais" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Despesas Pessoais / Retiradas de Lucro</h2>
+            <div class="bg-yellow-50 border-l-4 border-mendonca-gold p-3 text-xs md:text-sm text-gray-700 mb-4 rounded">
+                <i class="fas fa-info-circle mr-1"></i> As despesas desta aba representam retiradas particulares do sócio. Elas <strong>não reduzem o Lucro Operacional</strong> da pizzaria no DRE, sendo abatidas somente no final do caixa acumulado.
+            </div>
+            <div class="card mb-6">
+                <form id="formDespPessoal" onsubmit="salvarDespesaPessoal(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <input type="hidden" id="despPessoalId">
+                    <div>
+                        <label class="text-xs font-semibold">Data</label>
+                        <input type="date" id="despPessoalData" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Descrição (Ex: Conta de Luz da Casa)</label>
+                        <input type="text" id="despPessoalNome" placeholder="Ex: Mercado Pessoal" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold">Valor (R$)</label>
+                        <input type="number" step="0.01" id="despPessoalValor" required>
+                    </div>
+                    <div class="md:col-span-3 flex gap-2">
+                        <button type="submit" id="btnSalvarDespPessoal" class="btn btn-green flex-1">Registrar Retirada Pessoal</button>
+                        <button type="button" id="btnCancelarDespPessoal" onclick="cancelarEdicaoDespPessoal()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card overflow-x-auto">
+                <table id="tabelaDespesasPessoais">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
                             <th>Valor Total</th>
                             <th>Ações</th>
                         </tr>
@@ -435,14 +478,22 @@
                     <span>4. Margem Contribuição</span><span id="dreMargemCont">R$ 0,00</span>
                 </div>
                 <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Despesas Fixas</span><span id="dreFixas">R$ 0,00</span>
+                    <span>(-) Despesas Fixas (Loja + Pró-Labore)</span><span id="dreFixas">R$ 0,00</span>
                 </div>
-                <div class="flex justify-between font-bold text-lg p-2.5 bg-gray-800 text-white rounded">
-                    <span>5. LUCRO LÍQUIDO</span><span id="dreLucroLiq">R$ 0,00</span>
+                <div class="flex justify-between font-bold text-base p-2 bg-gray-800 text-white rounded">
+                    <span>5. LUCRO LÍQUIDO OPERACIONAL</span><span id="dreLucroLiq">R$ 0,00</span>
                 </div>
                 
+                <!-- Retiradas Pessoais e Caixa Retido -->
+                <div class="flex justify-between border-b border-t mt-3 pt-2 pb-2 text-red-600 font-semibold">
+                    <span>(-) Despesas Pessoais / Retiradas de Lucro</span><span id="dreDespPessoais">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between font-bold text-lg p-2.5 bg-mendonca-green text-white rounded mt-1">
+                    <span>6. SALDO CAIXA REMANESCENTE DA LOJA</span><span id="dreCaixaFinal">R$ 0,00</span>
+                </div>
+
                 <div class="mt-4 p-3 bg-blue-50 rounded text-xs md:text-sm space-y-1">
-                    <p>Margem Líquida: <span id="indMargemLiq" class="font-bold">0%</span></p>
+                    <p>Margem Líquida Operacional: <span id="indMargemLiq" class="font-bold">0%</span></p>
                     <p>CMV Geral: <span id="indCmvPerc" class="font-bold">0%</span></p>
                     <p>Ponto de Equilíbrio: <span id="indPontoEquilibrio" class="font-bold text-blue-700">R$ 0,00</span></p>
                 </div>
@@ -521,7 +572,7 @@
 
     <script>
         // =========================================================================
-        // CONFIGURAÇÃO DO FIREBASE OFICIAL DA PIZZARIA MENDONÇA
+        // CONFIGURAÇÃO DO FIREBASE
         // =========================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAlqJwMwpobW2h0neK9d80j0xzlZR5WveI",
@@ -533,10 +584,13 @@
             appId: "1:518287866317:web:9ff293074d8cc41fd92c84"
         };
 
-        // Inicializar o Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref('pizzariaMendoncaDB');
+        let dbRef = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            dbRef = firebase.database().ref('pizzariaMendoncaDB');
+        } catch (e) {
+            console.error("Erro ao inicializar Firebase:", e);
+        }
 
         // --- MOBILE MENU TOGGLE ---
         function toggleMobileMenu() {
@@ -556,12 +610,12 @@
             }
         }
 
-        // --- BANCO DE DADOS EM NUVEM EM TEMPO REAL ---
         let db = {
             produtos: [],
             vendas: [],
             despesas: [],
             custosVariaveis: [],
+            despesasPessoais: [],
             formasPagamento: [],
             ingredientes: [],
             fichasTecnicas: {},
@@ -572,25 +626,45 @@
         let chartTopPizzasInstance = null;
 
         function init() {
-            // Escutar alterações do Firebase em tempo real (Computador <-> Telemóvel)
-            dbRef.on('value', (snapshot) => {
-                const val = snapshot.val();
-                if (val) {
-                    db = val;
-                    if (!db.custosVariaveis) db.custosVariaveis = [];
-                    if (!db.ingredientes) db.ingredientes = [];
-                    if (!db.fichasTecnicas) db.fichasTecnicas = {};
-                    if (!db.formasPagamento || db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+            let localData = localStorage.getItem('pizzariaMendoncaDB');
+            if (localData) {
+                try {
+                    db = JSON.parse(localData);
+                    if (!db.despesasPessoais) db.despesasPessoais = [];
                     atualizarTudo();
-                } else {
-                    gerarDadosFicticios();
-                }
-            });
+                } catch(e){}
+            }
+
+            if (dbRef) {
+                dbRef.on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    if (val) {
+                        db = val;
+                        if (!db.custosVariaveis) db.custosVariaveis = [];
+                        if (!db.despesasPessoais) db.despesasPessoais = [];
+                        if (!db.ingredientes) db.ingredientes = [];
+                        if (!db.fichasTecnicas) db.fichasTecnicas = {};
+                        if (!db.formasPagamento || db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                        
+                        localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
+                        atualizarTudo();
+                    } else {
+                        if (!localData) gerarDadosFicticios();
+                    }
+                }, (error) => {
+                    console.error("Erro no Firebase:", error);
+                    if (!localData) gerarDadosFicticios();
+                });
+            } else if (!localData) {
+                gerarDadosFicticios();
+            }
         }
 
         function salvarBD() {
-            // Guarda na nuvem (Firebase) e atualiza todos os dispositivos em tempo real
-            dbRef.set(db);
+            localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
+            if (dbRef) {
+                dbRef.set(db).catch(err => console.error("Erro ao salvar na nuvem:", err));
+            }
         }
 
         function nav(viewId) {
@@ -608,11 +682,73 @@
             renderVendas();
             renderDespesas();
             renderCustosVariaveis();
+            renderDespesasPessoais();
             renderFormasPagamento();
             renderDashboardEDRE();
             preencherSelectProdutos();
             preencherSelectFormasPagamento();
             verificarAlertas();
+        }
+
+        // --- DESPESAS PESSOAIS ---
+        function salvarDespesaPessoal(e) {
+            e.preventDefault();
+            let id = document.getElementById('despPessoalId').value;
+            let dp = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('despPessoalData').value,
+                nome: document.getElementById('despPessoalNome').value,
+                valor: parseFloat(document.getElementById('despPessoalValor').value) || 0
+            };
+            if (id) {
+                let idx = db.despesasPessoais.findIndex(x => x.id == id);
+                if (idx !== -1) db.despesasPessoais[idx] = dp;
+            } else {
+                if (!db.despesasPessoais) db.despesasPessoais = [];
+                db.despesasPessoais.push(dp);
+            }
+            cancelarEdicaoDespPessoal();
+            salvarBD();
+        }
+
+        function editarDespesaPessoal(id) {
+            let dp = db.despesasPessoais.find(x => x.id == id);
+            if (!dp) return;
+            document.getElementById('despPessoalId').value = dp.id;
+            document.getElementById('despPessoalData').value = dp.data;
+            document.getElementById('despPessoalNome').value = dp.nome;
+            document.getElementById('despPessoalValor').value = dp.valor;
+            document.getElementById('btnSalvarDespPessoal').innerText = "Atualizar Retirada";
+            document.getElementById('btnCancelarDespPessoal').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoDespPessoal() {
+            document.getElementById('formDespPessoal').reset();
+            document.getElementById('despPessoalId').value = '';
+            document.getElementById('despPessoalData').valueAsDate = new Date();
+            document.getElementById('btnSalvarDespPessoal').innerText = "Registrar Retirada Pessoal";
+            document.getElementById('btnCancelarDespPessoal').classList.add('hidden');
+        }
+
+        function excluirDespesaPessoal(id) {
+            if (confirm("Deseja excluir esta despesa pessoal?")) {
+                db.despesasPessoais = db.despesasPessoais.filter(x => x.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderDespesasPessoais() {
+            const tbody = document.querySelector('#tabelaDespesasPessoais tbody');
+            if(!tbody) return;
+            tbody.innerHTML = (db.despesasPessoais || []).map(dp => `<tr>
+                <td>${dp.data}</td>
+                <td class="font-semibold">${dp.nome}</td>
+                <td class="text-red-600 font-bold">R$ ${dp.valor.toFixed(2)}</td>
+                <td>
+                    <button onclick="editarDespesaPessoal('${dp.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirDespesaPessoal('${dp.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
         }
 
         // --- INGREDIENTES ---
@@ -783,7 +919,8 @@
 
         function preencherSelectFormasPagamento() {
             const sel = document.getElementById('vendaFormaPagamento');
-            sel.innerHTML = db.formasPagamento.map(fp => `<option value="${fp.id}">${fp.nome} (${formatarTextoTaxa(fp.taxaPerc, fp.taxaFixa)})</option>`).join('');
+            if(!sel) return;
+            sel.innerHTML = (db.formasPagamento || []).map(fp => `<option value="${fp.id}">${fp.nome} (${formatarTextoTaxa(fp.taxaPerc, fp.taxaFixa)})</option>`).join('');
         }
 
         function salvarFormaPagamento(e) {
@@ -832,7 +969,8 @@
 
         function renderFormasPagamento() {
             const tbody = document.querySelector('#tabelaFormasPagamento tbody');
-            tbody.innerHTML = db.formasPagamento.map(fp => `<tr>
+            if(!tbody) return;
+            tbody.innerHTML = (db.formasPagamento || []).map(fp => `<tr>
                 <td class="font-semibold">${fp.nome}</td>
                 <td>${(fp.taxaPerc || 0).toFixed(2)}%</td>
                 <td>R$ ${(fp.taxaFixa || 0).toFixed(2)}</td>
@@ -923,7 +1061,8 @@
 
         function renderProdutos() {
             const tbody = document.querySelector('#tabelaProdutos tbody');
-            tbody.innerHTML = db.produtos.map(p => {
+            if(!tbody) return;
+            tbody.innerHTML = (db.produtos || []).map(p => {
                 let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
                 let lucro = p.preco - custoTotal;
                 let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
@@ -1018,9 +1157,10 @@
 
         function renderVendas() {
             const tbody = document.querySelector('#tabelaVendas tbody');
-            tbody.innerHTML = db.vendas.map(v => {
+            if(!tbody) return;
+            tbody.innerHTML = (db.vendas || []).map(v => {
                 let valorBruto = (v.quantidade * v.precoUnitario) - (v.desconto || 0);
-                let fp = db.formasPagamento.find(x => x.id == v.formaPagamentoId);
+                let fp = (db.formasPagamento || []).find(x => x.id == v.formaPagamentoId);
                 let taxaCalculada = 0;
                 let nomeFP = 'N/A';
 
@@ -1048,7 +1188,7 @@
             }).join('');
         }
 
-        // --- DESPESAS ---
+        // --- DESPESAS FIXAS ---
         function salvarDespesa(e) {
             e.preventDefault();
             let id = document.getElementById('despId').value;
@@ -1093,7 +1233,8 @@
 
         function renderDespesas() {
             const tbody = document.querySelector('#tabelaDespesas tbody');
-            tbody.innerHTML = db.despesas.map(d => `<tr>
+            if(!tbody) return;
+            tbody.innerHTML = (db.despesas || []).map(d => `<tr>
                 <td class="font-semibold">${d.nome}</td>
                 <td>R$ ${d.valor.toFixed(2)}</td>
                 <td>
@@ -1151,6 +1292,7 @@
 
         function renderCustosVariaveis() {
             const tbody = document.querySelector('#tabelaCustosVariaveis tbody');
+            if(!tbody) return;
             tbody.innerHTML = (db.custosVariaveis || []).map(cv => `<tr>
                 <td>${cv.data}</td>
                 <td class="font-semibold">${cv.local}</td>
@@ -1166,7 +1308,7 @@
         function renderDashboardEDRE() {
             let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
-            db.vendas.forEach(v => {
+            (db.vendas || []).forEach(v => {
                 let bruto = v.quantidade * v.precoUnitario;
                 fatBruto += bruto;
                 descontos += (v.desconto || 0);
@@ -1175,7 +1317,7 @@
                 entregasTotal += (v.entregaLoja || 0);
 
                 let valorComDesc = bruto - (v.desconto || 0);
-                let fp = db.formasPagamento.find(x => x.id == v.formaPagamentoId);
+                let fp = (db.formasPagamento || []).find(x => x.id == v.formaPagamentoId);
                 if (fp) {
                     taxasTotal += (valorComDesc * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
                 }
@@ -1185,8 +1327,11 @@
             let custosVarTotal = (db.custosVariaveis || []).reduce((acc, cv) => acc + cv.valor, 0);
             let lucroBruto = fatLiquido - cmvTotal - embTotal - custosVarTotal;
             let margemContrib = lucroBruto - taxasTotal - entregasTotal;
-            let despesasFixas = db.despesas.reduce((acc, d) => acc + d.valor, 0);
-            let lucroLiquido = margemContrib - despesasFixas;
+            let despesasFixas = (db.despesas || []).reduce((acc, d) => acc + d.valor, 0);
+            let lucroLiquidoOperacional = margemContrib - despesasFixas;
+
+            let despesasPessoaisTotal = (db.despesasPessoais || []).reduce((acc, dp) => acc + dp.valor, 0);
+            let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
 
             document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
             document.getElementById('dreDesc').innerText = `R$ ${descontos.toFixed(2)}`;
@@ -1199,9 +1344,12 @@
             document.getElementById('dreEntregas').innerText = `R$ ${entregasTotal.toFixed(2)}`;
             document.getElementById('dreMargemCont').innerText = `R$ ${margemContrib.toFixed(2)}`;
             document.getElementById('dreFixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
-            document.getElementById('dreLucroLiq').innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+            document.getElementById('dreLucroLiq').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
+            
+            document.getElementById('dreDespPessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
+            document.getElementById('dreCaixaFinal').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
 
-            let margemLiqPerc = fatLiquido > 0 ? (lucroLiquido / fatLiquido) * 100 : 0;
+            let margemLiqPerc = fatLiquido > 0 ? (lucroLiquidoOperacional / fatLiquido) * 100 : 0;
             let cmvPerc = fatLiquido > 0 ? ((cmvTotal + embTotal + custosVarTotal) / fatLiquido) * 100 : 0;
             let indiceMargemContrib = fatLiquido > 0 ? (margemContrib / fatLiquido) : 0;
             let pontoEquilibrio = indiceMargemContrib > 0 ? (despesasFixas / indiceMargemContrib) : 0;
@@ -1213,16 +1361,18 @@
             document.getElementById('dash-fat').innerText = `R$ ${fatLiquido.toFixed(2)}`;
             document.getElementById('dash-cmv').innerText = `R$ ${(cmvTotal + embTotal + custosVarTotal).toFixed(2)}`;
             document.getElementById('dash-fixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
-            document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquido.toFixed(2)}`;
+            document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
 
-            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquido);
+            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional);
         }
 
         function renderGraficos(fat, cmv, taxas, fixas, lucro) {
             if(chartDistInstance) chartDistInstance.destroy();
             if(chartTopPizzasInstance) chartTopPizzasInstance.destroy();
 
-            const ctx1 = document.getElementById('chartDist').getContext('2d');
+            const canvas1 = document.getElementById('chartDist');
+            if(!canvas1) return;
+            const ctx1 = canvas1.getContext('2d');
             chartDistInstance = new Chart(ctx1, {
                 type: 'doughnut',
                 data: {
@@ -1236,7 +1386,7 @@
             });
 
             let lucrosPorProd = {};
-            db.vendas.forEach(v => {
+            (db.vendas || []).forEach(v => {
                 let lucroUnit = v.precoUnitario - v.custoIngUnitario - v.custoEmbUnitario;
                 let totalLucro = (lucroUnit * v.quantidade) - (v.desconto || 0);
                 lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
@@ -1244,7 +1394,9 @@
 
             let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
-            const ctx2 = document.getElementById('chartTopPizzas').getContext('2d');
+            const canvas2 = document.getElementById('chartTopPizzas');
+            if(!canvas2) return;
+            const ctx2 = canvas2.getContext('2d');
             chartTopPizzasInstance = new Chart(ctx2, {
                 type: 'bar',
                 data: {
@@ -1261,12 +1413,13 @@
 
         function verificarAlertas() {
             let container = document.getElementById('alertsContainer');
+            if(!container) return;
             container.innerHTML = '';
-            db.produtos.forEach(p => {
-                let custoTotal = p.custoIng + p.custoEmb;
+            (db.produtos || []).forEach(p => {
+                let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
                 let lucro = p.preco - custoTotal;
                 let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
-                if(margem < db.config.margemMin) {
+                if(margem < (db.config ? db.config.margemMin : 20)) {
                     container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-xs rounded">
                         <strong>Atenção:</strong> <b>${p.nome}</b> está com margem de <b>${margem.toFixed(1)}%</b>.
                     </div>`;
@@ -1314,10 +1467,11 @@
 
             db.despesas = [
                 { id: 'd1', nome: 'Aluguel', valor: 2500.00 },
-                { id: 'd2', nome: 'Energia Elétrica', valor: 850.00 }
+                { id: 'd2', nome: 'Pró-Labore Sócio', valor: 3000.00 }
             ];
 
             db.custosVariaveis = [];
+            db.despesasPessoais = [];
             db.vendas = [];
             salvarBD();
         }
@@ -1325,6 +1479,7 @@
         window.onload = function() {
             document.getElementById('vendaData').valueAsDate = new Date();
             document.getElementById('custoVarData').valueAsDate = new Date();
+            document.getElementById('despPessoalData').valueAsDate = new Date();
             init();
 
             if ('serviceWorker' in navigator) {
