@@ -19,6 +19,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
+    <!-- OCR / Leitor de Foto de Comprovante -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
     <!-- Firebase SDK (Sincronização em Tempo Real) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -57,6 +60,17 @@
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden text-gray-800">
+
+    <!-- Modal de Carregamento do OCR/Câmera -->
+    <div id="ocrLoadingModal" class="fixed inset-0 bg-black/70 z-50 flex flex-col items-center justify-center text-white hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-mendonca-gold border-t-transparent mb-4"></div>
+        <h3 class="text-xl font-bold mb-1">Lendo Comprovante...</h3>
+        <p class="text-sm text-gray-300">A inteligência de visão está a identificar o valor.</p>
+    </div>
+
+    <!-- Inputs Ocultos de Câmera -->
+    <input type="file" id="cameraCustoVarInput" accept="image/*" capture="environment" class="hidden" onchange="processarFotoComprovante(event, 'custoVar')">
+    <input type="file" id="cameraDespPessoalInput" accept="image/*" capture="environment" class="hidden" onchange="processarFotoComprovante(event, 'despPessoal')">
 
     <!-- Header Mobile com Hamburguer -->
     <header class="md:hidden bg-mendonca-black text-white p-4 flex justify-between items-center z-20 shadow-md">
@@ -274,7 +288,12 @@
 
         <!-- VIEW: CUSTOS VARIÁVEIS -->
         <div id="view-custosVariaveis" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Custos Variáveis (Cupons)</h2>
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Custos Variáveis (Cupons)</h2>
+                <button onclick="abrirCamera('custoVar')" class="btn bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm flex items-center gap-2">
+                    <i class="fas fa-camera text-base"></i> Escanear Comprovante
+                </button>
+            </div>
             <div class="card mb-6">
                 <form id="formCustoVar" onsubmit="salvarCustoVariavel(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="custoVarId">
@@ -313,7 +332,12 @@
 
         <!-- VIEW: DESPESAS PESSOAIS -->
         <div id="view-despesasPessoais" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Despesas Pessoais / Retiradas de Lucro</h2>
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Despesas Pessoais / Retiradas</h2>
+                <button onclick="abrirCamera('despPessoal')" class="btn bg-purple-600 hover:bg-purple-700 text-white text-xs md:text-sm flex items-center gap-2">
+                    <i class="fas fa-camera text-base"></i> Escanear Comprovante
+                </button>
+            </div>
             <div class="bg-purple-50 border-l-4 border-purple-600 p-3 text-xs md:text-sm text-purple-900 mb-4 rounded">
                 <i class="fas fa-info-circle mr-1"></i> As despesas desta aba representam retiradas particulares dos sócios. Elas <strong>não reduzem o Lucro Operacional</strong> da pizzaria no DRE, sendo abatidas somente no final do caixa acumulado.
             </div>
@@ -692,6 +716,91 @@
             preencherSelectProdutos();
             preencherSelectFormasPagamento();
             verificarAlertas();
+        }
+
+        // --- CÂMERA E LEITURA DE COMPROVANTE (OCR) ---
+        function abrirCamera(tipo) {
+            if (tipo === 'custoVar') {
+                document.getElementById('cameraCustoVarInput').click();
+            } else {
+                document.getElementById('cameraDespPessoalInput').click();
+            }
+        }
+
+        async function processarFotoComprovante(event, tipo) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const modal = document.getElementById('ocrLoadingModal');
+            modal.classList.remove('hidden');
+
+            try {
+                const result = await Tesseract.recognize(file, 'por');
+                const text = result.data.text;
+                
+                let valor = extrairValorDoTexto(text);
+
+                if (valor && valor > 0) {
+                    let hoje = new Date().toISOString().slice(0,10);
+                    
+                    if (tipo === 'custoVar') {
+                        let cVar = {
+                            id: Date.now().toString(),
+                            data: hoje,
+                            local: "Comprovante Escaneado (Câmera)",
+                            valor: valor
+                        };
+                        if (!db.custosVariaveis) db.custosVariaveis = [];
+                        db.custosVariaveis.push(cVar);
+                        salvarBD();
+                        alert(` Comprovante de R$ ${valor.toFixed(2)} lançado com sucesso em Custos Variáveis!`);
+                    } else if (tipo === 'despPessoal') {
+                        let dp = {
+                            id: Date.now().toString(),
+                            data: hoje,
+                            nome: "Comprovante Escaneado (Câmera)",
+                            valor: valor
+                        };
+                        if (!db.despesasPessoais) db.despesasPessoais = [];
+                        db.despesasPessoais.push(dp);
+                        salvarBD();
+                        alert(` Comprovante de R$ ${valor.toFixed(2)} lançado com sucesso em Despesas Pessoais!`);
+                    }
+                } else {
+                    alert("Não foi possível identificar o valor no comprovante. Verifique a iluminação e tente novamente.");
+                }
+            } catch (err) {
+                console.error("Erro no OCR:", err);
+                alert("Erro ao ler comprovante. Tente novamente.");
+            } finally {
+                modal.classList.add('hidden');
+                event.target.value = '';
+            }
+        }
+
+        function extrairValorDoTexto(texto) {
+            const linhas = texto.split('\n');
+            for (let linha of linhas) {
+                let lUpper = linha.toUpperCase();
+                if (lUpper.includes('TOTAL') || lUpper.includes('VALOR') || lUpper.includes('PAGO') || lUpper.includes('R$')) {
+                    let match = linha.match(/(?:R\$\s*)?(\d+[\.,]\d{2})/);
+                    if (match) {
+                        let valStr = match[1].replace('.', '').replace(',', '.');
+                        let num = parseFloat(valStr);
+                        if (!isNaN(num) && num > 0) return num;
+                    }
+                }
+            }
+            const regexValores = /(?:R\$\s*)?(\d+[\.,]\d{2})/g;
+            let match;
+            let valores = [];
+            while ((match = regexValores.exec(texto)) !== null) {
+                let valStr = match[1].replace('.', '').replace(',', '.');
+                let num = parseFloat(valStr);
+                if (!isNaN(num) && num > 0) valores.push(num);
+            }
+            if (valores.length > 0) return Math.max(...valores);
+            return null;
         }
 
         // --- DESPESAS PESSOAIS ---
