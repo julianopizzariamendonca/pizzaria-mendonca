@@ -19,6 +19,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
+    <!-- Firebase SDK (Sincronização em Tempo Real) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -143,7 +147,6 @@
                         </div>
                         <div>
                             <label class="text-xs font-semibold">Produto</label>
-                            <!-- PESQUISA COM LUPA -->
                             <div class="relative mt-1">
                                 <input type="text" id="vendaBuscaProduto" oninput="filtrarProdutosVenda()" placeholder="Pesquisar produto..." class="pl-8 text-sm mt-0 mb-1">
                                 <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-sm"></i>
@@ -517,6 +520,24 @@
     </main>
 
     <script>
+        // =========================================================================
+        // CONFIGURAÇÃO DO FIREBASE OFICIAL DA PIZZARIA MENDONÇA
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlqJwMwpobW2h0neK9d80j0xzlZR5WveI",
+            authDomain: "pizzaria-mendonca.firebaseapp.com",
+            databaseURL: "https://pizzaria-mendonca-default-rtdb.firebaseio.com",
+            projectId: "pizzaria-mendonca",
+            storageBucket: "pizzaria-mendonca.firebasestorage.app",
+            messagingSenderId: "518287866317",
+            appId: "1:518287866317:web:9ff293074d8cc41fd92c84"
+        };
+
+        // Inicializar o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref('pizzariaMendoncaDB');
+
         // --- MOBILE MENU TOGGLE ---
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
@@ -535,7 +556,7 @@
             }
         }
 
-        // --- BANCO DE DADOS LOCAL (localStorage) ---
+        // --- BANCO DE DADOS EM NUVEM EM TEMPO REAL ---
         let db = {
             produtos: [],
             vendas: [],
@@ -551,22 +572,25 @@
         let chartTopPizzasInstance = null;
 
         function init() {
-            let localData = localStorage.getItem('mendoncaDB');
-            if (localData) {
-                db = JSON.parse(localData);
-                if (!db.custosVariaveis) db.custosVariaveis = [];
-                if (!db.ingredientes) db.ingredientes = [];
-                if (!db.fichasTecnicas) db.fichasTecnicas = {};
-                if (!db.formasPagamento || db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
-            } else {
-                gerarDadosFicticios();
-            }
-            atualizarTudo();
+            // Escutar alterações do Firebase em tempo real (Computador <-> Telemóvel)
+            dbRef.on('value', (snapshot) => {
+                const val = snapshot.val();
+                if (val) {
+                    db = val;
+                    if (!db.custosVariaveis) db.custosVariaveis = [];
+                    if (!db.ingredientes) db.ingredientes = [];
+                    if (!db.fichasTecnicas) db.fichasTecnicas = {};
+                    if (!db.formasPagamento || db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                    atualizarTudo();
+                } else {
+                    gerarDadosFicticios();
+                }
+            });
         }
 
         function salvarBD() {
-            localStorage.setItem('mendoncaDB', JSON.stringify(db));
-            atualizarTudo();
+            // Guarda na nuvem (Firebase) e atualiza todos os dispositivos em tempo real
+            dbRef.set(db);
         }
 
         function nav(viewId) {
@@ -1303,7 +1327,6 @@
             document.getElementById('custoVarData').valueAsDate = new Date();
             init();
 
-            // Registro do Service Worker para PWA
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js')
                     .then(() => console.log('PWA Service Worker Ativo!'))
