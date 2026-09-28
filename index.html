@@ -64,7 +64,7 @@
     <!-- Modal de Carregamento do OCR/Câmera -->
     <div id="ocrLoadingModal" class="fixed inset-0 bg-black/70 z-50 flex flex-col items-center justify-center text-white hidden">
         <div class="animate-spin rounded-full h-16 w-16 border-4 border-mendonca-gold border-t-transparent mb-4"></div>
-        <h3 class="text-xl font-bold mb-1">Lendo Comprovante...</h3>
+        <h3 class="text-xl font-bold mb-1">A ler comprovativo...</h3>
         <p class="text-sm text-gray-300">A inteligência de visão está a identificar o valor.</p>
     </div>
 
@@ -72,7 +72,7 @@
     <input type="file" id="cameraCustoVarInput" accept="image/*" capture="environment" class="hidden" onchange="processarFotoComprovante(event, 'custoVar')">
     <input type="file" id="cameraDespPessoalInput" accept="image/*" capture="environment" class="hidden" onchange="processarFotoComprovante(event, 'despPessoal')">
 
-    <!-- Header Mobile com Hamburguer -->
+    <!-- Header Mobile com Hambúrguer -->
     <header class="md:hidden bg-mendonca-black text-white p-4 flex justify-between items-center z-20 shadow-md">
         <div class="flex items-center space-x-2">
             <i class="fas fa-pizza-slice text-mendonca-gold text-xl"></i>
@@ -207,29 +207,102 @@
         <div id="view-produtos" class="tab-content">
             <div class="flex justify-between items-center mb-4 md:mb-6">
                 <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Produtos e Custos</h2>
-                <button onclick="mostrarFormProduto()" class="btn btn-red text-sm">+ Novo</button>
+                <button onclick="mostrarFormProduto()" class="btn btn-red text-sm">+ Novo Produto</button>
             </div>
             
-            <div id="formProdutoContainer" class="card mb-6 hidden bg-mendonca-cream border border-mendonca-gold">
-                <h3 class="font-bold mb-4" id="formProdTitle">Novo Produto</h3>
+            <div id="formProdutoContainer" class="card mb-6 hidden bg-mendonca-cream border border-mendonca-gold shadow-md">
+                <h3 class="font-bold text-lg mb-4 text-mendonca-black border-b pb-2" id="formProdTitle">Novo Produto & Precificação Inteligente</h3>
                 <form id="formProduto" onsubmit="salvarProduto(event)">
                     <input type="hidden" id="prodId">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div><label class="text-xs font-semibold">Nome</label><input type="text" id="prodNome" required></div>
-                        <div><label class="text-xs font-semibold">Categoria</label>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <div>
+                            <label class="text-xs font-semibold">Nome do Produto</label>
+                            <input type="text" id="prodNome" placeholder="Ex: Pizza Calabresa Especial" required>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold">Categoria</label>
                             <select id="prodCat">
                                 <option value="Pizza">Pizza</option>
                                 <option value="Bebida">Bebida</option>
                                 <option value="Outros">Outros</option>
                             </select>
                         </div>
-                        <div><label class="text-xs font-semibold">Preço Venda (R$)</label><input type="text" id="prodPreco" required></div>
-                        <div><label class="text-xs font-semibold">Custo Ingredientes (R$)</label><input type="text" id="prodCustoIng" required></div>
-                        <div><label class="text-xs font-semibold">Custo Embalagem (R$)</label><input type="text" id="prodCustoEmb" required></div>
+                        <div>
+                            <label class="text-xs font-semibold">Custo Embalagem (R$)</label>
+                            <input type="text" id="prodCustoEmb" value="0,00" oninput="calcularSugestaoPreco()" required>
+                        </div>
                     </div>
+
+                    <!-- Seção de Montagem Automática da Ficha Técnica -->
+                    <div class="p-3 bg-white rounded-md border border-gray-200 mb-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-bold text-xs text-mendonca-black flex items-center">
+                                <i class="fas fa-cubes mr-1.5 text-mendonca-gold text-sm"></i>
+                                Ingredientes da Pizza / Produto (Ficha Técnica Automática)
+                            </h4>
+                            <span class="text-xs text-gray-500">Puxa valores cadastrados na aba Ingredientes</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
+                            <div>
+                                <label class="text-xs font-semibold text-gray-700">Selecione o Ingrediente</label>
+                                <select id="prodIngSelect" class="text-xs p-2 mt-0.5 bg-white"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-gray-700">Quantidade Utilizada</label>
+                                <input type="text" id="prodIngQtd" placeholder="Ex: 250 (g/ml/un)" class="text-xs p-2 mt-0.5 bg-white">
+                            </div>
+                            <div>
+                                <button type="button" onclick="adicionarIngredienteAoProdutoTemp()" class="btn btn-green text-xs w-full py-2.5 flex justify-center items-center gap-1">
+                                    <i class="fas fa-plus-circle"></i> Adicionar à Ficha
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto max-h-48">
+                            <table class="text-xs w-full border border-gray-200 rounded">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b">
+                                        <th class="p-2">Ingrediente</th>
+                                        <th class="p-2">Quantidade Usada</th>
+                                        <th class="p-2">Custo Subtotal</th>
+                                        <th class="p-2 text-center">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaIngredientesProdTemp"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Painel de Cálculos e Sugestão de Preço -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-md border border-gray-200">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600">Custo Ingredientes (Auto)</label>
+                            <input type="text" id="prodCustoIng" readonly class="bg-gray-100 font-bold text-gray-800 cursor-not-allowed" value="R$ 0,00">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-gray-600">Custo Total (Ing + Emb)</label>
+                            <input type="text" id="prodCustoTotal" readonly class="bg-gray-100 font-bold text-mendonca-red cursor-not-allowed" value="R$ 0,00">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-blue-700">Preço Sugerido (CMV Max <span id="lblCmvMaxCfg">30</span>%)</label>
+                            <input type="text" id="prodPrecoSugerido" readonly class="bg-blue-50 font-bold text-blue-800 border-blue-300 cursor-not-allowed" value="R$ 0,00">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-green-800">Preço Cobrado Real (R$)</label>
+                            <input type="text" id="prodPreco" oninput="calcularSugestaoPreco()" placeholder="Ex: 49,90" required class="border-green-600 font-bold text-base bg-green-50/30">
+                        </div>
+                    </div>
+
+                    <!-- Alerta Visual em Tempo Real caso Preço esteja Fora da Faixa -->
+                    <div id="alertaPrecoForaDaFaixa" class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-900 text-xs font-semibold hidden rounded shadow-sm">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-sm mr-1"></i> <span id="msgAlertaPreco"></span>
+                    </div>
+
                     <div class="mt-4 flex gap-2">
-                        <button type="submit" class="btn btn-green flex-1">Salvar</button>
-                        <button type="button" onclick="fecharFormProduto()" class="btn bg-gray-400 text-white flex-1">Cancelar</button>
+                        <button type="submit" class="btn btn-green flex-1 text-sm py-2.5">Guardar Produto e Ficha Técnica</button>
+                        <button type="button" onclick="fecharFormProduto()" class="btn bg-gray-400 text-white flex-1 text-sm py-2.5">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -240,10 +313,10 @@
                         <tr>
                             <th>Produto</th>
                             <th>Categoria</th>
-                            <th>Preço Venda</th>
+                            <th>Preço Cobrado</th>
                             <th>Custo Total</th>
                             <th>Lucro Bruto</th>
-                            <th>Margem</th>
+                            <th>Margem %</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -599,7 +672,7 @@
     </main>
 
     <script>
-        // FUNÇÃO DE TRATAMENTO DE VALORES COM VÍRGULA/PONTO
+        // TRATAMENTO DE VALORES MONETÁRIOS
         function parseValor(val) {
             if (val === null || val === undefined) return 0;
             let s = val.toString().trim().replace(',', '.');
@@ -607,7 +680,7 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // FUNÇÃO DE SEGURANÇA: CONVERTE OBJETOS OU UNDEFINED EM ARRAYS
+        // SEGURANÇA CONTRA ERROS DE CONVERSÃO
         function garantirArray(val) {
             if (!val) return [];
             if (Array.isArray(val)) return val;
@@ -615,7 +688,7 @@
             return [];
         }
 
-        // CONFIGURAÇÃO DO FIREBASE
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAlqJwMwpobW2h0neK9d80j0xzlZR5WveI",
             authDomain: "pizzaria-mendonca.firebaseapp.com",
@@ -634,7 +707,7 @@
             console.error("Erro ao inicializar Firebase:", e);
         }
 
-        // MOBILE MENU TOGGLE
+        // MOBILE MENU
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
@@ -664,6 +737,9 @@
             config: { cmvMax: 30, margemMin: 20 }
         };
 
+        // VARIÁVEL TEMPORÁRIA DE INGREDIENTES PARA O CADASTRO DE PRODUTO
+        let ingredientesTempProduto = [];
+
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
 
@@ -680,7 +756,6 @@
         }
 
         function init() {
-            // 1. Carrega dados salvos localmente
             let localData = localStorage.getItem('pizzariaMendoncaDB');
             if (localData) {
                 try {
@@ -693,14 +768,12 @@
                 dbRef.on('value', (snapshot) => {
                     const val = snapshot.val();
                     if (val) {
-                        // Se o Firebase tem dados salvos, usa e atualiza localmente
                         db = val;
                         sanitizarBanco();
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
                         localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
                         atualizarTudo();
                     } else {
-                        // Se o Firebase estiver vazio (null), PRESERVA os dados cadastrados e sincroniza!
                         sanitizarBanco();
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
                         salvarBD();
@@ -720,14 +793,10 @@
 
         function salvarBD() {
             sanitizarBanco();
-            // Salva na memória do navegador
             localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
             atualizarTudo();
-            // Envia e sincroniza com o Firebase
             if (dbRef) {
-                dbRef.set(db).catch(err => {
-                    console.error("Erro ao salvar no Firebase:", err);
-                });
+                dbRef.set(db).catch(err => console.error("Erro ao guardar no Firebase:", err));
             }
         }
 
@@ -752,6 +821,7 @@
             renderDashboardEDRE();
             preencherSelectProdutos();
             preencherSelectFormasPagamento();
+            preencherSelectIngredientesProduto();
             verificarAlertas();
         }
 
@@ -787,7 +857,7 @@
                         };
                         db.custosVariaveis.push(cVar);
                         salvarBD();
-                        alert(`Comprovante de R$ ${valor.toFixed(2)} lançado com sucesso em Custos Variáveis!`);
+                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registado com sucesso em Custos Variáveis!`);
                     } else if (tipo === 'despPessoal') {
                         let dp = {
                             id: Date.now().toString(),
@@ -797,14 +867,14 @@
                         };
                         db.despesasPessoais.push(dp);
                         salvarBD();
-                        alert(`Comprovante de R$ ${valor.toFixed(2)} lançado com sucesso em Despesas Pessoais!`);
+                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registado com sucesso em Despesas Pessoais!`);
                     }
                 } else {
-                    alert("Não foi possível identificar o valor no comprovante. Verifique a iluminação e tente novamente.");
+                    alert("Não foi possível identificar o valor no comprovativo. Verifique a iluminação e tente novamente.");
                 }
             } catch (err) {
                 console.error("Erro no OCR:", err);
-                alert("Erro ao ler comprovante. Tente novamente.");
+                alert("Erro ao ler comprovativo.");
             } finally {
                 modal.classList.add('hidden');
                 event.target.value = '';
@@ -915,6 +985,209 @@
             }).join('');
         }
 
+        // PRODUTOS & AUTOMAÇÃO DA FICHA TÉCNICA E PRECIFICAÇÃO
+        function preencherSelectIngredientesProduto() {
+            const sel = document.getElementById('prodIngSelect');
+            if (!sel) return;
+            let ingredientes = garantirArray(db.ingredientes);
+            if (ingredientes.length === 0) {
+                sel.innerHTML = `<option value="">Nenhum ingrediente cadastrado</option>`;
+            } else {
+                sel.innerHTML = ingredientes.map(i => {
+                    let c = i.qtdEmbalagem > 0 ? (i.precoEmbalagem / i.qtdEmbalagem) : 0;
+                    return `<option value="${i.id}">${i.nome} (R$ ${c.toFixed(4)}/${i.unidade})</option>`;
+                }).join('');
+            }
+        }
+
+        function mostrarFormProduto(id = null) {
+            document.getElementById('formProdutoContainer').classList.remove('hidden');
+            preencherSelectIngredientesProduto();
+
+            if(id) {
+                let p = garantirArray(db.produtos).find(x => x.id == id);
+                document.getElementById('prodId').value = p.id;
+                document.getElementById('prodNome').value = p.nome;
+                document.getElementById('prodPreco').value = p.preco;
+                document.getElementById('prodCustoEmb').value = p.custoEmb || 0;
+                document.getElementById('prodCat').value = p.categoria;
+                document.getElementById('formProdTitle').innerText = 'Editar Produto & Precificação';
+
+                // Carrega a Ficha Técnica existente na memória do formulário
+                ingredientesTempProduto = JSON.parse(JSON.stringify(db.fichasTecnicas && db.fichasTecnicas[id] ? db.fichasTecnicas[id] : []));
+            } else {
+                document.getElementById('formProduto').reset();
+                document.getElementById('prodId').value = '';
+                document.getElementById('prodCustoEmb').value = '0,00';
+                document.getElementById('formProdTitle').innerText = 'Novo Produto & Precificação Inteligente';
+                ingredientesTempProduto = [];
+            }
+
+            renderIngredientesTempProduto();
+            calcularSugestaoPreco();
+        }
+
+        function fecharFormProduto() {
+            document.getElementById('formProdutoContainer').classList.add('hidden');
+            ingredientesTempProduto = [];
+        }
+
+        function adicionarIngredienteAoProdutoTemp() {
+            let ingId = document.getElementById('prodIngSelect').value;
+            let qtd = parseValor(document.getElementById('prodIngQtd').value);
+
+            if (!ingId) { alert("Cadastre ou selecione um ingrediente primeiro na aba Ingredientes."); return; }
+            if (qtd <= 0) { alert("Informe a quantidade utilizada no produto."); return; }
+
+            let idx = ingredientesTempProduto.findIndex(x => x.ingredienteId == ingId);
+            if (idx !== -1) {
+                ingredientesTempProduto[idx].quantidade += qtd;
+            } else {
+                ingredientesTempProduto.push({ ingredienteId: ingId, quantidade: qtd });
+            }
+
+            document.getElementById('prodIngQtd').value = '';
+            renderIngredientesTempProduto();
+            calcularSugestaoPreco();
+        }
+
+        function removerIngredienteTempProduto(index) {
+            ingredientesTempProduto.splice(index, 1);
+            renderIngredientesTempProduto();
+            calcularSugestaoPreco();
+        }
+
+        function renderIngredientesTempProduto() {
+            const tbody = document.getElementById('listaIngredientesProdTemp');
+            if (!tbody) return;
+
+            if (ingredientesTempProduto.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-3">Nenhum ingrediente adicionado à ficha técnica deste produto.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = ingredientesTempProduto.map((item, idx) => {
+                let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
+                if (!ing) return '';
+                let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
+                let subtotal = custoUnit * item.quantidade;
+                return `<tr class="border-b">
+                    <td class="p-2 font-semibold text-gray-800">${ing.nome}</td>
+                    <td class="p-2">${item.quantidade} ${ing.unidade}</td>
+                    <td class="p-2 font-bold text-green-700">R$ ${subtotal.toFixed(2)}</td>
+                    <td class="p-2 text-center">
+                        <button type="button" onclick="removerIngredienteTempProduto(${idx})" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function calcularSugestaoPreco() {
+            let custoIngTotal = 0;
+            ingredientesTempProduto.forEach(item => {
+                let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
+                if (ing && ing.qtdEmbalagem > 0) {
+                    custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
+                }
+            });
+
+            let custoEmb = parseValor(document.getElementById('prodCustoEmb').value);
+            let custoTotal = custoIngTotal + custoEmb;
+
+            let cmvMaxConfig = (db.config && db.config.cmvMax) ? parseValor(db.config.cmvMax) : 30;
+            if (cmvMaxConfig <= 0) cmvMaxConfig = 30;
+
+            let precoSugerido = (cmvMaxConfig > 0) ? (custoTotal / (cmvMaxConfig / 100)) : custoTotal;
+            let precoCobradoReal = parseValor(document.getElementById('prodPreco').value);
+
+            document.getElementById('prodCustoIng').value = `R$ ${custoIngTotal.toFixed(2)}`;
+            document.getElementById('prodCustoTotal').value = `R$ ${custoTotal.toFixed(2)}`;
+            document.getElementById('prodPrecoSugerido').value = `R$ ${precoSugerido.toFixed(2)}`;
+            document.getElementById('lblCmvMaxCfg').innerText = cmvMaxConfig;
+
+            let alertaEl = document.getElementById('alertaPrecoForaDaFaixa');
+            let msgEl = document.getElementById('msgAlertaPreco');
+
+            if (precoCobradoReal > 0 && precoCobradoReal < precoSugerido) {
+                let cmvReal = (custoTotal / precoCobradoReal) * 100;
+                msgEl.innerHTML = `O <b>Preço Cobrado Real (R$ ${precoCobradoReal.toFixed(2)})</b> está abaixo do sugerido (R$ ${precoSugerido.toFixed(2)}). O CMV deste produto será de <b>${cmvReal.toFixed(1)}%</b>, ultrapassando o seu teto máximo de <b>${cmvMaxConfig}%</b>!`;
+                alertaEl.classList.remove('hidden');
+            } else {
+                alertaEl.classList.add('hidden');
+            }
+        }
+
+        function salvarProduto(e) {
+            e.preventDefault();
+            let id = document.getElementById('prodId').value;
+            let prodIdFinal = id ? id : Date.now().toString();
+
+            let custoIngTotal = 0;
+            ingredientesTempProduto.forEach(item => {
+                let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
+                if (ing && ing.qtdEmbalagem > 0) {
+                    custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
+                }
+            });
+
+            let produto = {
+                id: prodIdFinal,
+                nome: document.getElementById('prodNome').value,
+                categoria: document.getElementById('prodCat').value,
+                preco: parseValor(document.getElementById('prodPreco').value), // PREÇO COBRADO REAL
+                custoIng: Math.round(custoIngTotal * 100) / 100,
+                custoEmb: parseValor(document.getElementById('prodCustoEmb').value)
+            };
+
+            db.produtos = garantirArray(db.produtos);
+            if(id) {
+                let idx = db.produtos.findIndex(x => x.id == id);
+                if(idx !== -1) db.produtos[idx] = produto;
+            } else {
+                db.produtos.push(produto);
+            }
+
+            // CRIA / ATUALIZA A FICHA TÉCNICA NA ABA FICHA TÉCNICA AUTOMATICAMENTE
+            if (!db.fichasTecnicas) db.fichasTecnicas = {};
+            db.fichasTecnicas[prodIdFinal] = ingredientesTempProduto;
+
+            fecharFormProduto();
+            salvarBD();
+        }
+
+        function excluirProduto(id) {
+            if(confirm("Deseja excluir este produto?")) {
+                db.produtos = garantirArray(db.produtos).filter(p => p.id != id);
+                if (db.fichasTecnicas) delete db.fichasTecnicas[id];
+                salvarBD();
+            }
+        }
+
+        function renderProdutos() {
+            const tbody = document.querySelector('#tabelaProdutos tbody');
+            if(!tbody) return;
+            tbody.innerHTML = garantirArray(db.produtos).map(p => {
+                let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
+                let lucro = p.preco - custoTotal; // Utiliza o preço cobrado real
+                let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
+                let cmvReal = p.preco > 0 ? (custoTotal / p.preco) * 100 : 0;
+                let trClass = cmvReal > (db.config ? db.config.cmvMax : 30) ? "bg-red-50 text-red-800" : "";
+
+                return `<tr class="${trClass}">
+                    <td class="font-semibold">${p.nome}</td>
+                    <td>${p.categoria}</td>
+                    <td class="font-bold text-green-700">R$ ${p.preco.toFixed(2)}</td>
+                    <td>R$ ${custoTotal.toFixed(2)}</td>
+                    <td>R$ ${lucro.toFixed(2)}</td>
+                    <td class="font-bold">${margem.toFixed(1)}%</td>
+                    <td>
+                        <button onclick="mostrarFormProduto('${p.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirProduto('${p.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
         // DESPESAS PESSOAIS
         function salvarDespesaPessoal(e) {
             e.preventDefault();
@@ -976,7 +1249,7 @@
             </tr>`).join('');
         }
 
-        // FICHA TÉCNICA
+        // FICHA TÉCNICA (VISUALIZAÇÃO E EDIÇÃO NA ABA FICHA TÉCNICA)
         function adicionarItemFicha(e) {
             e.preventDefault();
             let prodId = document.getElementById('fichaProdutoSelect').value;
@@ -1057,7 +1330,7 @@
                     </tr>`;
                 }).join('');
             } else {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-4">Nenhum ingrediente vinculado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-4">Nenhum ingrediente vinculado a este produto.</td></tr>`;
             }
             document.getElementById('fichaTotalCusto').innerText = `R$ ${totalCusto.toFixed(2)}`;
         }
@@ -1148,7 +1421,7 @@
             ];
         }
 
-        // PRODUTOS
+        // VENDAS (PDV)
         function filtrarProdutosVenda() {
             const busca = (document.getElementById('vendaBuscaProduto')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('vendaProduto');
@@ -1168,79 +1441,6 @@
             filtrarProdutosVenda();
         }
 
-        function mostrarFormProduto(id = null) {
-            document.getElementById('formProdutoContainer').classList.remove('hidden');
-            if(id) {
-                let p = garantirArray(db.produtos).find(x => x.id == id);
-                document.getElementById('prodId').value = p.id;
-                document.getElementById('prodNome').value = p.nome;
-                document.getElementById('prodPreco').value = p.preco;
-                document.getElementById('prodCustoIng').value = p.custoIng;
-                document.getElementById('prodCustoEmb').value = p.custoEmb;
-                document.getElementById('prodCat').value = p.categoria;
-                document.getElementById('formProdTitle').innerText = 'Editar Produto';
-            } else {
-                document.getElementById('formProduto').reset();
-                document.getElementById('prodId').value = '';
-                document.getElementById('formProdTitle').innerText = 'Novo Produto';
-            }
-        }
-
-        function fecharFormProduto() { document.getElementById('formProdutoContainer').classList.add('hidden'); }
-
-        function salvarProduto(e) {
-            e.preventDefault();
-            let id = document.getElementById('prodId').value;
-            let produto = {
-                id: id ? id : Date.now().toString(),
-                nome: document.getElementById('prodNome').value,
-                categoria: document.getElementById('prodCat').value,
-                preco: parseValor(document.getElementById('prodPreco').value),
-                custoIng: parseValor(document.getElementById('prodCustoIng').value),
-                custoEmb: parseValor(document.getElementById('prodCustoEmb').value)
-            };
-            db.produtos = garantirArray(db.produtos);
-            if(id) {
-                let idx = db.produtos.findIndex(x => x.id == id);
-                if(idx !== -1) db.produtos[idx] = produto;
-            } else {
-                db.produtos.push(produto);
-            }
-            fecharFormProduto();
-            salvarBD();
-        }
-
-        function excluirProduto(id) {
-            if(confirm("Deseja excluir este produto?")) {
-                db.produtos = garantirArray(db.produtos).filter(p => p.id != id);
-                salvarBD();
-            }
-        }
-
-        function renderProdutos() {
-            const tbody = document.querySelector('#tabelaProdutos tbody');
-            if(!tbody) return;
-            tbody.innerHTML = garantirArray(db.produtos).map(p => {
-                let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
-                let lucro = p.preco - custoTotal;
-                let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
-                let trClass = margem < db.config.margemMin ? "bg-red-50 text-red-800" : "";
-                return `<tr class="${trClass}">
-                    <td class="font-semibold">${p.nome}</td>
-                    <td>${p.categoria}</td>
-                    <td>R$ ${p.preco.toFixed(2)}</td>
-                    <td>R$ ${custoTotal.toFixed(2)}</td>
-                    <td>R$ ${lucro.toFixed(2)}</td>
-                    <td class="font-bold">${margem.toFixed(1)}%</td>
-                    <td>
-                        <button onclick="mostrarFormProduto('${p.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
-                        <button onclick="excluirProduto('${p.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
-            }).join('');
-        }
-
-        // VENDAS
         function salvarVenda(e) {
             e.preventDefault();
             let id = document.getElementById('vendaId').value;
@@ -1256,7 +1456,7 @@
                 produtoId: prodId,
                 produtoNome: prod ? prod.nome : 'Produto',
                 quantidade: parseValor(document.getElementById('vendaQtd').value) || 1,
-                precoUnitario: prod ? prod.preco : 0,
+                precoUnitario: prod ? prod.preco : 0, // UTILIZA O PREÇO COBRADO REAL
                 custoIngUnitario: prod ? prod.custoIng : 0,
                 custoEmbUnitario: prod ? prod.custoEmb : 0,
                 canal: document.getElementById('vendaCanal').value,
@@ -1465,12 +1665,12 @@
             </tr>`).join('');
         }
 
-        // DASHBOARD & DRE
+        // DASHBOARD & DRE (UTILIZA RIGOROSAMENTE O PREÇO COBRADO REAL)
         function renderDashboardEDRE() {
             let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
             garantirArray(db.vendas).forEach(v => {
-                let bruto = v.quantidade * v.precoUnitario;
+                let bruto = v.quantidade * v.precoUnitario; // Preço cobrado real
                 fatBruto += bruto;
                 descontos += (v.desconto || 0);
                 cmvTotal += v.quantidade * (v.custoIngUnitario || 0);
@@ -1556,7 +1756,7 @@
 
             let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
-            const canvas2 = document.querySelector('#chartTopPizzas');
+            const canvas2 = document.getElementById('chartTopPizzas');
             if(!canvas2) return;
             const ctx2 = canvas2.getContext('2d');
             chartTopPizzasInstance = new Chart(ctx2, {
@@ -1581,9 +1781,12 @@
                 let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
                 let lucro = p.preco - custoTotal;
                 let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
-                if(margem < (db.config ? db.config.margemMin : 20)) {
-                    container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-xs rounded">
-                        <strong>Atenção:</strong> <b>${p.nome}</b> está com margem de <b>${margem.toFixed(1)}%</b>.
+                let cmvReal = p.preco > 0 ? (custoTotal / p.preco) * 100 : 0;
+                let cmvMaxConfig = (db.config ? db.config.cmvMax : 30);
+
+                if (cmvReal > cmvMaxConfig) {
+                    container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2.5 text-xs rounded shadow-sm">
+                        <strong>Atenção ao CMV:</strong> O produto <b>${p.nome}</b> tem um preço cobrado de R$ ${p.preco.toFixed(2)}, gerando um CMV de <b>${cmvReal.toFixed(1)}%</b> (acima do teto de ${cmvMaxConfig}%).
                     </div>`;
                 }
             });
@@ -1593,7 +1796,7 @@
             db.config.cmvMax = parseValor(document.getElementById('cfgCmv').value);
             db.config.margemMin = parseValor(document.getElementById('cfgMargem').value);
             salvarBD();
-            alert("Metas atualizadas!");
+            alert("Metas atualizadas com sucesso!");
         }
 
         function exportarDados() {
