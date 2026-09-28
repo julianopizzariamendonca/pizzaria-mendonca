@@ -700,7 +700,10 @@
             localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
             atualizarTudo();
             if (dbRef) {
-                dbRef.set(db).catch(err => console.error("Erro ao salvar na nuvem:", err));
+                dbRef.set(db).catch(err => {
+                    console.error("Erro ao salvar no Firebase:", err);
+                    alert("Atenção: Não foi possível salvar as alterações no Firebase!\n\nVerifique se alterou as Regras do Realtime Database no Firebase Console para '.read': true e '.write': true.");
+                });
             }
         }
 
