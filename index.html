@@ -607,9 +607,15 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // =========================================================================
+        // FUNÇÃO DE SEGURANÇA: CONVERTE OBJETOS OU UNDEFINED EM ARRAYS
+        function garantirArray(val) {
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            if (typeof val === 'object') return Object.values(val);
+            return [];
+        }
+
         // CONFIGURAÇÃO DO FIREBASE
-        // =========================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAlqJwMwpobW2h0neK9d80j0xzlZR5WveI",
             authDomain: "pizzaria-mendonca.firebaseapp.com",
@@ -628,7 +634,7 @@
             console.error("Erro ao inicializar Firebase:", e);
         }
 
-        // --- MOBILE MENU TOGGLE ---
+        // MOBILE MENU TOGGLE
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
@@ -661,12 +667,24 @@
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
 
+        function sanitizarBanco() {
+            db.produtos = garantirArray(db.produtos);
+            db.vendas = garantirArray(db.vendas);
+            db.despesas = garantirArray(db.despesas);
+            db.custosVariaveis = garantirArray(db.custosVariaveis);
+            db.despesasPessoais = garantirArray(db.despesasPessoais);
+            db.formasPagamento = garantirArray(db.formasPagamento);
+            db.ingredientes = garantirArray(db.ingredientes);
+            db.fichasTecnicas = db.fichasTecnicas || {};
+            db.config = db.config || { cmvMax: 30, margemMin: 20 };
+        }
+
         function init() {
             let localData = localStorage.getItem('pizzariaMendoncaDB');
             if (localData) {
                 try {
                     db = JSON.parse(localData);
-                    if (!db.despesasPessoais) db.despesasPessoais = [];
+                    sanitizarBanco();
                     atualizarTudo();
                 } catch(e){}
             }
@@ -676,16 +694,13 @@
                     const val = snapshot.val();
                     if (val) {
                         db = val;
-                        if (!db.custosVariaveis) db.custosVariaveis = [];
-                        if (!db.despesasPessoais) db.despesasPessoais = [];
-                        if (!db.ingredientes) db.ingredientes = [];
-                        if (!db.fichasTecnicas) db.fichasTecnicas = {};
-                        if (!db.formasPagamento || db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                        sanitizarBanco();
+                        if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
                         
                         localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
                         atualizarTudo();
                     } else {
-                        if (!localData) gerarDadosFicticios();
+                        gerarDadosFicticios();
                     }
                 }, (error) => {
                     console.error("Erro no Firebase:", error);
@@ -697,12 +712,13 @@
         }
 
         function salvarBD() {
+            sanitizarBanco();
             localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
             atualizarTudo();
             if (dbRef) {
                 dbRef.set(db).catch(err => {
                     console.error("Erro ao salvar no Firebase:", err);
-                    alert("Atenção: Não foi possível salvar as alterações no Firebase!\n\nVerifique se alterou as Regras do Realtime Database no Firebase Console para '.read': true e '.write': true.");
+                    alert("Atenção: Não foi possível salvar as alterações no Firebase!");
                 });
             }
         }
@@ -716,6 +732,7 @@
         }
 
         function atualizarTudo() {
+            sanitizarBanco();
             renderIngredientes();
             renderFichaTecnica();
             renderProdutos();
@@ -730,7 +747,7 @@
             verificarAlertas();
         }
 
-        // --- CÂMERA E LEITURA DE COMPROVANTE (OCR) ---
+        // CÂMERA E OCR
         function abrirCamera(tipo) {
             if (tipo === 'custoVar') {
                 document.getElementById('cameraCustoVarInput').click();
@@ -760,7 +777,6 @@
                             local: "Comprovante Escaneado (Câmera)",
                             valor: valor
                         };
-                        if (!db.custosVariaveis) db.custosVariaveis = [];
                         db.custosVariaveis.push(cVar);
                         salvarBD();
                         alert(`Comprovante de R$ ${valor.toFixed(2)} lançado com sucesso em Custos Variáveis!`);
@@ -771,7 +787,6 @@
                             nome: "Comprovante Escaneado (Câmera)",
                             valor: valor
                         };
-                        if (!db.despesasPessoais) db.despesasPessoais = [];
                         db.despesasPessoais.push(dp);
                         salvarBD();
                         alert(`Comprovante de R$ ${valor.toFixed(2)} lançado com sucesso em Despesas Pessoais!`);
@@ -813,7 +828,7 @@
             return null;
         }
 
-        // --- INGREDIENTES ---
+        // INGREDIENTES
         function salvarIngrediente(e) {
             e.preventDefault();
             let id = document.getElementById('ingId').value;
@@ -825,7 +840,7 @@
                 precoEmbalagem: parseValor(document.getElementById('ingPrecoEmb').value)
             };
 
-            if (!db.ingredientes) db.ingredientes = [];
+            db.ingredientes = garantirArray(db.ingredientes);
 
             if (id) {
                 let idx = db.ingredientes.findIndex(x => x.id == id);
@@ -843,7 +858,7 @@
         }
 
         function editarIngrediente(id) {
-            let ing = (db.ingredientes || []).find(x => x.id == id);
+            let ing = garantirArray(db.ingredientes).find(x => x.id == id);
             if (!ing) return;
             document.getElementById('ingId').value = ing.id;
             document.getElementById('ingNome').value = ing.nome;
@@ -863,10 +878,10 @@
 
         function excluirIngrediente(id) {
             if (confirm("Deseja excluir este ingrediente?")) {
-                db.ingredientes = (db.ingredientes || []).filter(x => x.id != id);
+                db.ingredientes = garantirArray(db.ingredientes).filter(x => x.id != id);
                 if (db.fichasTecnicas) {
                     for (let prodId in db.fichasTecnicas) {
-                        db.fichasTecnicas[prodId] = db.fichasTecnicas[prodId].filter(item => item.ingredienteId != id);
+                        db.fichasTecnicas[prodId] = garantirArray(db.fichasTecnicas[prodId]).filter(item => item.ingredienteId != id);
                         recalcularCustoProdutoFicha(prodId);
                     }
                 }
@@ -877,7 +892,7 @@
         function renderIngredientes() {
             const tbody = document.querySelector('#tabelaIngredientes tbody');
             if(!tbody) return;
-            tbody.innerHTML = (db.ingredientes || []).map(ing => {
+            tbody.innerHTML = garantirArray(db.ingredientes).map(ing => {
                 let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
                 return `<tr>
                     <td class="font-semibold">${ing.nome}</td>
@@ -892,7 +907,7 @@
             }).join('');
         }
 
-        // --- DESPESAS PESSOAIS ---
+        // DESPESAS PESSOAIS
         function salvarDespesaPessoal(e) {
             e.preventDefault();
             let id = document.getElementById('despPessoalId').value;
@@ -902,11 +917,11 @@
                 nome: document.getElementById('despPessoalNome').value,
                 valor: parseValor(document.getElementById('despPessoalValor').value)
             };
+            db.despesasPessoais = garantirArray(db.despesasPessoais);
             if (id) {
                 let idx = db.despesasPessoais.findIndex(x => x.id == id);
                 if (idx !== -1) db.despesasPessoais[idx] = dp;
             } else {
-                if (!db.despesasPessoais) db.despesasPessoais = [];
                 db.despesasPessoais.push(dp);
             }
             cancelarEdicaoDespPessoal();
@@ -914,7 +929,7 @@
         }
 
         function editarDespesaPessoal(id) {
-            let dp = db.despesasPessoais.find(x => x.id == id);
+            let dp = garantirArray(db.despesasPessoais).find(x => x.id == id);
             if (!dp) return;
             document.getElementById('despPessoalId').value = dp.id;
             document.getElementById('despPessoalData').value = dp.data;
@@ -934,7 +949,7 @@
 
         function excluirDespesaPessoal(id) {
             if (confirm("Deseja excluir esta despesa pessoal?")) {
-                db.despesasPessoais = db.despesasPessoais.filter(x => x.id != id);
+                db.despesasPessoais = garantirArray(db.despesasPessoais).filter(x => x.id != id);
                 salvarBD();
             }
         }
@@ -942,7 +957,7 @@
         function renderDespesasPessoais() {
             const tbody = document.querySelector('#tabelaDespesasPessoais tbody');
             if(!tbody) return;
-            tbody.innerHTML = (db.despesasPessoais || []).map(dp => `<tr>
+            tbody.innerHTML = garantirArray(db.despesasPessoais).map(dp => `<tr>
                 <td>${dp.data}</td>
                 <td class="font-semibold">${dp.nome}</td>
                 <td class="text-red-600 font-bold">R$ ${dp.valor.toFixed(2)}</td>
@@ -953,7 +968,7 @@
             </tr>`).join('');
         }
 
-        // --- FICHA TÉCNICA ---
+        // FICHA TÉCNICA
         function adicionarItemFicha(e) {
             e.preventDefault();
             let prodId = document.getElementById('fichaProdutoSelect').value;
@@ -964,6 +979,7 @@
             if (!db.fichasTecnicas) db.fichasTecnicas = {};
             if (!db.fichasTecnicas[prodId]) db.fichasTecnicas[prodId] = [];
 
+            db.fichasTecnicas[prodId] = garantirArray(db.fichasTecnicas[prodId]);
             let idx = db.fichasTecnicas[prodId].findIndex(x => x.ingredienteId == ingId);
             if (idx !== -1) {
                 db.fichasTecnicas[prodId][idx].quantidade += qtd;
@@ -978,7 +994,7 @@
 
         function removerItemFicha(prodId, ingId) {
             if (db.fichasTecnicas && db.fichasTecnicas[prodId]) {
-                db.fichasTecnicas[prodId] = db.fichasTecnicas[prodId].filter(x => x.ingredienteId != ingId);
+                db.fichasTecnicas[prodId] = garantirArray(db.fichasTecnicas[prodId]).filter(x => x.ingredienteId != ingId);
                 recalcularCustoProdutoFicha(prodId);
                 salvarBD();
             }
@@ -987,13 +1003,13 @@
         function recalcularCustoProdutoFicha(prodId) {
             if (!db.fichasTecnicas || !db.fichasTecnicas[prodId]) return;
             let custoTotalIng = 0;
-            db.fichasTecnicas[prodId].forEach(item => {
-                let ing = (db.ingredientes || []).find(x => x.id == item.ingredienteId);
+            garantirArray(db.fichasTecnicas[prodId]).forEach(item => {
+                let ing = garantirArray(db.ingredientes).find(x => x.id == item.ingredienteId);
                 if (ing && ing.qtdEmbalagem > 0) {
                     custoTotalIng += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
                 }
             });
-            let prod = db.produtos.find(p => p.id == prodId);
+            let prod = garantirArray(db.produtos).find(p => p.id == prodId);
             if (prod) prod.custoIng = Math.round(custoTotalIng * 100) / 100;
         }
 
@@ -1001,13 +1017,14 @@
             const selProd = document.getElementById('fichaProdutoSelect');
             if(!selProd) return;
             let selectedProdId = selProd.value;
-            selProd.innerHTML = (db.produtos || []).map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
-            if (selectedProdId && db.produtos.some(p => p.id == selectedProdId)) selProd.value = selectedProdId;
+            let produtos = garantirArray(db.produtos);
+            selProd.innerHTML = produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            if (selectedProdId && produtos.some(p => p.id == selectedProdId)) selProd.value = selectedProdId;
 
             let prodId = selProd.value;
             const selIng = document.getElementById('fichaIngredienteSelect');
             if(selIng) {
-                selIng.innerHTML = (db.ingredientes || []).map(i => {
+                selIng.innerHTML = garantirArray(db.ingredientes).map(i => {
                     let c = i.qtdEmbalagem > 0 ? (i.precoEmbalagem / i.qtdEmbalagem) : 0;
                     return `<option value="${i.id}">${i.nome} (R$ ${c.toFixed(4)}/${i.unidade})</option>`;
                 }).join('');
@@ -1017,8 +1034,8 @@
             let totalCusto = 0;
 
             if (prodId && db.fichasTecnicas && db.fichasTecnicas[prodId] && db.fichasTecnicas[prodId].length > 0) {
-                tbody.innerHTML = db.fichasTecnicas[prodId].map(item => {
-                    let ing = (db.ingredientes || []).find(x => x.id == item.ingredienteId);
+                tbody.innerHTML = garantirArray(db.fichasTecnicas[prodId]).map(item => {
+                    let ing = garantirArray(db.ingredientes).find(x => x.id == item.ingredienteId);
                     if (!ing) return '';
                     let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
                     let subtotal = custoUnit * item.quantidade;
@@ -1037,7 +1054,7 @@
             document.getElementById('fichaTotalCusto').innerText = `R$ ${totalCusto.toFixed(2)}`;
         }
 
-        // --- FORMAS DE PAGAMENTO ---
+        // FORMAS DE PAGAMENTO
         function formatarTextoTaxa(taxaPerc, taxaFixa) {
             let pStr = (taxaPerc || 0).toFixed(2) + '%';
             let fStr = 'R$ ' + (taxaFixa || 0).toFixed(2);
@@ -1050,7 +1067,7 @@
         function preencherSelectFormasPagamento() {
             const sel = document.getElementById('vendaFormaPagamento');
             if(!sel) return;
-            sel.innerHTML = (db.formasPagamento || []).map(fp => `<option value="${fp.id}">${fp.nome} (${formatarTextoTaxa(fp.taxaPerc, fp.taxaFixa)})</option>`).join('');
+            sel.innerHTML = garantirArray(db.formasPagamento).map(fp => `<option value="${fp.id}">${fp.nome} (${formatarTextoTaxa(fp.taxaPerc, fp.taxaFixa)})</option>`).join('');
         }
 
         function salvarFormaPagamento(e) {
@@ -1062,6 +1079,7 @@
                 taxaPerc: parseValor(document.getElementById('fpTaxa').value),
                 taxaFixa: parseValor(document.getElementById('fpTaxaFixa').value)
             };
+            db.formasPagamento = garantirArray(db.formasPagamento);
             if (id) {
                 let idx = db.formasPagamento.findIndex(x => x.id == id);
                 if (idx !== -1) db.formasPagamento[idx] = fp;
@@ -1073,7 +1091,7 @@
         }
 
         function editarFormaPagamento(id) {
-            let fp = db.formasPagamento.find(x => x.id == id);
+            let fp = garantirArray(db.formasPagamento).find(x => x.id == id);
             if (!fp) return;
             document.getElementById('fpId').value = fp.id;
             document.getElementById('fpNome').value = fp.nome;
@@ -1092,7 +1110,7 @@
 
         function excluirFormaPagamento(id) {
             if (confirm("Deseja excluir esta forma de pagamento?")) {
-                db.formasPagamento = db.formasPagamento.filter(x => x.id != id);
+                db.formasPagamento = garantirArray(db.formasPagamento).filter(x => x.id != id);
                 salvarBD();
             }
         }
@@ -1100,7 +1118,7 @@
         function renderFormasPagamento() {
             const tbody = document.querySelector('#tabelaFormasPagamento tbody');
             if(!tbody) return;
-            tbody.innerHTML = (db.formasPagamento || []).map(fp => `<tr>
+            tbody.innerHTML = garantirArray(db.formasPagamento).map(fp => `<tr>
                 <td class="font-semibold">${fp.nome}</td>
                 <td>${(fp.taxaPerc || 0).toFixed(2)}%</td>
                 <td>R$ ${(fp.taxaFixa || 0).toFixed(2)}</td>
@@ -1121,13 +1139,13 @@
             ];
         }
 
-        // --- PRODUTOS E BUSCA COM LUPA ---
+        // PRODUTOS
         function filtrarProdutosVenda() {
             const busca = (document.getElementById('vendaBuscaProduto')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('vendaProduto');
             if (!sel) return;
 
-            const produtosFiltrados = (db.produtos || []).filter(p => p.nome.toLowerCase().includes(busca));
+            const produtosFiltrados = garantirArray(db.produtos).filter(p => p.nome.toLowerCase().includes(busca));
             if (produtosFiltrados.length === 0) {
                 sel.innerHTML = `<option value="">Nenhum produto encontrado</option>`;
             } else {
@@ -1144,7 +1162,7 @@
         function mostrarFormProduto(id = null) {
             document.getElementById('formProdutoContainer').classList.remove('hidden');
             if(id) {
-                let p = db.produtos.find(x => x.id == id);
+                let p = garantirArray(db.produtos).find(x => x.id == id);
                 document.getElementById('prodId').value = p.id;
                 document.getElementById('prodNome').value = p.nome;
                 document.getElementById('prodPreco').value = p.preco;
@@ -1172,9 +1190,10 @@
                 custoIng: parseValor(document.getElementById('prodCustoIng').value),
                 custoEmb: parseValor(document.getElementById('prodCustoEmb').value)
             };
+            db.produtos = garantirArray(db.produtos);
             if(id) {
                 let idx = db.produtos.findIndex(x => x.id == id);
-                db.produtos[idx] = produto;
+                if(idx !== -1) db.produtos[idx] = produto;
             } else {
                 db.produtos.push(produto);
             }
@@ -1184,7 +1203,7 @@
 
         function excluirProduto(id) {
             if(confirm("Deseja excluir este produto?")) {
-                db.produtos = db.produtos.filter(p => p.id != id);
+                db.produtos = garantirArray(db.produtos).filter(p => p.id != id);
                 salvarBD();
             }
         }
@@ -1192,7 +1211,7 @@
         function renderProdutos() {
             const tbody = document.querySelector('#tabelaProdutos tbody');
             if(!tbody) return;
-            tbody.innerHTML = (db.produtos || []).map(p => {
+            tbody.innerHTML = garantirArray(db.produtos).map(p => {
                 let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
                 let lucro = p.preco - custoTotal;
                 let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
@@ -1212,14 +1231,14 @@
             }).join('');
         }
 
-        // --- VENDAS ---
+        // VENDAS
         function salvarVenda(e) {
             e.preventDefault();
             let id = document.getElementById('vendaId').value;
             let prodId = document.getElementById('vendaProduto').value;
             if (!prodId) { alert("Selecione um produto."); return; }
 
-            let prod = db.produtos.find(p => p.id == prodId);
+            let prod = garantirArray(db.produtos).find(p => p.id == prodId);
             let formaPagId = document.getElementById('vendaFormaPagamento').value;
 
             let venda = {
@@ -1237,6 +1256,7 @@
                 entregaLoja: parseValor(document.getElementById('vendaEntrega').value)
             };
 
+            db.vendas = garantirArray(db.vendas);
             if(id) {
                 let idx = db.vendas.findIndex(x => x.id == id);
                 if(idx !== -1) db.vendas[idx] = venda;
@@ -1249,7 +1269,7 @@
         }
 
         function editarVenda(id) {
-            let v = db.vendas.find(x => x.id == id);
+            let v = garantirArray(db.vendas).find(x => x.id == id);
             if(!v) return;
 
             document.getElementById('vendaBuscaProduto').value = '';
@@ -1280,7 +1300,7 @@
 
         function excluirVenda(id) {
             if(confirm("Deseja excluir esta venda?")) {
-                db.vendas = db.vendas.filter(v => v.id != id);
+                db.vendas = garantirArray(db.vendas).filter(v => v.id != id);
                 salvarBD();
             }
         }
@@ -1288,9 +1308,9 @@
         function renderVendas() {
             const tbody = document.querySelector('#tabelaVendas tbody');
             if(!tbody) return;
-            tbody.innerHTML = (db.vendas || []).map(v => {
+            tbody.innerHTML = garantirArray(db.vendas).map(v => {
                 let valorBruto = (v.quantidade * v.precoUnitario) - (v.desconto || 0);
-                let fp = (db.formasPagamento || []).find(x => x.id == v.formaPagamentoId);
+                let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
                 let taxaCalculada = 0;
                 let nomeFP = 'N/A';
 
@@ -1318,7 +1338,7 @@
             }).join('');
         }
 
-        // --- DESPESAS FIXAS ---
+        // DESPESAS FIXAS
         function salvarDespesa(e) {
             e.preventDefault();
             let id = document.getElementById('despId').value;
@@ -1327,9 +1347,10 @@
                 nome: document.getElementById('despNome').value,
                 valor: parseValor(document.getElementById('despValor').value)
             };
+            db.despesas = garantirArray(db.despesas);
             if(id) {
                 let idx = db.despesas.findIndex(x => x.id == id);
-                db.despesas[idx] = despesa;
+                if(idx !== -1) db.despesas[idx] = despesa;
             } else {
                 db.despesas.push(despesa);
             }
@@ -1338,7 +1359,7 @@
         }
 
         function editarDespesa(id) {
-            let d = db.despesas.find(x => x.id == id);
+            let d = garantirArray(db.despesas).find(x => x.id == id);
             if(!d) return;
             document.getElementById('despId').value = d.id;
             document.getElementById('despNome').value = d.nome;
@@ -1356,7 +1377,7 @@
 
         function excluirDespesa(id) {
             if(confirm("Deseja excluir esta despesa?")) {
-                db.despesas = db.despesas.filter(d => d.id != id);
+                db.despesas = garantirArray(db.despesas).filter(d => d.id != id);
                 salvarBD();
             }
         }
@@ -1364,7 +1385,7 @@
         function renderDespesas() {
             const tbody = document.querySelector('#tabelaDespesas tbody');
             if(!tbody) return;
-            tbody.innerHTML = (db.despesas || []).map(d => `<tr>
+            tbody.innerHTML = garantirArray(db.despesas).map(d => `<tr>
                 <td class="font-semibold">${d.nome}</td>
                 <td>R$ ${d.valor.toFixed(2)}</td>
                 <td>
@@ -1374,7 +1395,7 @@
             </tr>`).join('');
         }
 
-        // --- CUSTOS VARIÁVEIS ---
+        // CUSTOS VARIÁVEIS
         function salvarCustoVariavel(e) {
             e.preventDefault();
             let id = document.getElementById('custoVarId').value;
@@ -1384,6 +1405,7 @@
                 local: document.getElementById('custoVarLocal').value,
                 valor: parseValor(document.getElementById('custoVarValor').value)
             };
+            db.custosVariaveis = garantirArray(db.custosVariaveis);
             if (id) {
                 let idx = db.custosVariaveis.findIndex(x => x.id == id);
                 if (idx !== -1) db.custosVariaveis[idx] = cVar;
@@ -1395,7 +1417,7 @@
         }
 
         function editarCustoVariavel(id) {
-            let cv = db.custosVariaveis.find(x => x.id == id);
+            let cv = garantirArray(db.custosVariaveis).find(x => x.id == id);
             if(!cv) return;
             document.getElementById('custoVarId').value = cv.id;
             document.getElementById('custoVarData').value = cv.data;
@@ -1415,7 +1437,7 @@
 
         function excluirCustoVariavel(id) {
             if(confirm("Deseja excluir este registro?")) {
-                db.custosVariaveis = db.custosVariaveis.filter(x => x.id != id);
+                db.custosVariaveis = garantirArray(db.custosVariaveis).filter(x => x.id != id);
                 salvarBD();
             }
         }
@@ -1423,7 +1445,7 @@
         function renderCustosVariaveis() {
             const tbody = document.querySelector('#tabelaCustosVariaveis tbody');
             if(!tbody) return;
-            tbody.innerHTML = (db.custosVariaveis || []).map(cv => `<tr>
+            tbody.innerHTML = garantirArray(db.custosVariaveis).map(cv => `<tr>
                 <td>${cv.data}</td>
                 <td class="font-semibold">${cv.local}</td>
                 <td class="text-red-600 font-bold">R$ ${cv.valor.toFixed(2)}</td>
@@ -1434,11 +1456,11 @@
             </tr>`).join('');
         }
 
-        // --- DASHBOARD & DRE ---
+        // DASHBOARD & DRE
         function renderDashboardEDRE() {
             let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
-            (db.vendas || []).forEach(v => {
+            garantirArray(db.vendas).forEach(v => {
                 let bruto = v.quantidade * v.precoUnitario;
                 fatBruto += bruto;
                 descontos += (v.desconto || 0);
@@ -1447,20 +1469,20 @@
                 entregasTotal += (v.entregaLoja || 0);
 
                 let valorComDesc = bruto - (v.desconto || 0);
-                let fp = (db.formasPagamento || []).find(x => x.id == v.formaPagamentoId);
+                let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
                 if (fp) {
                     taxasTotal += (valorComDesc * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
                 }
             });
 
             let fatLiquido = fatBruto - descontos;
-            let custosVarTotal = (db.custosVariaveis || []).reduce((acc, cv) => acc + cv.valor, 0);
+            let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => acc + cv.valor, 0);
             let lucroBruto = fatLiquido - cmvTotal - embTotal - custosVarTotal;
             let margemContrib = lucroBruto - taxasTotal - entregasTotal;
-            let despesasFixas = (db.despesas || []).reduce((acc, d) => acc + d.valor, 0);
+            let despesasFixas = garantirArray(db.despesas).reduce((acc, d) => acc + d.valor, 0);
             let lucroLiquidoOperacional = margemContrib - despesasFixas;
 
-            let despesasPessoaisTotal = (db.despesasPessoais || []).reduce((acc, dp) => acc + dp.valor, 0);
+            let despesasPessoaisTotal = garantirArray(db.despesasPessoais).reduce((acc, dp) => acc + dp.valor, 0);
             let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
 
             document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
@@ -1488,7 +1510,6 @@
             document.getElementById('indCmvPerc').innerText = `${cmvPerc.toFixed(1)}%`;
             document.getElementById('indPontoEquilibrio').innerText = `R$ ${pontoEquilibrio.toFixed(2)}`;
 
-            // DASHBOARD CARDS
             document.getElementById('dash-fat').innerText = `R$ ${fatLiquido.toFixed(2)}`;
             document.getElementById('dash-cmv').innerText = `R$ ${(cmvTotal + embTotal + custosVarTotal).toFixed(2)}`;
             document.getElementById('dash-fixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
@@ -1518,7 +1539,7 @@
             });
 
             let lucrosPorProd = {};
-            (db.vendas || []).forEach(v => {
+            garantirArray(db.vendas).forEach(v => {
                 let lucroUnit = v.precoUnitario - v.custoIngUnitario - v.custoEmbUnitario;
                 let totalLucro = (lucroUnit * v.quantidade) - (v.desconto || 0);
                 lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
@@ -1547,7 +1568,7 @@
             let container = document.getElementById('alertsContainer');
             if(!container) return;
             container.innerHTML = '';
-            (db.produtos || []).forEach(p => {
+            garantirArray(db.produtos).forEach(p => {
                 let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
                 let lucro = p.preco - custoTotal;
                 let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
