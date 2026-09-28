@@ -680,12 +680,12 @@
         }
 
         function init() {
+            // 1. Carrega dados salvos localmente
             let localData = localStorage.getItem('pizzariaMendoncaDB');
             if (localData) {
                 try {
                     db = JSON.parse(localData);
                     sanitizarBanco();
-                    atualizarTudo();
                 } catch(e){}
             }
 
@@ -693,32 +693,40 @@
                 dbRef.on('value', (snapshot) => {
                     const val = snapshot.val();
                     if (val) {
+                        // Se o Firebase tem dados salvos, usa e atualiza localmente
                         db = val;
                         sanitizarBanco();
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
-                        
                         localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
                         atualizarTudo();
                     } else {
-                        gerarDadosFicticios();
+                        // Se o Firebase estiver vazio (null), PRESERVA os dados cadastrados e sincroniza!
+                        sanitizarBanco();
+                        if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                        salvarBD();
                     }
                 }, (error) => {
                     console.error("Erro no Firebase:", error);
-                    if (!localData) gerarDadosFicticios();
+                    sanitizarBanco();
+                    if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                    atualizarTudo();
                 });
-            } else if (!localData) {
-                gerarDadosFicticios();
+            } else {
+                sanitizarBanco();
+                if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                atualizarTudo();
             }
         }
 
         function salvarBD() {
             sanitizarBanco();
+            // Salva na memória do navegador
             localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
             atualizarTudo();
+            // Envia e sincroniza com o Firebase
             if (dbRef) {
                 dbRef.set(db).catch(err => {
                     console.error("Erro ao salvar no Firebase:", err);
-                    alert("Atenção: Não foi possível salvar as alterações no Firebase!");
                 });
             }
         }
@@ -1130,6 +1138,7 @@
         }
 
         function gerarFormasPagamentoPadrao() {
+            if (db.formasPagamento && db.formasPagamento.length > 0) return;
             db.formasPagamento = [
                 { id: '1', nome: 'Pix', taxaPerc: 0.50, taxaFixa: 0.40 },
                 { id: '2', nome: 'Dinheiro', taxaPerc: 0, taxaFixa: 0 },
@@ -1147,7 +1156,7 @@
 
             const produtosFiltrados = garantirArray(db.produtos).filter(p => p.nome.toLowerCase().includes(busca));
             if (produtosFiltrados.length === 0) {
-                sel.innerHTML = `<option value="">Nenhum produto encontrado</option>`;
+                sel.innerHTML = `<option value="">Nenhum produto cadastrado</option>`;
             } else {
                 sel.innerHTML = produtosFiltrados.map(p => `<option value="${p.id}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`).join('');
             }
@@ -1236,7 +1245,7 @@
             e.preventDefault();
             let id = document.getElementById('vendaId').value;
             let prodId = document.getElementById('vendaProduto').value;
-            if (!prodId) { alert("Selecione um produto."); return; }
+            if (!prodId) { alert("Cadastre ou selecione um produto primeiro."); return; }
 
             let prod = garantirArray(db.produtos).find(p => p.id == prodId);
             let formaPagId = document.getElementById('vendaFormaPagamento').value;
@@ -1547,7 +1556,7 @@
 
             let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
-            const canvas2 = document.getElementById('chartTopPizzas');
+            const canvas2 = document.querySelector('#chartTopPizzas');
             if(!canvas2) return;
             const ctx2 = canvas2.getContext('2d');
             chartTopPizzasInstance = new Chart(ctx2, {
@@ -1595,38 +1604,6 @@
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
-        }
-
-        function gerarDadosFicticios() {
-            gerarFormasPagamentoPadrao();
-            db.ingredientes = [
-                { id: 'ing1', nome: 'Massa de Pizza', unidade: 'un', qtdEmbalagem: 1, precoEmbalagem: 2.50 },
-                { id: 'ing2', nome: 'Mussarela', unidade: 'g', qtdEmbalagem: 1000, precoEmbalagem: 35.00 },
-                { id: 'ing3', nome: 'Calabresa', unidade: 'g', qtdEmbalagem: 1000, precoEmbalagem: 28.00 }
-            ];
-
-            db.produtos = [
-                { id: 'p1', nome: 'Calabresa Tradicional (M)', categoria: 'Pizza', preco: 49.90, custoIng: 21.20, custoEmb: 3.50 },
-                { id: 'p2', nome: 'Pizza Mussarela (G)', categoria: 'Pizza', preco: 50.00, custoIng: 15.00, custoEmb: 3.50 }
-            ];
-
-            db.fichasTecnicas = {
-                'p1': [
-                    { ingredienteId: 'ing1', quantidade: 1 },
-                    { ingredienteId: 'ing2', quantidade: 300 },
-                    { ingredienteId: 'ing3', quantidade: 250 }
-                ]
-            };
-
-            db.despesas = [
-                { id: 'd1', nome: 'Aluguel', valor: 2500.00 },
-                { id: 'd2', nome: 'Pró-Labore Sócio', valor: 3000.00 }
-            ];
-
-            db.custosVariaveis = [];
-            db.despesasPessoais = [];
-            db.vendas = [];
-            salvarBD();
         }
 
         window.onload = function() {
