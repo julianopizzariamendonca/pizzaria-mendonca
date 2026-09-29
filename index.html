@@ -818,11 +818,29 @@
             renderCustosVariaveis();
             renderDespesasPessoais();
             renderFormasPagamento();
+            renderConfig(); // <--- PREENCHE OS CAMPOS DE METAS SALVOS
             renderDashboardEDRE();
             preencherSelectProdutos();
             preencherSelectFormasPagamento();
             preencherSelectIngredientesProduto();
             verificarAlertas();
+        }
+
+        // CARREGA AS METAS SALVAS NAS CAIXAS DE INPUT DA ABA CONFIGURAÇÕES
+        function renderConfig() {
+            if (!db.config) db.config = { cmvMax: 30, margemMin: 20 };
+            const cfgCmvEl = document.getElementById('cfgCmv');
+            const cfgMargemEl = document.getElementById('cfgMargem');
+            if (cfgCmvEl) cfgCmvEl.value = db.config.cmvMax !== undefined ? db.config.cmvMax : 30;
+            if (cfgMargemEl) cfgMargemEl.value = db.config.margemMin !== undefined ? db.config.margemMin : 20;
+        }
+
+        function salvarConfig() {
+            if (!db.config) db.config = {};
+            db.config.cmvMax = parseValor(document.getElementById('cfgCmv').value);
+            db.config.margemMin = parseValor(document.getElementById('cfgMargem').value);
+            salvarBD();
+            alert("Metas atualizadas com sucesso!");
         }
 
         // CÂMERA E OCR
@@ -1013,7 +1031,6 @@
                 document.getElementById('prodCat').value = p.categoria;
                 document.getElementById('formProdTitle').innerText = 'Editar Produto & Precificação';
 
-                // Carrega a Ficha Técnica existente na memória do formulário
                 ingredientesTempProduto = JSON.parse(JSON.stringify(db.fichasTecnicas && db.fichasTecnicas[id] ? db.fichasTecnicas[id] : []));
             } else {
                 document.getElementById('formProduto').reset();
@@ -1134,7 +1151,7 @@
                 id: prodIdFinal,
                 nome: document.getElementById('prodNome').value,
                 categoria: document.getElementById('prodCat').value,
-                preco: parseValor(document.getElementById('prodPreco').value), // PREÇO COBRADO REAL
+                preco: parseValor(document.getElementById('prodPreco').value),
                 custoIng: Math.round(custoIngTotal * 100) / 100,
                 custoEmb: parseValor(document.getElementById('prodCustoEmb').value)
             };
@@ -1147,7 +1164,6 @@
                 db.produtos.push(produto);
             }
 
-            // CRIA / ATUALIZA A FICHA TÉCNICA NA ABA FICHA TÉCNICA AUTOMATICAMENTE
             if (!db.fichasTecnicas) db.fichasTecnicas = {};
             db.fichasTecnicas[prodIdFinal] = ingredientesTempProduto;
 
@@ -1168,10 +1184,11 @@
             if(!tbody) return;
             tbody.innerHTML = garantirArray(db.produtos).map(p => {
                 let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
-                let lucro = p.preco - custoTotal; // Utiliza o preço cobrado real
+                let lucro = p.preco - custoTotal;
                 let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
                 let cmvReal = p.preco > 0 ? (custoTotal / p.preco) * 100 : 0;
-                let trClass = cmvReal > (db.config ? db.config.cmvMax : 30) ? "bg-red-50 text-red-800" : "";
+                let cmvMaxConfig = (db.config ? db.config.cmvMax : 30);
+                let trClass = cmvReal > cmvMaxConfig ? "bg-red-50 text-red-800" : "";
 
                 return `<tr class="${trClass}">
                     <td class="font-semibold">${p.nome}</td>
@@ -1249,7 +1266,7 @@
             </tr>`).join('');
         }
 
-        // FICHA TÉCNICA (VISUALIZAÇÃO E EDIÇÃO NA ABA FICHA TÉCNICA)
+        // FICHA TÉCNICA
         function adicionarItemFicha(e) {
             e.preventDefault();
             let prodId = document.getElementById('fichaProdutoSelect').value;
@@ -1456,7 +1473,7 @@
                 produtoId: prodId,
                 produtoNome: prod ? prod.nome : 'Produto',
                 quantidade: parseValor(document.getElementById('vendaQtd').value) || 1,
-                precoUnitario: prod ? prod.preco : 0, // UTILIZA O PREÇO COBRADO REAL
+                precoUnitario: prod ? prod.preco : 0,
                 custoIngUnitario: prod ? prod.custoIng : 0,
                 custoEmbUnitario: prod ? prod.custoEmb : 0,
                 canal: document.getElementById('vendaCanal').value,
@@ -1665,12 +1682,12 @@
             </tr>`).join('');
         }
 
-        // DASHBOARD & DRE (UTILIZA RIGOROSAMENTE O PREÇO COBRADO REAL)
+        // DASHBOARD & DRE
         function renderDashboardEDRE() {
             let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
             garantirArray(db.vendas).forEach(v => {
-                let bruto = v.quantidade * v.precoUnitario; // Preço cobrado real
+                let bruto = v.quantidade * v.precoUnitario;
                 fatBruto += bruto;
                 descontos += (v.desconto || 0);
                 cmvTotal += v.quantidade * (v.custoIngUnitario || 0);
@@ -1779,8 +1796,6 @@
             container.innerHTML = '';
             garantirArray(db.produtos).forEach(p => {
                 let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
-                let lucro = p.preco - custoTotal;
-                let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
                 let cmvReal = p.preco > 0 ? (custoTotal / p.preco) * 100 : 0;
                 let cmvMaxConfig = (db.config ? db.config.cmvMax : 30);
 
@@ -1790,13 +1805,6 @@
                     </div>`;
                 }
             });
-        }
-
-        function salvarConfig() {
-            db.config.cmvMax = parseValor(document.getElementById('cfgCmv').value);
-            db.config.margemMin = parseValor(document.getElementById('cfgMargem').value);
-            salvarBD();
-            alert("Metas atualizadas com sucesso!");
         }
 
         function exportarDados() {
