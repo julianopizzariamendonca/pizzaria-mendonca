@@ -121,9 +121,20 @@
         <div id="view-dashboard" class="tab-content active">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-2">
                 <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Visão Geral</h2>
-                <div class="flex items-center gap-2 bg-white p-2 rounded border shadow-sm">
-                    <label class="text-xs font-semibold text-gray-600">Filtrar Mês:</label>
-                    <input type="month" id="filtroMesAno" onchange="atualizarTudo()" class="text-xs p-1 mt-0 border rounded">
+                <div class="flex flex-wrap items-center gap-2 bg-white p-2 rounded border shadow-sm">
+                    <label class="text-xs font-semibold text-gray-600">Visão:</label>
+                    <select id="tipoFiltro" onchange="alternarTipoFiltro()" class="text-xs p-1 border rounded bg-gray-50 font-bold text-mendonca-black">
+                        <option value="mensal">Mensal</option>
+                        <option value="anual">Anual (Acumulado)</option>
+                    </select>
+                    
+                    <div id="containerFiltroMes" class="inline-block">
+                        <input type="month" id="filtroMesAno" onchange="atualizarTudo()" class="text-xs p-1 border rounded">
+                    </div>
+                    
+                    <div id="containerFiltroAno" class="hidden inline-block">
+                        <select id="filtroAnoOnly" onchange="atualizarTudo()" class="text-xs p-1 border rounded font-semibold text-mendonca-red"></select>
+                    </div>
                 </div>
             </div>
 
@@ -554,7 +565,11 @@
 
         <!-- VIEW: RESULTADOS E DRE -->
         <div id="view-dre" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">DRE & Resultado</h2>
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">DRE & Resultado</h2>
+                <span id="lblPeriodoDRE" class="text-xs md:text-sm font-bold bg-mendonca-black text-mendonca-gold px-3 py-1 rounded shadow"></span>
+            </div>
+            
             <div class="card max-w-2xl mx-auto text-sm">
                 <div class="flex justify-between border-b pb-2 mb-2 font-bold">
                     <span>1. Faturamento Bruto</span><span id="dreFatBruto" class="text-green-600">R$ 0,00</span>
@@ -587,7 +602,7 @@
                     <span>4. Margem Contribuição</span><span id="dreMargemCont">R$ 0,00</span>
                 </div>
                 <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Despesas Fixas (Loja + Pró-Labore)</span><span id="dreFixas">R$ 0,00</span>
+                    <span>(-) Despesas Fixas (<span id="lblMultiplicadorFixas">Loja + Pró-Labore</span>)</span><span id="dreFixas">R$ 0,00</span>
                 </div>
                 <div class="flex justify-between font-bold text-base p-2 bg-gray-800 text-white rounded">
                     <span>5. LUCRO LÍQUIDO OPERACIONAL</span><span id="dreLucroLiq">R$ 0,00</span>
@@ -680,7 +695,6 @@
     </main>
 
     <script>
-        // TRATAMENTO DE VALORES MONETÁRIOS
         function parseValor(val) {
             if (val === null || val === undefined) return 0;
             let s = val.toString().trim().replace(',', '.');
@@ -776,6 +790,7 @@
                         sanitizarBanco();
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
                         localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
+                        preencherOpcoesAnosFiltro();
                         atualizarTudo();
                     } else {
                         sanitizarBanco();
@@ -786,11 +801,13 @@
                     console.error("Erro no Firebase:", error);
                     sanitizarBanco();
                     if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                    preencherOpcoesAnosFiltro();
                     atualizarTudo();
                 });
             } else {
                 sanitizarBanco();
                 if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                preencherOpcoesAnosFiltro();
                 atualizarTudo();
             }
         }
@@ -798,6 +815,7 @@
         function salvarBD() {
             sanitizarBanco();
             localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
+            preencherOpcoesAnosFiltro();
             atualizarTudo();
             if (dbRef) {
                 dbRef.set(db).catch(err => console.error("Erro ao guardar no Firebase:", err));
@@ -810,6 +828,37 @@
             if (window.innerWidth < 768) {
                 toggleMobileMenu();
             }
+        }
+
+        function alternarTipoFiltro() {
+            const tipo = document.getElementById('tipoFiltro').value;
+            const containerMes = document.getElementById('containerFiltroMes');
+            const containerAno = document.getElementById('containerFiltroAno');
+            
+            if (tipo === 'mensal') {
+                containerMes.classList.remove('hidden');
+                containerAno.classList.add('hidden');
+            } else {
+                containerMes.classList.add('hidden');
+                containerAno.classList.remove('hidden');
+            }
+            atualizarTudo();
+        }
+
+        function preencherOpcoesAnosFiltro() {
+            const selAno = document.getElementById('filtroAnoOnly');
+            if (!selAno) return;
+
+            let anosSet = new Set();
+            let anoAtual = new Date().getFullYear().toString();
+            anosSet.add(anoAtual);
+
+            garantirArray(db.vendas).forEach(v => {
+                if (v.data) anosSet.add(v.data.split('-')[0]);
+            });
+
+            let anosArray = Array.from(anosSet).sort((a,b) => b - a);
+            selAno.innerHTML = anosArray.map(a => `<option value="${a}">${a}</option>`).join('');
         }
 
         function atualizarTudo() {
@@ -1676,26 +1725,42 @@
             </tr>`).join('');
         }
 
-        // FILTRO DE MÊS NO DASHBOARD E DRE
+        // CÁLCULO DINÂMICO DO DASHBOARD E DRE (SUPORTA MENSAL E ANUAL ACUMULADO)
         function renderDashboardEDRE() {
-            let filtroVal = document.getElementById('filtroMesAno')?.value;
-            let anoFiltro, mesFiltro;
+            let tipoFiltro = document.getElementById('tipoFiltro')?.value || 'mensal';
+            let anoFiltro, mesFiltro, textoPeriodo;
 
-            if (filtroVal) {
-                [anoFiltro, mesFiltro] = filtroVal.split('-');
+            if (tipoFiltro === 'mensal') {
+                let filtroVal = document.getElementById('filtroMesAno')?.value;
+                if (filtroVal) {
+                    [anoFiltro, mesFiltro] = filtroVal.split('-');
+                } else {
+                    let hoje = new Date();
+                    anoFiltro = hoje.getFullYear().toString();
+                    mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
+                }
+                let nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                textoPeriodo = `${nomesMeses[parseInt(mesFiltro) - 1]} / ${anoFiltro}`;
             } else {
-                let hoje = new Date();
-                anoFiltro = hoje.getFullYear().toString();
-                mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
+                anoFiltro = document.getElementById('filtroAnoOnly')?.value || new Date().getFullYear().toString();
+                textoPeriodo = `Ano Acumulado de ${anoFiltro}`;
             }
+
+            const lblDRE = document.getElementById('lblPeriodoDRE');
+            if (lblDRE) lblDRE.innerText = textoPeriodo;
 
             let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
-            // Filtra vendas do mês selecionado
+            // Filtro de Vendas
             garantirArray(db.vendas).forEach(v => {
                 if (!v.data) return;
                 let [vAno, vMes] = v.data.split('-');
-                if (vAno === anoFiltro && vMes === mesFiltro) {
+                
+                let pertenceAoPeriodo = (tipoFiltro === 'mensal') 
+                    ? (vAno === anoFiltro && vMes === mesFiltro)
+                    : (vAno === anoFiltro);
+
+                if (pertenceAoPeriodo) {
                     let bruto = v.quantidade * v.precoUnitario;
                     fatBruto += bruto;
                     descontos += (v.desconto || 0);
@@ -1711,24 +1776,38 @@
                 }
             });
 
-            // Filtra custos variáveis do mês selecionado
+            // Filtro de Custos Variáveis
             let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => {
                 if (!cv.data) return acc;
                 let [cAno, cMes] = cv.data.split('-');
-                return (cAno === anoFiltro && cMes === mesFiltro) ? acc + cv.valor : acc;
+                let pertence = (tipoFiltro === 'mensal') 
+                    ? (cAno === anoFiltro && cMes === mesFiltro)
+                    : (cAno === anoFiltro);
+                return pertence ? acc + cv.valor : acc;
             }, 0);
 
-            // Filtra despesas pessoais do mês selecionado
+            // Filtro de Despesas Pessoais
             let despesasPessoaisTotal = garantirArray(db.despesasPessoais).reduce((acc, dp) => {
                 if (!dp.data) return acc;
                 let [dAno, dMes] = dp.data.split('-');
-                return (dAno === anoFiltro && dMes === mesFiltro) ? acc + dp.valor : acc;
+                let pertence = (tipoFiltro === 'mensal') 
+                    ? (dAno === anoFiltro && dMes === mesFiltro)
+                    : (dAno === anoFiltro);
+                return pertence ? acc + dp.valor : acc;
             }, 0);
+
+            // Despesas Fixas (No acumulado Anual, multiplica por 12)
+            let despesasFixasMensais = garantirArray(db.despesas).reduce((acc, d) => acc + d.valor, 0);
+            let despesasFixas = (tipoFiltro === 'anual') ? (despesasFixasMensais * 12) : despesasFixasMensais;
+
+            const lblFixas = document.getElementById('lblMultiplicadorFixas');
+            if (lblFixas) {
+                lblFixas.innerText = (tipoFiltro === 'anual') ? "Anual Acumulado (12 Meses)" : "Mensal";
+            }
 
             let fatLiquido = fatBruto - descontos;
             let lucroBruto = fatLiquido - cmvTotal - embTotal - custosVarTotal;
             let margemContrib = lucroBruto - taxasTotal - entregasTotal;
-            let despesasFixas = garantirArray(db.despesas).reduce((acc, d) => acc + d.valor, 0);
             let lucroLiquidoOperacional = margemContrib - despesasFixas;
             let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
 
@@ -1762,10 +1841,10 @@
             document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
             document.getElementById('dash-pessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
 
-            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro);
+            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro, tipoFiltro);
         }
 
-        function renderGraficos(fat, cmv, taxas, fixas, lucro, ano, mes) {
+        function renderGraficos(fat, cmv, taxas, fixas, lucro, ano, mes, tipoFiltro) {
             if(chartDistInstance) chartDistInstance.destroy();
             if(chartTopPizzasInstance) chartTopPizzasInstance.destroy();
 
@@ -1788,7 +1867,9 @@
             garantirArray(db.vendas).forEach(v => {
                 if (!v.data) return;
                 let [vAno, vMes] = v.data.split('-');
-                if (vAno === ano && vMes === mes) {
+                let pertence = (tipoFiltro === 'mensal') ? (vAno === ano && vMes === mes) : (vAno === ano);
+                
+                if (pertence) {
                     let lucroUnit = v.precoUnitario - v.custoIngUnitario - v.custoEmbUnitario;
                     let totalLucro = (lucroUnit * v.quantidade) - (v.desconto || 0);
                     lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
