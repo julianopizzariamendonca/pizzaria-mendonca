@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pizzaria Mendonça - Gestão</title>
     
-    <!-- Meta Tags PWA / Mobile & Novo Ícone Oficial -->
+    <!-- Meta Tags PWA / Mobile & Ícone Oficial -->
     <meta name="theme-color" content="#1A1A1A">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -119,7 +119,14 @@
 
         <!-- VIEW: DASHBOARD -->
         <div id="view-dashboard" class="tab-content active">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Visão Geral (Mês Atual)</h2>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-2">
+                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Visão Geral</h2>
+                <div class="flex items-center gap-2 bg-white p-2 rounded border shadow-sm">
+                    <label class="text-xs font-semibold text-gray-600">Filtrar Mês:</label>
+                    <input type="month" id="filtroMesAno" onchange="atualizarTudo()" class="text-xs p-1 mt-0 border rounded">
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
                 <div class="card border-l-4 border-blue-500">
                     <p class="text-xs text-gray-500">Faturamento Líq.</p>
@@ -681,7 +688,6 @@
             return isNaN(num) ? 0 : num;
         }
 
-        // SEGURANÇA CONTRA ERROS DE CONVERSÃO
         function garantirArray(val) {
             if (!val) return [];
             if (Array.isArray(val)) return val;
@@ -708,7 +714,6 @@
             console.error("Erro ao inicializar Firebase:", e);
         }
 
-        // MOBILE MENU
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
@@ -738,9 +743,7 @@
             config: { cmvMax: 30, margemMin: 20 }
         };
 
-        // VARIÁVEL TEMPORÁRIA DE INGREDIENTES PARA O CADASTRO DE PRODUTO
         let ingredientesTempProduto = [];
-
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
 
@@ -843,7 +846,6 @@
             alert("Metas atualizadas com sucesso!");
         }
 
-        // CÂMERA E OCR
         function abrirCamera(tipo) {
             if (tipo === 'custoVar') {
                 document.getElementById('cameraCustoVarInput').click();
@@ -924,7 +926,6 @@
             return null;
         }
 
-        // INGREDIENTES
         function salvarIngrediente(e) {
             e.preventDefault();
             let id = document.getElementById('ingId').value;
@@ -1003,7 +1004,6 @@
             }).join('');
         }
 
-        // PRODUTOS & AUTOMAÇÃO DA FICHA TÉCNICA E PRECIFICAÇÃO
         function preencherSelectIngredientesProduto() {
             const sel = document.getElementById('prodIngSelect');
             if (!sel) return;
@@ -1205,7 +1205,6 @@
             }).join('');
         }
 
-        // DESPESAS PESSOAIS
         function salvarDespesaPessoal(e) {
             e.preventDefault();
             let id = document.getElementById('despPessoalId').value;
@@ -1266,7 +1265,6 @@
             </tr>`).join('');
         }
 
-        // FICHA TÉCNICA
         function adicionarItemFicha(e) {
             e.preventDefault();
             let prodId = document.getElementById('fichaProdutoSelect').value;
@@ -1352,7 +1350,6 @@
             document.getElementById('fichaTotalCusto').innerText = `R$ ${totalCusto.toFixed(2)}`;
         }
 
-        // FORMAS DE PAGAMENTO
         function formatarTextoTaxa(taxaPerc, taxaFixa) {
             let pStr = (taxaPerc || 0).toFixed(2) + '%';
             let fStr = 'R$ ' + (taxaFixa || 0).toFixed(2);
@@ -1438,7 +1435,6 @@
             ];
         }
 
-        // VENDAS (PDV)
         function filtrarProdutosVenda() {
             const busca = (document.getElementById('vendaBuscaProduto')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('vendaProduto');
@@ -1564,7 +1560,6 @@
             }).join('');
         }
 
-        // DESPESAS FIXAS
         function salvarDespesa(e) {
             e.preventDefault();
             let id = document.getElementById('despId').value;
@@ -1621,7 +1616,6 @@
             </tr>`).join('');
         }
 
-        // CUSTOS VARIÁVEIS
         function salvarCustoVariavel(e) {
             e.preventDefault();
             let id = document.getElementById('custoVarId').value;
@@ -1682,33 +1676,60 @@
             </tr>`).join('');
         }
 
-        // DASHBOARD & DRE
+        // FILTRO DE MÊS NO DASHBOARD E DRE
         function renderDashboardEDRE() {
+            let filtroVal = document.getElementById('filtroMesAno')?.value;
+            let anoFiltro, mesFiltro;
+
+            if (filtroVal) {
+                [anoFiltro, mesFiltro] = filtroVal.split('-');
+            } else {
+                let hoje = new Date();
+                anoFiltro = hoje.getFullYear().toString();
+                mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
+            }
+
             let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
+            // Filtra vendas do mês selecionado
             garantirArray(db.vendas).forEach(v => {
-                let bruto = v.quantidade * v.precoUnitario;
-                fatBruto += bruto;
-                descontos += (v.desconto || 0);
-                cmvTotal += v.quantidade * (v.custoIngUnitario || 0);
-                embTotal += v.quantidade * (v.custoEmbUnitario || 0);
-                entregasTotal += (v.entregaLoja || 0);
+                if (!v.data) return;
+                let [vAno, vMes] = v.data.split('-');
+                if (vAno === anoFiltro && vMes === mesFiltro) {
+                    let bruto = v.quantidade * v.precoUnitario;
+                    fatBruto += bruto;
+                    descontos += (v.desconto || 0);
+                    cmvTotal += v.quantidade * (v.custoIngUnitario || 0);
+                    embTotal += v.quantidade * (v.custoEmbUnitario || 0);
+                    entregasTotal += (v.entregaLoja || 0);
 
-                let valorComDesc = bruto - (v.desconto || 0);
-                let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
-                if (fp) {
-                    taxasTotal += (valorComDesc * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
+                    let valorComDesc = bruto - (v.desconto || 0);
+                    let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
+                    if (fp) {
+                        taxasTotal += (valorComDesc * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
+                    }
                 }
             });
 
+            // Filtra custos variáveis do mês selecionado
+            let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => {
+                if (!cv.data) return acc;
+                let [cAno, cMes] = cv.data.split('-');
+                return (cAno === anoFiltro && cMes === mesFiltro) ? acc + cv.valor : acc;
+            }, 0);
+
+            // Filtra despesas pessoais do mês selecionado
+            let despesasPessoaisTotal = garantirArray(db.despesasPessoais).reduce((acc, dp) => {
+                if (!dp.data) return acc;
+                let [dAno, dMes] = dp.data.split('-');
+                return (dAno === anoFiltro && dMes === mesFiltro) ? acc + dp.valor : acc;
+            }, 0);
+
             let fatLiquido = fatBruto - descontos;
-            let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => acc + cv.valor, 0);
             let lucroBruto = fatLiquido - cmvTotal - embTotal - custosVarTotal;
             let margemContrib = lucroBruto - taxasTotal - entregasTotal;
             let despesasFixas = garantirArray(db.despesas).reduce((acc, d) => acc + d.valor, 0);
             let lucroLiquidoOperacional = margemContrib - despesasFixas;
-
-            let despesasPessoaisTotal = garantirArray(db.despesasPessoais).reduce((acc, dp) => acc + dp.valor, 0);
             let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
 
             document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
@@ -1723,7 +1744,6 @@
             document.getElementById('dreMargemCont').innerText = `R$ ${margemContrib.toFixed(2)}`;
             document.getElementById('dreFixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
             document.getElementById('dreLucroLiq').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
-            
             document.getElementById('dreDespPessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
             document.getElementById('dreCaixaFinal').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
 
@@ -1742,10 +1762,10 @@
             document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
             document.getElementById('dash-pessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
 
-            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional);
+            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro);
         }
 
-        function renderGraficos(fat, cmv, taxas, fixas, lucro) {
+        function renderGraficos(fat, cmv, taxas, fixas, lucro, ano, mes) {
             if(chartDistInstance) chartDistInstance.destroy();
             if(chartTopPizzasInstance) chartTopPizzasInstance.destroy();
 
@@ -1766,9 +1786,13 @@
 
             let lucrosPorProd = {};
             garantirArray(db.vendas).forEach(v => {
-                let lucroUnit = v.precoUnitario - v.custoIngUnitario - v.custoEmbUnitario;
-                let totalLucro = (lucroUnit * v.quantidade) - (v.desconto || 0);
-                lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
+                if (!v.data) return;
+                let [vAno, vMes] = v.data.split('-');
+                if (vAno === ano && vMes === mes) {
+                    let lucroUnit = v.precoUnitario - v.custoIngUnitario - v.custoEmbUnitario;
+                    let totalLucro = (lucroUnit * v.quantidade) - (v.desconto || 0);
+                    lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
+                }
             });
 
             let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
@@ -1818,9 +1842,12 @@
         }
 
         window.onload = function() {
-            document.getElementById('vendaData').valueAsDate = new Date();
-            document.getElementById('custoVarData').valueAsDate = new Date();
-            document.getElementById('despPessoalData').valueAsDate = new Date();
+            let hoje = new Date();
+            let mesStr = String(hoje.getMonth() + 1).padStart(2, '0');
+            document.getElementById('filtroMesAno').value = `${hoje.getFullYear()}-${mesStr}`;
+            document.getElementById('vendaData').valueAsDate = hoje;
+            document.getElementById('custoVarData').valueAsDate = hoje;
+            document.getElementById('despPessoalData').valueAsDate = hoje;
             init();
 
             if ('serviceWorker' in navigator) {
