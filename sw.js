@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mendonca-gestao-v1';
+const CACHE_NAME = 'mendonca-gestao-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -7,10 +7,27 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
+      return Promise.allSettled(
+        urlsToCache.map((url) => cache.add(url))
+      );
     })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
   );
 });
 
