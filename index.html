@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pizzaria Mendonça - Gestão</title>
     
-    <!-- Meta Tags PWA / Mobile -->
+    <!-- Meta Tags PWA / Mobile & Novo Ícone Oficial -->
     <meta name="theme-color" content="#1A1A1A">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mendonça Gestão">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3132/3132693.png">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    <link rel="icon" type="image/png" href="icon-512.png">
 
     <!-- CDNs -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -818,7 +819,7 @@
             renderCustosVariaveis();
             renderDespesasPessoais();
             renderFormasPagamento();
-            renderConfig(); // <--- PREENCHE OS CAMPOS DE METAS SALVOS
+            renderConfig();
             renderDashboardEDRE();
             preencherSelectProdutos();
             preencherSelectFormasPagamento();
@@ -826,7 +827,6 @@
             verificarAlertas();
         }
 
-        // CARREGA AS METAS SALVAS NAS CAIXAS DE INPUT DA ABA CONFIGURAÇÕES
         function renderConfig() {
             if (!db.config) db.config = { cmvMax: 30, margemMin: 20 };
             const cfgCmvEl = document.getElementById('cfgCmv');
