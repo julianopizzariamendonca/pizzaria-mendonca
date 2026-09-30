@@ -23,7 +23,7 @@
     <!-- OCR / Leitor de Foto de Comprovante -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-    <!-- Firebase SDK (Sincronização em Tempo Real) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -58,11 +58,27 @@
         table { width: 100%; text-align: left; border-collapse: collapse; font-size: 0.875rem; }
         th, td { padding: 0.625rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
         th { background: #FFF3E0; color: #1A1A1A; font-weight: 600; }
+        
+        /* Animação do Botão de Voz */
+        .pulse-mic { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.7); } 70% { transform: scale(1.08); box-shadow: 0 0 0 15px rgba(230, 57, 70, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); } }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden text-gray-800">
 
-    <!-- Modal de Carregamento do OCR/Câmera -->
+    <!-- Modal de Interação por Voz / Assistente Alexa -->
+    <div id="voiceModal" class="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center text-white hidden p-4">
+        <div class="relative mb-6">
+            <div id="micWave" class="w-24 h-24 rounded-full bg-mendonca-red flex items-center justify-center text-3xl shadow-lg pulse-mic">
+                <i class="fas fa-microphone"></i>
+            </div>
+        </div>
+        <h3 id="voiceTitle" class="text-xl font-bold mb-2 text-center text-mendonca-gold">Assistente Mendonça</h3>
+        <p id="voiceSubtext" class="text-base text-gray-200 text-center max-w-md mb-6 font-medium">A escutar...</p>
+        <button onclick="fecharAssistenteVoz()" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-6 py-2.5 rounded-full uppercase tracking-wider font-semibold">Cancelar</button>
+    </div>
+
+    <!-- Modal de Carregamento do OCR -->
     <div id="ocrLoadingModal" class="fixed inset-0 bg-black/70 z-50 flex flex-col items-center justify-center text-white hidden">
         <div class="animate-spin rounded-full h-16 w-16 border-4 border-mendonca-gold border-t-transparent mb-4"></div>
         <h3 class="text-xl font-bold mb-1">A ler comprovativo...</h3>
@@ -73,7 +89,7 @@
     <input type="file" id="cameraCustoVarInput" accept="image/*" capture="environment" class="hidden" onchange="processarFotoComprovante(event, 'custoVar')">
     <input type="file" id="cameraDespPessoalInput" accept="image/*" capture="environment" class="hidden" onchange="processarFotoComprovante(event, 'despPessoal')">
 
-    <!-- Header Mobile com Hambúrguer -->
+    <!-- Header Mobile -->
     <header class="md:hidden bg-mendonca-black text-white p-4 flex justify-between items-center z-20 shadow-md">
         <div class="flex items-center space-x-2">
             <i class="fas fa-pizza-slice text-mendonca-gold text-xl"></i>
@@ -112,8 +128,13 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 h-full overflow-y-auto bg-gray-50 p-4 md:p-8">
+    <main class="flex-1 h-full overflow-y-auto bg-gray-50 p-4 md:p-8 relative">
         
+        <!-- Botão Flutuante da Assistente de Voz (Estilo Alexa) -->
+        <button onclick="iniciarAssistenteVoz()" class="fixed bottom-6 right-6 z-40 bg-mendonca-red hover:bg-red-700 text-white rounded-full p-4 shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 border-2 border-mendonca-gold" title="Ativar Assistente Mendonça">
+            <i class="fas fa-microphone text-2xl"></i>
+        </button>
+
         <!-- Alertas -->
         <div id="alertsContainer" class="mb-4 space-y-2"></div>
 
@@ -253,7 +274,6 @@
                         </div>
                     </div>
 
-                    <!-- Seção de Montagem Automática da Ficha Técnica -->
                     <div class="p-3 bg-white rounded-md border border-gray-200 mb-4 shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="font-bold text-xs text-mendonca-black flex items-center">
@@ -294,7 +314,6 @@
                         </div>
                     </div>
 
-                    <!-- Painel de Cálculos e Sugestão de Preço -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-md border border-gray-200">
                         <div>
                             <label class="text-xs font-semibold text-gray-600">Custo Ingredientes (Auto)</label>
@@ -314,7 +333,6 @@
                         </div>
                     </div>
 
-                    <!-- Alerta Visual em Tempo Real caso Preço esteja Fora da Faixa -->
                     <div id="alertaPrecoForaDaFaixa" class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-900 text-xs font-semibold hidden rounded shadow-sm">
                         <i class="fas fa-exclamation-triangle text-yellow-600 text-sm mr-1"></i> <span id="msgAlertaPreco"></span>
                     </div>
@@ -608,7 +626,6 @@
                     <span>5. LUCRO LÍQUIDO OPERACIONAL</span><span id="dreLucroLiq">R$ 0,00</span>
                 </div>
                 
-                <!-- Retiradas Pessoais e Caixa Retido -->
                 <div class="flex justify-between border-b border-t mt-3 pt-2 pb-2 text-purple-700 font-semibold">
                     <span>(-) Despesas Pessoais / Retiradas de Lucro</span><span id="dreDespPessoais">R$ 0,00</span>
                 </div>
@@ -760,6 +777,210 @@
         let ingredientesTempProduto = [];
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
+
+        // MOTOR DA ASSISTENTE DE VOZ (ESTILO ALEXA)
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let estadoVoz = 'INATIVO'; // INATIVO, AGUARDANDO_COMANDO, CUSTO_VAR_DATA, CUSTO_VAR_LOCAL, CUSTO_VAR_VALOR, VENDA_PRODUTO, VENDA_QTD, VENDA_PAGAMENTO
+        let tempVoz = {};
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'pt-BR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const texto = event.results[0][0].transcript.trim();
+                console.log("Voz ouvida:", texto);
+                processarVoz(texto);
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Erro de voz:", event.error);
+                falarVoz("Não consegui ouvir. Pode repetir?");
+            };
+
+            recognition.onend = () => {
+                if (estadoVoz !== 'INATIVO' && estadoVoz !== 'FALANDO') {
+                    // Continua ouvindo a próxima resposta do fluxo
+                }
+            };
+        }
+
+        function falarVoz(texto, proximoEstado = null) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                estadoVoz = 'FALANDO';
+                document.getElementById('voiceSubtext').innerText = texto;
+
+                const utterance = new SpeechSynthesisUtterance(texto);
+                utterance.lang = 'pt-BR';
+                utterance.rate = 1.0;
+
+                utterance.onend = () => {
+                    if (proximoEstado) {
+                        estadoVoz = proximoEstado;
+                        ouvirVoz();
+                    } else if (estadoVoz === 'FINALIZAR') {
+                        fecharAssistenteVoz();
+                    }
+                };
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert(texto);
+            }
+        }
+
+        function ouvirVoz() {
+            if (!recognition) {
+                alert("O seu navegador não suporta reconhecimento de voz.");
+                return;
+            }
+            document.getElementById('voiceSubtext').innerText = "A escutar...";
+            try {
+                recognition.start();
+            } catch(e) {}
+        }
+
+        function iniciarAssistenteVoz() {
+            document.getElementById('voiceModal').classList.remove('hidden');
+            tempVoz = {};
+            estadoVoz = 'AGUARDANDO_COMANDO';
+            falarVoz("Olá! Sou a assistente Mendonça. O que deseja fazer?", 'AGUARDANDO_COMANDO');
+        }
+
+        function fecharAssistenteVoz() {
+            estadoVoz = 'INATIVO';
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            if (recognition) try { recognition.stop(); } catch(e){}
+            document.getElementById('voiceModal').classList.add('hidden');
+        }
+
+        function processarVoz(texto) {
+            const txt = texto.toLowerCase();
+
+            // FLUXO 1: Lançar Custo Variável (Cupom/Mercado)
+            if (estadoVoz === 'AGUARDANDO_COMANDO' && (txt.includes('custo variável') || txt.includes('custo variavel') || txt.includes('lançar custo') || txt.includes('lancar custo'))) {
+                falarVoz("Qual é a data do lançamento? Pode dizer 'hoje' ou 'ontem'.", 'CUSTO_VAR_DATA');
+                return;
+            }
+
+            if (estadoVoz === 'CUSTO_VAR_DATA') {
+                let dataDefinida = new Date().toISOString().slice(0,10);
+                if (txt.includes('ontem')) {
+                    let d = new Date();
+                    d.setDate(d.getDate() - 1);
+                    dataDefinida = d.toISOString().slice(0,10);
+                }
+                tempVoz.data = dataDefinida;
+                falarVoz("Qual foi o estabelecimento ou local da compra?", 'CUSTO_VAR_LOCAL');
+                return;
+            }
+
+            if (estadoVoz === 'CUSTO_VAR_LOCAL') {
+                tempVoz.local = texto;
+                falarVoz("Qual foi o valor total gasto?", 'CUSTO_VAR_VALOR');
+                return;
+            }
+
+            if (estadoVoz === 'CUSTO_VAR_VALOR') {
+                let valorNum = extrairNumeroDeTexto(txt);
+                if (valorNum <= 0) {
+                    falarVoz("Não entendi o valor. Qual foi o valor gasto em reais?", 'CUSTO_VAR_VALOR');
+                    return;
+                }
+
+                tempVoz.valor = valorNum;
+                
+                // Grava o custo variável
+                let novoCusto = {
+                    id: Date.now().toString(),
+                    data: tempVoz.data,
+                    local: tempVoz.local,
+                    valor: tempVoz.valor
+                };
+                db.custosVariaveis.push(novoCusto);
+                salvarBD();
+
+                estadoVoz = 'FINALIZAR';
+                falarVoz(`Custo variável de ${tempVoz.valor} reais em ${tempVoz.local} registrado com sucesso!`);
+                return;
+            }
+
+            // FLUXO 2: Lançar Venda
+            if (estadoVoz === 'AGUARDANDO_COMANDO' && (txt.includes('venda') || txt.includes('lançar venda') || txt.includes('lancar venda'))) {
+                falarVoz("Qual produto foi vendido?", 'VENDA_PRODUTO');
+                return;
+            }
+
+            if (estadoVoz === 'VENDA_PRODUTO') {
+                let prodEncontrado = garantirArray(db.produtos).find(p => p.nome.toLowerCase().includes(txt) || txt.includes(p.nome.toLowerCase()));
+                if (!prodEncontrado && db.produtos.length > 0) prodEncontrado = db.produtos[0];
+
+                if (!prodEncontrado) {
+                    falarVoz("Não encontrei esse produto cadastrado. Qual o nome do produto?", 'VENDA_PRODUTO');
+                    return;
+                }
+
+                tempVoz.produto = prodEncontrado;
+                falarVoz(`Qual a quantidade de ${prodEncontrado.nome}?`, 'VENDA_QTD');
+                return;
+            }
+
+            if (estadoVoz === 'VENDA_QTD') {
+                let qtd = extrairNumeroDeTexto(txt) || 1;
+                tempVoz.qtd = qtd;
+                falarVoz("Qual foi a forma de pagamento? Exemplo: Pix, Dinheiro ou Cartão.", 'VENDA_PAGAMENTO');
+                return;
+            }
+
+            if (estadoVoz === 'VENDA_PAGAMENTO') {
+                let fp = garantirArray(db.formasPagamento).find(f => txt.includes(f.nome.toLowerCase())) || db.formasPagamento[0];
+                let hoje = new Date().toISOString().slice(0,10);
+
+                let novaVenda = {
+                    id: Date.now().toString(),
+                    data: hoje,
+                    produtoId: tempVoz.produto.id,
+                    produtoNome: tempVoz.produto.nome,
+                    quantidade: tempVoz.qtd,
+                    precoUnitario: tempVoz.produto.preco,
+                    custoIngUnitario: tempVoz.produto.custoIng || 0,
+                    custoEmbUnitario: tempVoz.produto.custoEmb || 0,
+                    canal: 'Atendente',
+                    formaPagamentoId: fp ? fp.id : '',
+                    desconto: 0,
+                    entregaLoja: 0
+                };
+
+                db.vendas.push(novaVenda);
+                salvarBD();
+
+                estadoVoz = 'FINALIZAR';
+                falarVoz(`Venda de ${tempVoz.qtd} ${tempVoz.produto.nome} registrada com sucesso!`);
+                return;
+            }
+
+            // FLUXO 3: NAVEGAÇÃO POR VOZ
+            if (txt.includes('dashboard') || txt.includes('início')) { nav('dashboard'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir o Dashboard."); return; }
+            if (txt.includes('dre') || txt.includes('resultado')) { nav('dre'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir a tela de DRE e Resultados."); return; }
+            if (txt.includes('produtos')) { nav('produtos'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir a lista de Produtos."); return; }
+            if (txt.includes('ingredientes')) { nav('ingredientes'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir a lista de Ingredientes."); return; }
+
+            falarVoz("Não compreendi o comando. Pode repetir ou dizer 'lançar custo variável'?", 'AGUARDANDO_COMANDO');
+        }
+
+        function extrairNumeroDeTexto(texto) {
+            let palavras = texto.replace('reais', '').replace('real', '').replace('r$', '').trim();
+            let num = parseFloat(palavras.replace(',', '.'));
+            if (!isNaN(num)) return num;
+
+            // Tratamento de numerais falados por extenso
+            const numerosExtenso = { "um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8, "nove": 9, "dez": 10, "vinte": 20, "trinta": 30, "quarenta": 40, "cinquenta": 50, "cem": 100 };
+            return numerosExtenso[palavras] || 0;
+        }
 
         function sanitizarBanco() {
             db.produtos = garantirArray(db.produtos);
@@ -1725,7 +1946,6 @@
             </tr>`).join('');
         }
 
-        // CÁLCULO DINÂMICO DO DASHBOARD E DRE (SUPORTA MENSAL E ANUAL ACUMULADO)
         function renderDashboardEDRE() {
             let tipoFiltro = document.getElementById('tipoFiltro')?.value || 'mensal';
             let anoFiltro, mesFiltro, textoPeriodo;
@@ -1751,14 +1971,10 @@
 
             let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
-            // Filtro de Vendas
             garantirArray(db.vendas).forEach(v => {
                 if (!v.data) return;
                 let [vAno, vMes] = v.data.split('-');
-                
-                let pertenceAoPeriodo = (tipoFiltro === 'mensal') 
-                    ? (vAno === anoFiltro && vMes === mesFiltro)
-                    : (vAno === anoFiltro);
+                let pertenceAoPeriodo = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
 
                 if (pertenceAoPeriodo) {
                     let bruto = v.quantidade * v.precoUnitario;
@@ -1776,27 +1992,20 @@
                 }
             });
 
-            // Filtro de Custos Variáveis
             let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => {
                 if (!cv.data) return acc;
                 let [cAno, cMes] = cv.data.split('-');
-                let pertence = (tipoFiltro === 'mensal') 
-                    ? (cAno === anoFiltro && cMes === mesFiltro)
-                    : (cAno === anoFiltro);
+                let pertence = (tipoFiltro === 'mensal') ? (cAno === anoFiltro && cMes === mesFiltro) : (cAno === anoFiltro);
                 return pertence ? acc + cv.valor : acc;
             }, 0);
 
-            // Filtro de Despesas Pessoais
             let despesasPessoaisTotal = garantirArray(db.despesasPessoais).reduce((acc, dp) => {
                 if (!dp.data) return acc;
                 let [dAno, dMes] = dp.data.split('-');
-                let pertence = (tipoFiltro === 'mensal') 
-                    ? (dAno === anoFiltro && dMes === mesFiltro)
-                    : (dAno === anoFiltro);
+                let pertence = (tipoFiltro === 'mensal') ? (dAno === anoFiltro && dMes === mesFiltro) : (dAno === anoFiltro);
                 return pertence ? acc + dp.valor : acc;
             }, 0);
 
-            // Despesas Fixas (No acumulado Anual, multiplica por 12)
             let despesasFixasMensais = garantirArray(db.despesas).reduce((acc, d) => acc + d.valor, 0);
             let despesasFixas = (tipoFiltro === 'anual') ? (despesasFixasMensais * 12) : despesasFixasMensais;
 
