@@ -59,30 +59,29 @@
         th, td { padding: 0.625rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
         th { background: #FFF3E0; color: #1A1A1A; font-weight: 600; }
         
-        /* Animação do Botão de Voz */
-        .pulse-mic { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.7); } 70% { transform: scale(1.08); box-shadow: 0 0 0 15px rgba(230, 57, 70, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); } }
+        .pulse-mic { animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.8); } 70% { transform: scale(1.1); box-shadow: 0 0 0 18px rgba(230, 57, 70, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); } }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden text-gray-800">
 
-    <!-- Modal de Interação por Voz / Assistente Alexa -->
-    <div id="voiceModal" class="fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center text-white hidden p-4">
-        <div class="relative mb-6">
-            <div id="micWave" class="w-24 h-24 rounded-full bg-mendonca-red flex items-center justify-center text-3xl shadow-lg pulse-mic">
+    <!-- Modal de Voz Ultrarrápido -->
+    <div id="voiceModal" class="fixed inset-0 bg-black/85 z-50 flex flex-col items-center justify-center text-white hidden p-4">
+        <div class="relative mb-4">
+            <div id="micWave" class="w-20 h-20 rounded-full bg-mendonca-red flex items-center justify-center text-3xl shadow-xl pulse-mic">
                 <i class="fas fa-microphone"></i>
             </div>
         </div>
-        <h3 id="voiceTitle" class="text-xl font-bold mb-2 text-center text-mendonca-gold">Assistente Mendonça</h3>
-        <p id="voiceSubtext" class="text-base text-gray-200 text-center max-w-md mb-6 font-medium">A escutar...</p>
-        <button onclick="fecharAssistenteVoz()" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-6 py-2.5 rounded-full uppercase tracking-wider font-semibold">Cancelar</button>
+        <h3 id="voiceTitle" class="text-lg font-bold mb-1 text-center text-mendonca-gold">Assistente Mendonça</h3>
+        <p id="voiceSubtext" class="text-sm text-gray-200 text-center max-w-md mb-6 font-medium">A escutar...</p>
+        <button onclick="fecharAssistenteVoz()" class="bg-gray-800 hover:bg-gray-700 text-white text-xs px-5 py-2 rounded-full uppercase tracking-wider font-semibold border border-gray-600">Fechar</button>
     </div>
 
-    <!-- Modal de Carregamento do OCR -->
+    <!-- Modal de Carregamento OCR -->
     <div id="ocrLoadingModal" class="fixed inset-0 bg-black/70 z-50 flex flex-col items-center justify-center text-white hidden">
         <div class="animate-spin rounded-full h-16 w-16 border-4 border-mendonca-gold border-t-transparent mb-4"></div>
         <h3 class="text-xl font-bold mb-1">A ler comprovativo...</h3>
-        <p class="text-sm text-gray-300">A inteligência de visão está a identificar o valor.</p>
+        <p class="text-sm text-gray-300">A identificar valores.</p>
     </div>
 
     <!-- Inputs Ocultos de Câmera -->
@@ -130,8 +129,8 @@
     <!-- Main Content -->
     <main class="flex-1 h-full overflow-y-auto bg-gray-50 p-4 md:p-8 relative">
         
-        <!-- Botão Flutuante da Assistente de Voz (Estilo Alexa) -->
-        <button onclick="iniciarAssistenteVoz()" class="fixed bottom-6 right-6 z-40 bg-mendonca-red hover:bg-red-700 text-white rounded-full p-4 shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 border-2 border-mendonca-gold" title="Ativar Assistente Mendonça">
+        <!-- Botão Flutuante Microfone -->
+        <button onclick="iniciarAssistenteVoz()" class="fixed bottom-6 right-6 z-40 bg-mendonca-red hover:bg-red-700 text-white rounded-full p-4 shadow-2xl flex items-center justify-center border-2 border-mendonca-gold" title="Ativar Assistente">
             <i class="fas fa-microphone text-2xl"></i>
         </button>
 
@@ -726,7 +725,20 @@
             return [];
         }
 
-        // CONFIGURAÇÃO FIREBASE
+        function extrairAnoMes(dataStr) {
+            if (!dataStr) return { ano: '', mes: '' };
+            let partes = dataStr.includes('/') ? dataStr.split('/') : dataStr.split('-');
+            if (partes.length < 3) return { ano: '', mes: '' };
+            let ano, mes;
+            if (partes[0].length === 4) {
+                ano = partes[0]; mes = partes[1];
+            } else {
+                ano = partes[2]; mes = partes[1];
+            }
+            if (mes.length === 1) mes = '0' + mes;
+            return { ano, mes };
+        }
+
         const firebaseConfig = {
             apiKey: "AIzaSyAlqJwMwpobW2h0neK9d80j0xzlZR5WveI",
             authDomain: "pizzaria-mendonca.firebaseapp.com",
@@ -742,7 +754,7 @@
             firebase.initializeApp(firebaseConfig);
             dbRef = firebase.database().ref('pizzariaMendoncaDB');
         } catch (e) {
-            console.error("Erro ao inicializar Firebase:", e);
+            console.error("Erro Firebase:", e);
         }
 
         function toggleMobileMenu() {
@@ -778,10 +790,10 @@
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
 
-        // MOTOR DA ASSISTENTE DE VOZ (ESTILO ALEXA)
+        // MOTOR DA ASSISTENTE DE VOZ ULTRARRÁPIDA
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
-        let estadoVoz = 'INATIVO'; // INATIVO, AGUARDANDO_COMANDO, CUSTO_VAR_DATA, CUSTO_VAR_LOCAL, CUSTO_VAR_VALOR, VENDA_PRODUTO, VENDA_QTD, VENDA_PAGAMENTO
+        let estadoVoz = 'INATIVO';
         let tempVoz = {};
 
         if (SpeechRecognition) {
@@ -792,20 +804,19 @@
 
             recognition.onresult = (event) => {
                 const texto = event.results[0][0].transcript.trim();
-                console.log("Voz ouvida:", texto);
                 processarVoz(texto);
             };
 
-            recognition.onerror = (event) => {
-                console.error("Erro de voz:", event.error);
-                falarVoz("Não consegui ouvir. Pode repetir?");
+            recognition.onerror = () => {
+                falarVoz("Não ouvi. Pode repetir?", estadoVoz);
             };
+        }
 
-            recognition.onend = () => {
-                if (estadoVoz !== 'INATIVO' && estadoVoz !== 'FALANDO') {
-                    // Continua ouvindo a próxima resposta do fluxo
-                }
-            };
+        function getSaudacao() {
+            let h = new Date().getHours();
+            if (h >= 5 && h < 12) return "Bom dia, Juliano!";
+            if (h >= 12 && h < 18) return "Boa tarde, Juliano!";
+            return "Boa noite, Juliano!";
         }
 
         function falarVoz(texto, proximoEstado = null) {
@@ -816,39 +827,35 @@
 
                 const utterance = new SpeechSynthesisUtterance(texto);
                 utterance.lang = 'pt-BR';
-                utterance.rate = 1.0;
+                utterance.rate = 1.25; // FALA RÁPIDA E DINÂMICA
 
                 utterance.onend = () => {
-                    if (proximoEstado) {
+                    if (proximoEstado === 'PERGUNTAR_OUTRO') {
+                        estadoVoz = 'PERGUNTAR_OUTRO';
+                        ouvirVoz();
+                    } else if (proximoEstado === 'FINALIZAR_VOLTAR_DASHBOARD') {
+                        nav('dashboard');
+                        fecharAssistenteVoz();
+                    } else if (proximoEstado) {
                         estadoVoz = proximoEstado;
                         ouvirVoz();
-                    } else if (estadoVoz === 'FINALIZAR') {
-                        fecharAssistenteVoz();
                     }
                 };
 
                 window.speechSynthesis.speak(utterance);
-            } else {
-                alert(texto);
             }
         }
 
         function ouvirVoz() {
-            if (!recognition) {
-                alert("O seu navegador não suporta reconhecimento de voz.");
-                return;
-            }
+            if (!recognition) return;
             document.getElementById('voiceSubtext').innerText = "A escutar...";
-            try {
-                recognition.start();
-            } catch(e) {}
+            try { recognition.start(); } catch(e) {}
         }
 
         function iniciarAssistenteVoz() {
             document.getElementById('voiceModal').classList.remove('hidden');
             tempVoz = {};
-            estadoVoz = 'AGUARDANDO_COMANDO';
-            falarVoz("Olá! Sou a assistente Mendonça. O que deseja fazer?", 'AGUARDANDO_COMANDO');
+            falarVoz(getSaudacao(), 'AGUARDANDO_COMANDO');
         }
 
         function fecharAssistenteVoz() {
@@ -858,128 +865,173 @@
             document.getElementById('voiceModal').classList.add('hidden');
         }
 
-        function processarVoz(texto) {
-            const txt = texto.toLowerCase();
-
-            // FLUXO 1: Lançar Custo Variável (Cupom/Mercado)
-            if (estadoVoz === 'AGUARDANDO_COMANDO' && (txt.includes('custo variável') || txt.includes('custo variavel') || txt.includes('lançar custo') || txt.includes('lancar custo'))) {
-                falarVoz("Qual é a data do lançamento? Pode dizer 'hoje' ou 'ontem'.", 'CUSTO_VAR_DATA');
-                return;
-            }
-
-            if (estadoVoz === 'CUSTO_VAR_DATA') {
-                let dataDefinida = new Date().toISOString().slice(0,10);
-                if (txt.includes('ontem')) {
-                    let d = new Date();
-                    d.setDate(d.getDate() - 1);
-                    dataDefinida = d.toISOString().slice(0,10);
-                }
-                tempVoz.data = dataDefinida;
-                falarVoz("Qual foi o estabelecimento ou local da compra?", 'CUSTO_VAR_LOCAL');
-                return;
-            }
-
-            if (estadoVoz === 'CUSTO_VAR_LOCAL') {
-                tempVoz.local = texto;
-                falarVoz("Qual foi o valor total gasto?", 'CUSTO_VAR_VALOR');
-                return;
-            }
-
-            if (estadoVoz === 'CUSTO_VAR_VALOR') {
-                let valorNum = extrairNumeroDeTexto(txt);
-                if (valorNum <= 0) {
-                    falarVoz("Não entendi o valor. Qual foi o valor gasto em reais?", 'CUSTO_VAR_VALOR');
-                    return;
-                }
-
-                tempVoz.valor = valorNum;
-                
-                // Grava o custo variável
-                let novoCusto = {
-                    id: Date.now().toString(),
-                    data: tempVoz.data,
-                    local: tempVoz.local,
-                    valor: tempVoz.valor
-                };
-                db.custosVariaveis.push(novoCusto);
-                salvarBD();
-
-                estadoVoz = 'FINALIZAR';
-                falarVoz(`Custo variável de ${tempVoz.valor} reais em ${tempVoz.local} registrado com sucesso!`);
-                return;
-            }
-
-            // FLUXO 2: Lançar Venda
-            if (estadoVoz === 'AGUARDANDO_COMANDO' && (txt.includes('venda') || txt.includes('lançar venda') || txt.includes('lancar venda'))) {
-                falarVoz("Qual produto foi vendido?", 'VENDA_PRODUTO');
-                return;
-            }
-
-            if (estadoVoz === 'VENDA_PRODUTO') {
-                let prodEncontrado = garantirArray(db.produtos).find(p => p.nome.toLowerCase().includes(txt) || txt.includes(p.nome.toLowerCase()));
-                if (!prodEncontrado && db.produtos.length > 0) prodEncontrado = db.produtos[0];
-
-                if (!prodEncontrado) {
-                    falarVoz("Não encontrei esse produto cadastrado. Qual o nome do produto?", 'VENDA_PRODUTO');
-                    return;
-                }
-
-                tempVoz.produto = prodEncontrado;
-                falarVoz(`Qual a quantidade de ${prodEncontrado.nome}?`, 'VENDA_QTD');
-                return;
-            }
-
-            if (estadoVoz === 'VENDA_QTD') {
-                let qtd = extrairNumeroDeTexto(txt) || 1;
-                tempVoz.qtd = qtd;
-                falarVoz("Qual foi a forma de pagamento? Exemplo: Pix, Dinheiro ou Cartão.", 'VENDA_PAGAMENTO');
-                return;
-            }
-
-            if (estadoVoz === 'VENDA_PAGAMENTO') {
-                let fp = garantirArray(db.formasPagamento).find(f => txt.includes(f.nome.toLowerCase())) || db.formasPagamento[0];
-                let hoje = new Date().toISOString().slice(0,10);
-
-                let novaVenda = {
-                    id: Date.now().toString(),
-                    data: hoje,
-                    produtoId: tempVoz.produto.id,
-                    produtoNome: tempVoz.produto.nome,
-                    quantidade: tempVoz.qtd,
-                    precoUnitario: tempVoz.produto.preco,
-                    custoIngUnitario: tempVoz.produto.custoIng || 0,
-                    custoEmbUnitario: tempVoz.produto.custoEmb || 0,
-                    canal: 'Atendente',
-                    formaPagamentoId: fp ? fp.id : '',
-                    desconto: 0,
-                    entregaLoja: 0
-                };
-
-                db.vendas.push(novaVenda);
-                salvarBD();
-
-                estadoVoz = 'FINALIZAR';
-                falarVoz(`Venda de ${tempVoz.qtd} ${tempVoz.produto.nome} registrada com sucesso!`);
-                return;
-            }
-
-            // FLUXO 3: NAVEGAÇÃO POR VOZ
-            if (txt.includes('dashboard') || txt.includes('início')) { nav('dashboard'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir o Dashboard."); return; }
-            if (txt.includes('dre') || txt.includes('resultado')) { nav('dre'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir a tela de DRE e Resultados."); return; }
-            if (txt.includes('produtos')) { nav('produtos'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir a lista de Produtos."); return; }
-            if (txt.includes('ingredientes')) { nav('ingredientes'); estadoVoz = 'FINALIZAR'; falarVoz("A abrir a lista de Ingredientes."); return; }
-
-            falarVoz("Não compreendi o comando. Pode repetir ou dizer 'lançar custo variável'?", 'AGUARDANDO_COMANDO');
-        }
-
         function extrairNumeroDeTexto(texto) {
             let palavras = texto.replace('reais', '').replace('real', '').replace('r$', '').trim();
             let num = parseFloat(palavras.replace(',', '.'));
             if (!isNaN(num)) return num;
 
-            // Tratamento de numerais falados por extenso
-            const numerosExtenso = { "um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8, "nove": 9, "dez": 10, "vinte": 20, "trinta": 30, "quarenta": 40, "cinquenta": 50, "cem": 100 };
+            const numerosExtenso = { "um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8, "nove": 9, "dez": 10, "vinte": 20, "trinta": 30, "quarenta": 40, "cinquenta": 50, "cem": 100, "oitenta": 80, "noventa": 90 };
             return numerosExtenso[palavras] || 0;
+        }
+
+        function processarVoz(texto) {
+            const txt = texto.toLowerCase();
+
+            // RESPOSTA DE CONTINUAÇÃO (SIM / NÃO)
+            if (estadoVoz === 'PERGUNTAR_OUTRO') {
+                if (txt.includes('não') || txt.includes('nao') || txt.includes('não preciso') || txt.includes('não obrigado') || txt.includes('cancelar')) {
+                    falarVoz("Perfeito!", 'FINALIZAR_VOLTAR_DASHBOARD');
+                    return;
+                } else if (txt.includes('sim') || txt.includes('quero') || txt.includes('outra')) {
+                    falarVoz("Pode falar o próximo comando.", 'AGUARDANDO_COMANDO');
+                    return;
+                }
+            }
+
+            // EXPLICAR DRE / RESUMO FINANCEIRO
+            if (txt.includes('dre') || txt.includes('explicar dre') || txt.includes('resultado') || txt.includes('resumo') || txt.includes('como estão os resultados') || txt.includes('como esta o caixa')) {
+                nav('dre');
+                let fat = document.getElementById('dreFatLiq').innerText;
+                let lucro = document.getElementById('dreLucroLiq').innerText;
+                let cmv = document.getElementById('indCmvPerc').innerText;
+                let caixa = document.getElementById('dreCaixaFinal').innerText;
+
+                let resumo = `Neste mês, seu faturamento líquido é de ${fat}, com lucro operacional de ${lucro}. O CMV geral está em ${cmv}, e o saldo restante em caixa é de ${caixa}. Deseja fazer algum lançamento?`;
+                falarVoz(resumo, 'PERGUNTAR_OUTRO');
+                return;
+            }
+
+            // LANÇAR CUSTO VARIÁVEL
+            if (txt.includes('custo variável') || txt.includes('custo variavel') || txt.includes('cupom') || txt.includes('mercado')) {
+                let valor = extrairNumeroDeTexto(txt);
+                let hoje = new Date().toISOString().slice(0,10);
+
+                if (valor > 0) {
+                    let local = txt.replace('lançar', '').replace('lancar', '').replace('custo variável', '').replace('custo variavel', '').replace(valor.toString(), '').replace('reais', '').trim() || 'Mercado Geral';
+                    db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: local, valor: valor });
+                    salvarBD();
+                    falarVoz(`Lançamento de ${valor} reais confirmado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                } else {
+                    falarVoz("Qual foi o valor do custo variável?", 'CUSTO_VAR_VALOR');
+                }
+                return;
+            }
+
+            if (estadoVoz === 'CUSTO_VAR_VALOR') {
+                let valor = extrairNumeroDeTexto(txt);
+                if (valor <= 0) { falarVoz("Por favor, diga o valor em reais.", 'CUSTO_VAR_VALOR'); return; }
+                let hoje = new Date().toISOString().slice(0,10);
+                db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: 'Mercado / Loja', valor: valor });
+                salvarBD();
+                falarVoz(`Lançamento de ${valor} reais confirmado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                return;
+            }
+
+            // LANÇAR DESPESA PESSOAL
+            if (txt.includes('despesa pessoal') || txt.includes('retirada') || txt.includes('conta pessoal')) {
+                let valor = extrairNumeroDeTexto(txt);
+                let hoje = new Date().toISOString().slice(0,10);
+                if (valor > 0) {
+                    db.despesasPessoais.push({ id: Date.now().toString(), data: hoje, nome: 'Retirada Pessoal', valor: valor });
+                    salvarBD();
+                    falarVoz(`Despesa pessoal de ${valor} reais confirmada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                } else {
+                    falarVoz("Qual foi o valor da retirada pessoal?", 'DESPESA_PESSOAL_VALOR');
+                }
+                return;
+            }
+
+            if (estadoVoz === 'DESPESA_PESSOAL_VALOR') {
+                let valor = extrairNumeroDeTexto(txt);
+                let hoje = new Date().toISOString().slice(0,10);
+                db.despesasPessoais.push({ id: Date.now().toString(), data: hoje, nome: 'Retirada Pessoal', valor: valor });
+                salvarBD();
+                falarVoz(`Despesa pessoal de ${valor} reais confirmada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                return;
+            }
+
+            // LANÇAR DESPESA FIXA
+            if (txt.includes('despesa fixa') || txt.includes('aluguel') || txt.includes('pró-labore') || txt.includes('pro labore')) {
+                let valor = extrairNumeroDeTexto(txt);
+                if (valor > 0) {
+                    db.despesas.push({ id: Date.now().toString(), nome: 'Despesa Fixa', valor: valor });
+                    salvarBD();
+                    falarVoz(`Despesa fixa de ${valor} reais adicionada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                } else {
+                    falarVoz("Qual é o valor mensal da despesa fixa?", 'DESPESA_FIXA_VALOR');
+                }
+                return;
+            }
+
+            if (estadoVoz === 'DESPESA_FIXA_VALOR') {
+                let valor = extrairNumeroDeTexto(txt);
+                db.despesas.push({ id: Date.now().toString(), nome: 'Despesa Fixa', valor: valor });
+                salvarBD();
+                falarVoz(`Despesa fixa de ${valor} reais adicionada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                return;
+            }
+
+            // ADICIONAR INGREDIENTE
+            if (txt.includes('ingrediente') || txt.includes('cadastrar ingrediente')) {
+                falarVoz("Qual é o nome do ingrediente e o preço pago?", 'ING_DETALHES');
+                return;
+            }
+
+            if (estadoVoz === 'ING_DETALHES') {
+                let valor = extrairNumeroDeTexto(txt) || 10;
+                let nome = txt.replace(valor.toString(), '').replace('reais', '').trim() || 'Novo Ingrediente';
+                db.ingredientes.push({ id: Date.now().toString(), nome: nome, unidade: 'g', qtdEmbalagem: 1000, precoEmbalagem: valor });
+                salvarBD();
+                falarVoz(`Ingrediente ${nome} cadastrado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                return;
+            }
+
+            // LANÇAR VENDA
+            if (txt.includes('venda') || txt.includes('lançar venda') || txt.includes('vendi')) {
+                let prods = garantirArray(db.produtos);
+                let pEncontrado = prods.find(p => txt.includes(p.nome.toLowerCase()));
+
+                if (pEncontrado) {
+                    let hoje = new Date().toISOString().slice(0,10);
+                    db.vendas.push({
+                        id: Date.now().toString(), data: hoje, produtoId: pEncontrado.id, produtoNome: pEncontrado.nome,
+                        quantidade: 1, precoUnitario: pEncontrado.preco, custoIngUnitario: pEncontrado.custoIng || 0,
+                        custoEmbUnitario: pEncontrado.custoEmb || 0, canal: 'Atendente', formaPagamentoId: db.formasPagamento[0]?.id || '',
+                        desconto: 0, entregaLoja: 0
+                    });
+                    salvarBD();
+                    falarVoz(`Venda de ${pEncontrado.nome} registrada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                } else {
+                    falarVoz("Qual produto foi vendido?", 'VENDA_PRODUTO');
+                }
+                return;
+            }
+
+            if (estadoVoz === 'VENDA_PRODUTO') {
+                let pEncontrado = garantirArray(db.produtos).find(p => txt.includes(p.nome.toLowerCase())) || db.produtos[0];
+                if (pEncontrado) {
+                    let hoje = new Date().toISOString().slice(0,10);
+                    db.vendas.push({
+                        id: Date.now().toString(), data: hoje, produtoId: pEncontrado.id, produtoNome: pEncontrado.nome,
+                        quantidade: 1, precoUnitario: pEncontrado.preco, custoIngUnitario: pEncontrado.custoIng || 0,
+                        custoEmbUnitario: pEncontrado.custoEmb || 0, canal: 'Atendente', formaPagamentoId: db.formasPagamento[0]?.id || '',
+                        desconto: 0, entregaLoja: 0
+                    });
+                    salvarBD();
+                    falarVoz(`Venda de ${pEncontrado.nome} registrada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                } else {
+                    falarVoz("Produto não encontrado.", 'AGUARDANDO_COMANDO');
+                }
+                return;
+            }
+
+            // NAVEGAÇÃO RÁPIDA
+            if (txt.includes('dashboard') || txt.includes('início')) { nav('dashboard'); fecharAssistenteVoz(); return; }
+            if (txt.includes('produtos')) { nav('produtos'); fecharAssistenteVoz(); return; }
+            if (txt.includes('vendas')) { nav('vendas'); fecharAssistenteVoz(); return; }
+            if (txt.includes('ingredientes')) { nav('ingredientes'); fecharAssistenteVoz(); return; }
+
+            falarVoz("Não entendi. O que deseja lançar?", 'AGUARDANDO_COMANDO');
         }
 
         function sanitizarBanco() {
@@ -997,18 +1049,14 @@
         function init() {
             let localData = localStorage.getItem('pizzariaMendoncaDB');
             if (localData) {
-                try {
-                    db = JSON.parse(localData);
-                    sanitizarBanco();
-                } catch(e){}
+                try { db = JSON.parse(localData); sanitizarBanco(); } catch(e){}
             }
 
             if (dbRef) {
                 dbRef.on('value', (snapshot) => {
                     const val = snapshot.val();
                     if (val) {
-                        db = val;
-                        sanitizarBanco();
+                        db = val; sanitizarBanco();
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
                         localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
                         preencherOpcoesAnosFiltro();
@@ -1018,12 +1066,6 @@
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
                         salvarBD();
                     }
-                }, (error) => {
-                    console.error("Erro no Firebase:", error);
-                    sanitizarBanco();
-                    if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
-                    preencherOpcoesAnosFiltro();
-                    atualizarTudo();
                 });
             } else {
                 sanitizarBanco();
@@ -1038,30 +1080,23 @@
             localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
             preencherOpcoesAnosFiltro();
             atualizarTudo();
-            if (dbRef) {
-                dbRef.set(db).catch(err => console.error("Erro ao guardar no Firebase:", err));
-            }
+            if (dbRef) dbRef.set(db).catch(err => console.error("Erro Firebase:", err));
         }
 
         function nav(viewId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById('view-' + viewId).classList.add('active');
-            if (window.innerWidth < 768) {
-                toggleMobileMenu();
-            }
+            if (window.innerWidth < 768) toggleMobileMenu();
         }
 
         function alternarTipoFiltro() {
             const tipo = document.getElementById('tipoFiltro').value;
             const containerMes = document.getElementById('containerFiltroMes');
             const containerAno = document.getElementById('containerFiltroAno');
-            
             if (tipo === 'mensal') {
-                containerMes.classList.remove('hidden');
-                containerAno.classList.add('hidden');
+                containerMes.classList.remove('hidden'); containerAno.classList.add('hidden');
             } else {
-                containerMes.classList.add('hidden');
-                containerAno.classList.remove('hidden');
+                containerMes.classList.add('hidden'); containerAno.classList.remove('hidden');
             }
             atualizarTudo();
         }
@@ -1069,13 +1104,12 @@
         function preencherOpcoesAnosFiltro() {
             const selAno = document.getElementById('filtroAnoOnly');
             if (!selAno) return;
-
             let anosSet = new Set();
             let anoAtual = new Date().getFullYear().toString();
             anosSet.add(anoAtual);
 
             garantirArray(db.vendas).forEach(v => {
-                if (v.data) anosSet.add(v.data.split('-')[0]);
+                if (v.data) { let { ano } = extrairAnoMes(v.data); if (ano) anosSet.add(ano); }
             });
 
             let anosArray = Array.from(anosSet).sort((a,b) => b - a);
@@ -1117,17 +1151,13 @@
         }
 
         function abrirCamera(tipo) {
-            if (tipo === 'custoVar') {
-                document.getElementById('cameraCustoVarInput').click();
-            } else {
-                document.getElementById('cameraDespPessoalInput').click();
-            }
+            if (tipo === 'custoVar') document.getElementById('cameraCustoVarInput').click();
+            else document.getElementById('cameraDespPessoalInput').click();
         }
 
         async function processarFotoComprovante(event, tipo) {
             const file = event.target.files[0];
             if (!file) return;
-
             const modal = document.getElementById('ocrLoadingModal');
             modal.classList.remove('hidden');
 
@@ -1139,61 +1169,19 @@
                 if (valor && valor > 0) {
                     let hoje = new Date().toISOString().slice(0,10);
                     if (tipo === 'custoVar') {
-                        let cVar = {
-                            id: Date.now().toString(),
-                            data: hoje,
-                            local: "Comprovante Escaneado (Câmera)",
-                            valor: valor
-                        };
-                        db.custosVariaveis.push(cVar);
+                        db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: "Comprovante Escaneado", valor: valor });
                         salvarBD();
-                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registado com sucesso em Custos Variáveis!`);
+                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registrado com sucesso!`);
                     } else if (tipo === 'despPessoal') {
-                        let dp = {
-                            id: Date.now().toString(),
-                            data: hoje,
-                            nome: "Comprovante Escaneado (Câmera)",
-                            valor: valor
-                        };
-                        db.despesasPessoais.push(dp);
+                        db.despesasPessoais.push({ id: Date.now().toString(), data: hoje, nome: "Comprovante Escaneado", valor: valor });
                         salvarBD();
-                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registado com sucesso em Despesas Pessoais!`);
+                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registrado com sucesso!`);
                     }
                 } else {
-                    alert("Não foi possível identificar o valor no comprovativo. Verifique a iluminação e tente novamente.");
+                    alert("Não foi possível ler o valor.");
                 }
-            } catch (err) {
-                console.error("Erro no OCR:", err);
-                alert("Erro ao ler comprovativo.");
-            } finally {
-                modal.classList.add('hidden');
-                event.target.value = '';
-            }
-        }
-
-        function extrairValorDoTexto(texto) {
-            const linhas = texto.split('\n');
-            for (let linha of linhas) {
-                let lUpper = linha.toUpperCase();
-                if (lUpper.includes('TOTAL') || lUpper.includes('VALOR') || lUpper.includes('PAGO') || lUpper.includes('R$')) {
-                    let match = linha.match(/(?:R\$\s*)?(\d+[\.,]\d{2})/);
-                    if (match) {
-                        let valStr = match[1].replace('.', '').replace(',', '.');
-                        let num = parseFloat(valStr);
-                        if (!isNaN(num) && num > 0) return num;
-                    }
-                }
-            }
-            const regexValores = /(?:R\$\s*)?(\d+[\.,]\d{2})/g;
-            let match;
-            let valores = [];
-            while ((match = regexValores.exec(texto)) !== null) {
-                let valStr = match[1].replace('.', '').replace(',', '.');
-                let num = parseFloat(valStr);
-                if (!isNaN(num) && num > 0) valores.push(num);
-            }
-            if (valores.length > 0) return Math.max(...valores);
-            return null;
+            } catch (err) { alert("Erro ao ler comprovativo."); }
+            finally { modal.classList.add('hidden'); event.target.value = ''; }
         }
 
         function salvarIngrediente(e) {
@@ -1206,20 +1194,15 @@
                 qtdEmbalagem: parseValor(document.getElementById('ingQtdEmb').value) || 1,
                 precoEmbalagem: parseValor(document.getElementById('ingPrecoEmb').value)
             };
-
             db.ingredientes = garantirArray(db.ingredientes);
-
             if (id) {
                 let idx = db.ingredientes.findIndex(x => x.id == id);
                 if (idx !== -1) db.ingredientes[idx] = ing;
-            } else {
-                db.ingredientes.push(ing);
-            }
+            } else { db.ingredientes.push(ing); }
 
             if (db.fichasTecnicas) {
                 for (let prodId in db.fichasTecnicas) recalcularCustoProdutoFicha(prodId);
             }
-
             cancelarEdicaoIngrediente();
             salvarBD();
         }
@@ -1246,12 +1229,6 @@
         function excluirIngrediente(id) {
             if (confirm("Deseja excluir este ingrediente?")) {
                 db.ingredientes = garantirArray(db.ingredientes).filter(x => x.id != id);
-                if (db.fichasTecnicas) {
-                    for (let prodId in db.fichasTecnicas) {
-                        db.fichasTecnicas[prodId] = garantirArray(db.fichasTecnicas[prodId]).filter(item => item.ingredienteId != id);
-                        recalcularCustoProdutoFicha(prodId);
-                    }
-                }
                 salvarBD();
             }
         }
@@ -1278,20 +1255,13 @@
             const sel = document.getElementById('prodIngSelect');
             if (!sel) return;
             let ingredientes = garantirArray(db.ingredientes);
-            if (ingredientes.length === 0) {
-                sel.innerHTML = `<option value="">Nenhum ingrediente cadastrado</option>`;
-            } else {
-                sel.innerHTML = ingredientes.map(i => {
-                    let c = i.qtdEmbalagem > 0 ? (i.precoEmbalagem / i.qtdEmbalagem) : 0;
-                    return `<option value="${i.id}">${i.nome} (R$ ${c.toFixed(4)}/${i.unidade})</option>`;
-                }).join('');
-            }
+            if (ingredientes.length === 0) sel.innerHTML = `<option value="">Nenhum ingrediente cadastrado</option>`;
+            else sel.innerHTML = ingredientes.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
         }
 
         function mostrarFormProduto(id = null) {
             document.getElementById('formProdutoContainer').classList.remove('hidden');
             preencherSelectIngredientesProduto();
-
             if(id) {
                 let p = garantirArray(db.produtos).find(x => x.id == id);
                 document.getElementById('prodId').value = p.id;
@@ -1299,17 +1269,12 @@
                 document.getElementById('prodPreco').value = p.preco;
                 document.getElementById('prodCustoEmb').value = p.custoEmb || 0;
                 document.getElementById('prodCat').value = p.categoria;
-                document.getElementById('formProdTitle').innerText = 'Editar Produto & Precificação';
-
                 ingredientesTempProduto = JSON.parse(JSON.stringify(db.fichasTecnicas && db.fichasTecnicas[id] ? db.fichasTecnicas[id] : []));
             } else {
                 document.getElementById('formProduto').reset();
                 document.getElementById('prodId').value = '';
-                document.getElementById('prodCustoEmb').value = '0,00';
-                document.getElementById('formProdTitle').innerText = 'Novo Produto & Precificação Inteligente';
                 ingredientesTempProduto = [];
             }
-
             renderIngredientesTempProduto();
             calcularSugestaoPreco();
         }
@@ -1322,17 +1287,10 @@
         function adicionarIngredienteAoProdutoTemp() {
             let ingId = document.getElementById('prodIngSelect').value;
             let qtd = parseValor(document.getElementById('prodIngQtd').value);
-
-            if (!ingId) { alert("Cadastre ou selecione um ingrediente primeiro na aba Ingredientes."); return; }
-            if (qtd <= 0) { alert("Informe a quantidade utilizada no produto."); return; }
-
+            if (!ingId || qtd <= 0) return;
             let idx = ingredientesTempProduto.findIndex(x => x.ingredienteId == ingId);
-            if (idx !== -1) {
-                ingredientesTempProduto[idx].quantidade += qtd;
-            } else {
-                ingredientesTempProduto.push({ ingredienteId: ingId, quantidade: qtd });
-            }
-
+            if (idx !== -1) ingredientesTempProduto[idx].quantidade += qtd;
+            else ingredientesTempProduto.push({ ingredienteId: ingId, quantidade: qtd });
             document.getElementById('prodIngQtd').value = '';
             renderIngredientesTempProduto();
             calcularSugestaoPreco();
@@ -1347,24 +1305,20 @@
         function renderIngredientesTempProduto() {
             const tbody = document.getElementById('listaIngredientesProdTemp');
             if (!tbody) return;
-
             if (ingredientesTempProduto.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-3">Nenhum ingrediente adicionado à ficha técnica deste produto.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-3">Sem ingredientes adicionados.</td></tr>`;
                 return;
             }
-
             tbody.innerHTML = ingredientesTempProduto.map((item, idx) => {
                 let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
                 if (!ing) return '';
                 let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
                 let subtotal = custoUnit * item.quantidade;
                 return `<tr class="border-b">
-                    <td class="p-2 font-semibold text-gray-800">${ing.nome}</td>
+                    <td class="p-2 font-semibold">${ing.nome}</td>
                     <td class="p-2">${item.quantidade} ${ing.unidade}</td>
                     <td class="p-2 font-bold text-green-700">R$ ${subtotal.toFixed(2)}</td>
-                    <td class="p-2 text-center">
-                        <button type="button" onclick="removerIngredienteTempProduto(${idx})" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
-                    </td>
+                    <td class="p-2 text-center"><button type="button" onclick="removerIngredienteTempProduto(${idx})" class="text-red-600"><i class="fas fa-trash"></i></button></td>
                 </tr>`;
             }).join('');
         }
@@ -1373,35 +1327,16 @@
             let custoIngTotal = 0;
             ingredientesTempProduto.forEach(item => {
                 let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
-                if (ing && ing.qtdEmbalagem > 0) {
-                    custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
-                }
+                if (ing && ing.qtdEmbalagem > 0) custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
             });
-
             let custoEmb = parseValor(document.getElementById('prodCustoEmb').value);
             let custoTotal = custoIngTotal + custoEmb;
-
             let cmvMaxConfig = (db.config && db.config.cmvMax) ? parseValor(db.config.cmvMax) : 30;
-            if (cmvMaxConfig <= 0) cmvMaxConfig = 30;
-
             let precoSugerido = (cmvMaxConfig > 0) ? (custoTotal / (cmvMaxConfig / 100)) : custoTotal;
-            let precoCobradoReal = parseValor(document.getElementById('prodPreco').value);
 
             document.getElementById('prodCustoIng').value = `R$ ${custoIngTotal.toFixed(2)}`;
             document.getElementById('prodCustoTotal').value = `R$ ${custoTotal.toFixed(2)}`;
             document.getElementById('prodPrecoSugerido').value = `R$ ${precoSugerido.toFixed(2)}`;
-            document.getElementById('lblCmvMaxCfg').innerText = cmvMaxConfig;
-
-            let alertaEl = document.getElementById('alertaPrecoForaDaFaixa');
-            let msgEl = document.getElementById('msgAlertaPreco');
-
-            if (precoCobradoReal > 0 && precoCobradoReal < precoSugerido) {
-                let cmvReal = (custoTotal / precoCobradoReal) * 100;
-                msgEl.innerHTML = `O <b>Preço Cobrado Real (R$ ${precoCobradoReal.toFixed(2)})</b> está abaixo do sugerido (R$ ${precoSugerido.toFixed(2)}). O CMV deste produto será de <b>${cmvReal.toFixed(1)}%</b>, ultrapassando o seu teto máximo de <b>${cmvMaxConfig}%</b>!`;
-                alertaEl.classList.remove('hidden');
-            } else {
-                alertaEl.classList.add('hidden');
-            }
         }
 
         function salvarProduto(e) {
@@ -1412,31 +1347,23 @@
             let custoIngTotal = 0;
             ingredientesTempProduto.forEach(item => {
                 let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
-                if (ing && ing.qtdEmbalagem > 0) {
-                    custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
-                }
+                if (ing && ing.qtdEmbalagem > 0) custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
             });
 
             let produto = {
-                id: prodIdFinal,
-                nome: document.getElementById('prodNome').value,
-                categoria: document.getElementById('prodCat').value,
-                preco: parseValor(document.getElementById('prodPreco').value),
-                custoIng: Math.round(custoIngTotal * 100) / 100,
-                custoEmb: parseValor(document.getElementById('prodCustoEmb').value)
+                id: prodIdFinal, nome: document.getElementById('prodNome').value,
+                categoria: document.getElementById('prodCat').value, preco: parseValor(document.getElementById('prodPreco').value),
+                custoIng: Math.round(custoIngTotal * 100) / 100, custoEmb: parseValor(document.getElementById('prodCustoEmb').value)
             };
 
             db.produtos = garantirArray(db.produtos);
             if(id) {
                 let idx = db.produtos.findIndex(x => x.id == id);
                 if(idx !== -1) db.produtos[idx] = produto;
-            } else {
-                db.produtos.push(produto);
-            }
+            } else db.produtos.push(produto);
 
             if (!db.fichasTecnicas) db.fichasTecnicas = {};
             db.fichasTecnicas[prodIdFinal] = ingredientesTempProduto;
-
             fecharFormProduto();
             salvarBD();
         }
@@ -1444,7 +1371,6 @@
         function excluirProduto(id) {
             if(confirm("Deseja excluir este produto?")) {
                 db.produtos = garantirArray(db.produtos).filter(p => p.id != id);
-                if (db.fichasTecnicas) delete db.fichasTecnicas[id];
                 salvarBD();
             }
         }
@@ -1456,11 +1382,7 @@
                 let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
                 let lucro = p.preco - custoTotal;
                 let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
-                let cmvReal = p.preco > 0 ? (custoTotal / p.preco) * 100 : 0;
-                let cmvMaxConfig = (db.config ? db.config.cmvMax : 30);
-                let trClass = cmvReal > cmvMaxConfig ? "bg-red-50 text-red-800" : "";
-
-                return `<tr class="${trClass}">
+                return `<tr>
                     <td class="font-semibold">${p.nome}</td>
                     <td>${p.categoria}</td>
                     <td class="font-bold text-green-700">R$ ${p.preco.toFixed(2)}</td>
@@ -1488,9 +1410,7 @@
             if (id) {
                 let idx = db.despesasPessoais.findIndex(x => x.id == id);
                 if (idx !== -1) db.despesasPessoais[idx] = dp;
-            } else {
-                db.despesasPessoais.push(dp);
-            }
+            } else db.despesasPessoais.push(dp);
             cancelarEdicaoDespPessoal();
             salvarBD();
         }
@@ -1502,7 +1422,7 @@
             document.getElementById('despPessoalData').value = dp.data;
             document.getElementById('despPessoalNome').value = dp.nome;
             document.getElementById('despPessoalValor').value = dp.valor;
-            document.getElementById('btnSalvarDespPessoal').innerText = "Atualizar Retirada";
+            document.getElementById('btnSalvarDespPessoal').innerText = "Atualizar";
             document.getElementById('btnCancelarDespPessoal').classList.remove('hidden');
         }
 
@@ -1527,7 +1447,7 @@
             tbody.innerHTML = garantirArray(db.despesasPessoais).map(dp => `<tr>
                 <td>${dp.data}</td>
                 <td class="font-semibold">${dp.nome}</td>
-                <td class="text-red-600 font-bold">R$ ${dp.valor.toFixed(2)}</td>
+                <td class="text-red-600 font-bold">R$ ${parseValor(dp.valor).toFixed(2)}</td>
                 <td>
                     <button onclick="editarDespesaPessoal('${dp.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
                     <button onclick="excluirDespesaPessoal('${dp.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
@@ -1540,18 +1460,14 @@
             let prodId = document.getElementById('fichaProdutoSelect').value;
             let ingId = document.getElementById('fichaIngredienteSelect').value;
             let qtd = parseValor(document.getElementById('fichaQtd').value);
-
             if (!prodId || !ingId || qtd <= 0) return;
             if (!db.fichasTecnicas) db.fichasTecnicas = {};
             if (!db.fichasTecnicas[prodId]) db.fichasTecnicas[prodId] = [];
 
             db.fichasTecnicas[prodId] = garantirArray(db.fichasTecnicas[prodId]);
             let idx = db.fichasTecnicas[prodId].findIndex(x => x.ingredienteId == ingId);
-            if (idx !== -1) {
-                db.fichasTecnicas[prodId][idx].quantidade += qtd;
-            } else {
-                db.fichasTecnicas[prodId].push({ ingredienteId: ingId, quantidade: qtd });
-            }
+            if (idx !== -1) db.fichasTecnicas[prodId][idx].quantidade += qtd;
+            else db.fichasTecnicas[prodId].push({ ingredienteId: ingId, quantidade: qtd });
 
             recalcularCustoProdutoFicha(prodId);
             salvarBD();
@@ -1571,9 +1487,7 @@
             let custoTotalIng = 0;
             garantirArray(db.fichasTecnicas[prodId]).forEach(item => {
                 let ing = garantirArray(db.ingredientes).find(x => x.id == item.ingredienteId);
-                if (ing && ing.qtdEmbalagem > 0) {
-                    custoTotalIng += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
-                }
+                if (ing && ing.qtdEmbalagem > 0) custoTotalIng += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
             });
             let prod = garantirArray(db.produtos).find(p => p.id == prodId);
             if (prod) prod.custoIng = Math.round(custoTotalIng * 100) / 100;
@@ -1590,10 +1504,7 @@
             let prodId = selProd.value;
             const selIng = document.getElementById('fichaIngredienteSelect');
             if(selIng) {
-                selIng.innerHTML = garantirArray(db.ingredientes).map(i => {
-                    let c = i.qtdEmbalagem > 0 ? (i.precoEmbalagem / i.qtdEmbalagem) : 0;
-                    return `<option value="${i.id}">${i.nome} (R$ ${c.toFixed(4)}/${i.unidade})</option>`;
-                }).join('');
+                selIng.innerHTML = garantirArray(db.ingredientes).map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
             }
 
             const tbody = document.querySelector('#tabelaFichaTecnica tbody');
@@ -1615,24 +1526,15 @@
                     </tr>`;
                 }).join('');
             } else {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-4">Nenhum ingrediente vinculado a este produto.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-4">Nenhum ingrediente vinculado.</td></tr>`;
             }
             document.getElementById('fichaTotalCusto').innerText = `R$ ${totalCusto.toFixed(2)}`;
-        }
-
-        function formatarTextoTaxa(taxaPerc, taxaFixa) {
-            let pStr = (taxaPerc || 0).toFixed(2) + '%';
-            let fStr = 'R$ ' + (taxaFixa || 0).toFixed(2);
-            if (taxaPerc > 0 && taxaFixa > 0) return `${pStr} + ${fStr}`;
-            if (taxaPerc > 0) return pStr;
-            if (taxaFixa > 0) return fStr;
-            return 'Isento';
         }
 
         function preencherSelectFormasPagamento() {
             const sel = document.getElementById('vendaFormaPagamento');
             if(!sel) return;
-            sel.innerHTML = garantirArray(db.formasPagamento).map(fp => `<option value="${fp.id}">${fp.nome} (${formatarTextoTaxa(fp.taxaPerc, fp.taxaFixa)})</option>`).join('');
+            sel.innerHTML = garantirArray(db.formasPagamento).map(fp => `<option value="${fp.id}">${fp.nome}</option>`).join('');
         }
 
         function salvarFormaPagamento(e) {
@@ -1648,9 +1550,7 @@
             if (id) {
                 let idx = db.formasPagamento.findIndex(x => x.id == id);
                 if (idx !== -1) db.formasPagamento[idx] = fp;
-            } else {
-                db.formasPagamento.push(fp);
-            }
+            } else db.formasPagamento.push(fp);
             salvarBD();
             cancelarEdicaoFP();
         }
@@ -1709,13 +1609,9 @@
             const busca = (document.getElementById('vendaBuscaProduto')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('vendaProduto');
             if (!sel) return;
-
             const produtosFiltrados = garantirArray(db.produtos).filter(p => p.nome.toLowerCase().includes(busca));
-            if (produtosFiltrados.length === 0) {
-                sel.innerHTML = `<option value="">Nenhum produto cadastrado</option>`;
-            } else {
-                sel.innerHTML = produtosFiltrados.map(p => `<option value="${p.id}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`).join('');
-            }
+            if (produtosFiltrados.length === 0) sel.innerHTML = `<option value="">Nenhum produto</option>`;
+            else sel.innerHTML = produtosFiltrados.map(p => `<option value="${p.id}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`).join('');
         }
 
         function preencherSelectProdutos() {
@@ -1728,7 +1624,7 @@
             e.preventDefault();
             let id = document.getElementById('vendaId').value;
             let prodId = document.getElementById('vendaProduto').value;
-            if (!prodId) { alert("Cadastre ou selecione um produto primeiro."); return; }
+            if (!prodId) return;
 
             let prod = garantirArray(db.produtos).find(p => p.id == prodId);
             let formaPagId = document.getElementById('vendaFormaPagamento').value;
@@ -1752,9 +1648,7 @@
             if(id) {
                 let idx = db.vendas.findIndex(x => x.id == id);
                 if(idx !== -1) db.vendas[idx] = venda;
-            } else {
-                db.vendas.push(venda);
-            }
+            } else db.vendas.push(venda);
 
             cancelarEdicaoVenda();
             salvarBD();
@@ -1763,10 +1657,6 @@
         function editarVenda(id) {
             let v = garantirArray(db.vendas).find(x => x.id == id);
             if(!v) return;
-
-            document.getElementById('vendaBuscaProduto').value = '';
-            filtrarProdutosVenda();
-
             document.getElementById('vendaId').value = v.id;
             document.getElementById('vendaData').value = v.data;
             document.getElementById('vendaProduto').value = v.produtoId;
@@ -1775,7 +1665,6 @@
             document.getElementById('vendaFormaPagamento').value = v.formaPagamentoId || '';
             document.getElementById('vendaDesconto').value = v.desconto || 0;
             document.getElementById('vendaEntrega').value = v.entregaLoja || 0;
-
             document.getElementById('btnSalvarVenda').innerText = 'Atualizar Venda';
             document.getElementById('btnCancelarEdicaoVenda').classList.remove('hidden');
         }
@@ -1784,8 +1673,6 @@
             document.getElementById('formVenda').reset();
             document.getElementById('vendaId').value = '';
             document.getElementById('vendaData').valueAsDate = new Date();
-            document.getElementById('vendaBuscaProduto').value = '';
-            filtrarProdutosVenda();
             document.getElementById('btnSalvarVenda').innerText = 'Registrar Venda';
             document.getElementById('btnCancelarEdicaoVenda').classList.add('hidden');
         }
@@ -1801,16 +1688,9 @@
             const tbody = document.querySelector('#tabelaVendas tbody');
             if(!tbody) return;
             tbody.innerHTML = garantirArray(db.vendas).map(v => {
-                let valorBruto = (v.quantidade * v.precoUnitario) - (v.desconto || 0);
+                let valorBruto = (parseValor(v.quantidade) * parseValor(v.precoUnitario)) - parseValor(v.desconto);
                 let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
-                let taxaCalculada = 0;
-                let nomeFP = 'N/A';
-
-                if (fp) {
-                    nomeFP = fp.nome;
-                    taxaCalculada = (valorBruto * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
-                }
-
+                let taxaCalculada = fp ? (valorBruto * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa) : 0;
                 let liqComTaxa = valorBruto - taxaCalculada;
 
                 return `<tr>
@@ -1818,7 +1698,7 @@
                     <td class="font-semibold">${v.produtoNome}</td>
                     <td>${v.quantidade}</td>
                     <td>${v.canal}</td>
-                    <td>${nomeFP}</td>
+                    <td>${fp ? fp.nome : 'N/A'}</td>
                     <td>R$ ${valorBruto.toFixed(2)}</td>
                     <td class="text-red-600">R$ ${taxaCalculada.toFixed(2)}</td>
                     <td class="font-bold text-green-700">R$ ${liqComTaxa.toFixed(2)}</td>
@@ -1842,9 +1722,7 @@
             if(id) {
                 let idx = db.despesas.findIndex(x => x.id == id);
                 if(idx !== -1) db.despesas[idx] = despesa;
-            } else {
-                db.despesas.push(despesa);
-            }
+            } else db.despesas.push(despesa);
             cancelarEdicaoDespesa();
             salvarBD();
         }
@@ -1878,7 +1756,7 @@
             if(!tbody) return;
             tbody.innerHTML = garantirArray(db.despesas).map(d => `<tr>
                 <td class="font-semibold">${d.nome}</td>
-                <td>R$ ${d.valor.toFixed(2)}</td>
+                <td>R$ ${parseValor(d.valor).toFixed(2)}</td>
                 <td>
                     <button onclick="editarDespesa('${d.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
                     <button onclick="excluirDespesa('${d.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
@@ -1899,9 +1777,7 @@
             if (id) {
                 let idx = db.custosVariaveis.findIndex(x => x.id == id);
                 if (idx !== -1) db.custosVariaveis[idx] = cVar;
-            } else {
-                db.custosVariaveis.push(cVar);
-            }
+            } else db.custosVariaveis.push(cVar);
             cancelarEdicaoCustoVariavel();
             salvarBD();
         }
@@ -1938,7 +1814,7 @@
             tbody.innerHTML = garantirArray(db.custosVariaveis).map(cv => `<tr>
                 <td>${cv.data}</td>
                 <td class="font-semibold">${cv.local}</td>
-                <td class="text-red-600 font-bold">R$ ${cv.valor.toFixed(2)}</td>
+                <td class="text-red-600 font-bold">R$ ${parseValor(cv.valor).toFixed(2)}</td>
                 <td>
                     <button onclick="editarCustoVariavel('${cv.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
                     <button onclick="excluirCustoVariavel('${cv.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
@@ -1952,9 +1828,8 @@
 
             if (tipoFiltro === 'mensal') {
                 let filtroVal = document.getElementById('filtroMesAno')?.value;
-                if (filtroVal) {
-                    [anoFiltro, mesFiltro] = filtroVal.split('-');
-                } else {
+                if (filtroVal) [anoFiltro, mesFiltro] = filtroVal.split('-');
+                else {
                     let hoje = new Date();
                     anoFiltro = hoje.getFullYear().toString();
                     mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
@@ -1973,46 +1848,42 @@
 
             garantirArray(db.vendas).forEach(v => {
                 if (!v.data) return;
-                let [vAno, vMes] = v.data.split('-');
-                let pertenceAoPeriodo = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
+                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
+                let pertence = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
 
-                if (pertenceAoPeriodo) {
-                    let bruto = v.quantidade * v.precoUnitario;
-                    fatBruto += bruto;
-                    descontos += (v.desconto || 0);
-                    cmvTotal += v.quantidade * (v.custoIngUnitario || 0);
-                    embTotal += v.quantidade * (v.custoEmbUnitario || 0);
-                    entregasTotal += (v.entregaLoja || 0);
+                if (pertence) {
+                    let qtd = parseValor(v.quantidade) || 1;
+                    let precoUnit = parseValor(v.precoUnitario);
+                    let desc = parseValor(v.desconto);
+                    let bruto = qtd * precoUnit;
 
-                    let valorComDesc = bruto - (v.desconto || 0);
+                    fatBruto += bruto; descontos += desc;
+                    cmvTotal += qtd * parseValor(v.custoIngUnitario);
+                    embTotal += qtd * parseValor(v.custoEmbUnitario);
+                    entregasTotal += parseValor(v.entregaLoja);
+
+                    let valorComDesc = bruto - desc;
                     let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
-                    if (fp) {
-                        taxasTotal += (valorComDesc * ((fp.taxaPerc || 0) / 100)) + (fp.taxaFixa || 0);
-                    }
+                    if (fp) taxasTotal += (valorComDesc * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa);
                 }
             });
 
             let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => {
                 if (!cv.data) return acc;
-                let [cAno, cMes] = cv.data.split('-');
+                let { ano: cAno, mes: cMes } = extrairAnoMes(cv.data);
                 let pertence = (tipoFiltro === 'mensal') ? (cAno === anoFiltro && cMes === mesFiltro) : (cAno === anoFiltro);
-                return pertence ? acc + cv.valor : acc;
+                return pertence ? acc + parseValor(cv.valor) : acc;
             }, 0);
 
             let despesasPessoaisTotal = garantirArray(db.despesasPessoais).reduce((acc, dp) => {
                 if (!dp.data) return acc;
-                let [dAno, dMes] = dp.data.split('-');
+                let { ano: dAno, mes: dMes } = extrairAnoMes(dp.data);
                 let pertence = (tipoFiltro === 'mensal') ? (dAno === anoFiltro && dMes === mesFiltro) : (dAno === anoFiltro);
-                return pertence ? acc + dp.valor : acc;
+                return pertence ? acc + parseValor(dp.valor) : acc;
             }, 0);
 
-            let despesasFixasMensais = garantirArray(db.despesas).reduce((acc, d) => acc + d.valor, 0);
+            let despesasFixasMensais = garantirArray(db.despesas).reduce((acc, d) => acc + parseValor(d.valor), 0);
             let despesasFixas = (tipoFiltro === 'anual') ? (despesasFixasMensais * 12) : despesasFixasMensais;
-
-            const lblFixas = document.getElementById('lblMultiplicadorFixas');
-            if (lblFixas) {
-                lblFixas.innerText = (tipoFiltro === 'anual') ? "Anual Acumulado (12 Meses)" : "Mensal";
-            }
 
             let fatLiquido = fatBruto - descontos;
             let lucroBruto = fatLiquido - cmvTotal - embTotal - custosVarTotal;
@@ -2075,12 +1946,12 @@
             let lucrosPorProd = {};
             garantirArray(db.vendas).forEach(v => {
                 if (!v.data) return;
-                let [vAno, vMes] = v.data.split('-');
+                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
                 let pertence = (tipoFiltro === 'mensal') ? (vAno === ano && vMes === mes) : (vAno === ano);
                 
                 if (pertence) {
-                    let lucroUnit = v.precoUnitario - v.custoIngUnitario - v.custoEmbUnitario;
-                    let totalLucro = (lucroUnit * v.quantidade) - (v.desconto || 0);
+                    let lucroUnit = parseValor(v.precoUnitario) - parseValor(v.custoIngUnitario) - parseValor(v.custoEmbUnitario);
+                    let totalLucro = (lucroUnit * parseValor(v.quantidade)) - parseValor(v.desconto);
                     lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
                 }
             });
@@ -2095,9 +1966,7 @@
                 data: {
                     labels: sorted.map(x => x[0]),
                     datasets: [{
-                        label: 'Lucro (R$)',
-                        data: sorted.map(x => x[1]),
-                        backgroundColor: '#2E7D32'
+                        label: 'Lucro (R$)', data: sorted.map(x => x[1]), backgroundColor: '#2E7D32'
                     }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
@@ -2115,7 +1984,7 @@
 
                 if (cmvReal > cmvMaxConfig) {
                     container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2.5 text-xs rounded shadow-sm">
-                        <strong>Atenção ao CMV:</strong> O produto <b>${p.nome}</b> tem um preço cobrado de R$ ${p.preco.toFixed(2)}, gerando um CMV de <b>${cmvReal.toFixed(1)}%</b> (acima do teto de ${cmvMaxConfig}%).
+                        <strong>Atenção ao CMV:</strong> O produto <b>${p.nome}</b> está com CMV de <b>${cmvReal.toFixed(1)}%</b>.
                     </div>`;
                 }
             });
