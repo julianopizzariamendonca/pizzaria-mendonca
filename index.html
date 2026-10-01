@@ -50,7 +50,7 @@
         .tab-content.active { display: block; animation: fadeIn 0.2s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card { background: white; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); padding: 1rem; }
-        input, select { width: 100%; padding: 0.625rem; border: 1px solid #d1d5db; border-radius: 0.375rem; margin-top: 0.25rem; font-size: 0.95rem; }
+        input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; }
         button.btn { padding: 0.625rem 1rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .btn-red { background: #E63946; color: white; } .btn-red:hover { background: #c5303c; }
         .btn-green { background: #2E7D32; color: white; } .btn-green:hover { background: #246328; }
@@ -192,52 +192,57 @@
             </div>
         </div>
 
-        <!-- VIEW: LANÇAR VENDA (PDV) -->
+        <!-- VIEW: LANÇAR VENDA (PDV - PADRONIZADO) -->
         <div id="view-pdv" class="tab-content">
             <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Lançamento Rápido de Venda</h2>
-            <div class="card max-w-2xl mx-auto">
+            <div class="card max-w-3xl mx-auto bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+                <h3 class="font-bold text-lg mb-4 text-mendonca-black border-b border-mendonca-gold/40 pb-2">Registrar Nova Venda</h3>
                 <form id="formVenda" onsubmit="salvarVenda(event)">
                     <input type="hidden" id="vendaId">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-xs font-semibold">Data</label>
-                            <input type="date" id="vendaData" required>
+                            <label class="text-xs font-semibold text-gray-700">Data da Venda</label>
+                            <input type="date" id="vendaData" required class="p-2.5 mt-1 border rounded bg-white font-medium text-xs">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold">Produto</label>
-                            <div class="relative mt-1">
-                                <input type="text" id="vendaBuscaProduto" oninput="filtrarProdutosVenda()" placeholder="Pesquisar produto..." class="pl-8 text-sm mt-0 mb-1">
-                                <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-sm"></i>
+                            <label class="text-xs font-semibold text-gray-700">Produto Vendido</label>
+                            <div class="relative mt-1 mb-1">
+                                <input type="text" id="vendaBuscaProduto" oninput="filtrarProdutosVenda()" placeholder="Pesquisar produto..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white font-normal">
+                                <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
                             </div>
-                            <select id="vendaProduto" required></select>
+                            <select id="vendaProduto" required class="text-xs p-2.5 border rounded bg-white font-semibold text-gray-800 w-full"></select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold">Quantidade</label>
-                            <input type="text" id="vendaQtd" value="1" required>
+                            <label class="text-xs font-semibold text-gray-700">Quantidade</label>
+                            <input type="text" id="vendaQtd" value="1" required class="p-2.5 mt-1 border rounded bg-white text-xs font-semibold">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold">Canal de Vendas</label>
-                            <select id="vendaCanal" required>
+                            <label class="text-xs font-semibold text-gray-700">Canal de Vendas</label>
+                            <select id="vendaCanal" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium">
                                 <option value="Brendi/Site">Brendi/Site</option>
                                 <option value="Delivery Much">Delivery Much</option>
                                 <option value="Atendente">Atendente</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold">Forma de Pagamento</label>
-                            <select id="vendaFormaPagamento" required></select>
+                            <label class="text-xs font-semibold text-gray-700">Forma de Pagamento</label>
+                            <select id="vendaFormaPagamento" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium"></select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold">Desconto Concedido (R$)</label>
-                            <input type="text" id="vendaDesconto" value="0">
+                            <label class="text-xs font-semibold text-gray-700">Desconto Concedido (R$)</label>
+                            <input type="text" id="vendaDesconto" value="0" class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="text-xs font-semibold">Custo de Entrega Assumido pela Loja (R$)</label>
-                            <input type="text" id="vendaEntrega" value="0">
+                            <label class="text-xs font-semibold text-gray-700">Custo de Entrega Assumido pela Loja (R$)</label>
+                            <input type="text" id="vendaEntrega" value="0" class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                     </div>
-                    <button type="submit" id="btnSalvarVenda" class="btn btn-green mt-6 w-full text-lg">Registrar Venda</button>
-                    <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-400 text-white mt-2 w-full hidden">Cancelar Edição</button>
+                    <div class="mt-6">
+                        <button type="submit" id="btnSalvarVenda" class="btn btn-green w-full py-3 text-base shadow flex items-center justify-center gap-2">
+                            <i class="fas fa-check-circle"></i> Registrar Venda
+                        </button>
+                        <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-400 text-white mt-2 w-full text-xs hidden">Cancelar Edição</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -250,26 +255,26 @@
             </div>
             
             <div id="formProdutoContainer" class="card mb-6 hidden bg-mendonca-cream border border-mendonca-gold shadow-md">
-                <h3 class="font-bold text-lg mb-4 text-mendonca-black border-b pb-2" id="formProdTitle">Novo Produto & Precificação Inteligente</h3>
+                <h3 class="font-bold text-lg mb-4 text-mendonca-black border-b border-mendonca-gold/40 pb-2" id="formProdTitle">Novo Produto & Precificação Inteligente</h3>
                 <form id="formProduto" onsubmit="salvarProduto(event)">
                     <input type="hidden" id="prodId">
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                         <div>
-                            <label class="text-xs font-semibold">Nome do Produto</label>
-                            <input type="text" id="prodNome" placeholder="Ex: Pizza Calabresa Especial" required>
+                            <label class="text-xs font-semibold text-gray-700">Nome do Produto</label>
+                            <input type="text" id="prodNome" placeholder="Ex: Pizza Calabresa Especial" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold">Categoria</label>
-                            <select id="prodCat">
+                            <label class="text-xs font-semibold text-gray-700">Categoria</label>
+                            <select id="prodCat" class="p-2.5 mt-1 border rounded bg-white text-xs">
                                 <option value="Pizza">Pizza</option>
                                 <option value="Bebida">Bebida</option>
                                 <option value="Outros">Outros</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold">Custo Embalagem (R$)</label>
-                            <input type="text" id="prodCustoEmb" value="0,00" oninput="calcularSugestaoPreco()" required>
+                            <label class="text-xs font-semibold text-gray-700">Custo Embalagem (R$)</label>
+                            <input type="text" id="prodCustoEmb" value="0,00" oninput="calcularSugestaoPreco()" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                     </div>
 
@@ -285,15 +290,15 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
                             <div>
                                 <label class="text-xs font-semibold text-gray-700">Selecione o Ingrediente</label>
-                                <div class="relative mt-1">
-                                    <input type="text" id="prodBuscaIngrediente" oninput="filtrarIngredientesProduto()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2 border rounded w-full mb-1 bg-white">
-                                    <i class="fas fa-search absolute left-2.5 top-3 text-gray-400 text-xs"></i>
+                                <div class="relative mt-1 mb-1">
+                                    <input type="text" id="prodBuscaIngrediente" oninput="filtrarIngredientesProduto()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white">
+                                    <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
                                 </div>
-                                <select id="prodIngSelect" class="text-xs p-2 mt-0.5 bg-white"></select>
+                                <select id="prodIngSelect" class="text-xs p-2.5 border rounded bg-white w-full"></select>
                             </div>
                             <div>
                                 <label class="text-xs font-semibold text-gray-700">Quantidade Utilizada</label>
-                                <input type="text" id="prodIngQtd" placeholder="Ex: 250 (g/ml/un)" class="text-xs p-2 mt-0.5 bg-white">
+                                <input type="text" id="prodIngQtd" placeholder="Ex: 250 (g/ml/un)" class="text-xs p-2.5 mt-1 border rounded bg-white">
                             </div>
                             <div>
                                 <button type="button" onclick="adicionarIngredienteAoProdutoTemp()" class="btn btn-green text-xs w-full py-2.5 flex justify-center items-center gap-1">
@@ -320,19 +325,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-md border border-gray-200">
                         <div>
                             <label class="text-xs font-semibold text-gray-600">Custo Ingredientes (Auto)</label>
-                            <input type="text" id="prodCustoIng" readonly class="bg-gray-100 font-bold text-gray-800 cursor-not-allowed" value="R$ 0,00">
+                            <input type="text" id="prodCustoIng" readonly class="bg-gray-100 font-bold text-gray-800 cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
                         </div>
                         <div>
                             <label class="text-xs font-semibold text-gray-600">Custo Total (Ing + Emb)</label>
-                            <input type="text" id="prodCustoTotal" readonly class="bg-gray-100 font-bold text-mendonca-red cursor-not-allowed" value="R$ 0,00">
+                            <input type="text" id="prodCustoTotal" readonly class="bg-gray-100 font-bold text-mendonca-red cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
                         </div>
                         <div>
                             <label class="text-xs font-semibold text-blue-700">Preço Sugerido (CMV Max <span id="lblCmvMaxCfg">30</span>%)</label>
-                            <input type="text" id="prodPrecoSugerido" readonly class="bg-blue-50 font-bold text-blue-800 border-blue-300 cursor-not-allowed" value="R$ 0,00">
+                            <input type="text" id="prodPrecoSugerido" readonly class="bg-blue-50 font-bold text-blue-800 border-blue-300 cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
                         </div>
                         <div>
                             <label class="text-xs font-semibold text-green-800">Preço Cobrado Real (R$)</label>
-                            <input type="text" id="prodPreco" oninput="calcularSugestaoPreco()" placeholder="Ex: 49,90" required class="border-green-600 font-bold text-base bg-green-50/30">
+                            <input type="text" id="prodPreco" oninput="calcularSugestaoPreco()" placeholder="Ex: 49,90" required class="border-green-600 font-bold text-base bg-green-50/30 p-2 mt-1">
                         </div>
                     </div>
 
@@ -368,19 +373,19 @@
         <!-- VIEW: DESPESAS FIXAS -->
         <div id="view-despesas" class="tab-content">
             <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Despesas Fixas (Inclusos Pró-Labore)</h2>
-            <div class="card mb-4">
+            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
                 <form id="formDespesa" onsubmit="salvarDespesa(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="despId">
                     <div>
-                        <label class="text-xs font-semibold">Descrição (Ex: Aluguel, Pró-Labore)</label>
-                        <input type="text" id="despNome" placeholder="Ex: Pró-Labore Juliano" required>
+                        <label class="text-xs font-semibold text-gray-700">Descrição (Ex: Aluguel, Pró-Labore)</label>
+                        <input type="text" id="despNome" placeholder="Ex: Pró-Labore Juliano" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Valor Mensal (R$)</label>
-                        <input type="text" id="despValor" required>
+                        <label class="text-xs font-semibold text-gray-700">Valor Mensal (R$)</label>
+                        <input type="text" id="despValor" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div class="flex gap-2">
-                        <button type="submit" id="btnSalvarDesp" class="btn btn-green flex-1">Adicionar</button>
+                        <button type="submit" id="btnSalvarDesp" class="btn btn-green flex-1 text-xs py-3">Adicionar Despesa</button>
                         <button type="button" id="btnCancelarEdicaoDesp" onclick="cancelarEdicaoDespesa()" class="btn bg-gray-400 text-white hidden">X</button>
                     </div>
                 </form>
@@ -407,23 +412,23 @@
                     <i class="fas fa-camera text-base"></i> Escanear Comprovante
                 </button>
             </div>
-            <div class="card mb-6">
+            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
                 <form id="formCustoVar" onsubmit="salvarCustoVariavel(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="custoVarId">
                     <div>
-                        <label class="text-xs font-semibold">Data Compra</label>
-                        <input type="date" id="custoVarData" required>
+                        <label class="text-xs font-semibold text-gray-700">Data Compra</label>
+                        <input type="date" id="custoVarData" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Mercado / Loja</label>
-                        <input type="text" id="custoVarLocal" placeholder="Ex: Mercado X" required>
+                        <label class="text-xs font-semibold text-gray-700">Mercado / Loja</label>
+                        <input type="text" id="custoVarLocal" placeholder="Ex: Mercado X" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Valor Cupom (R$)</label>
-                        <input type="text" id="custoVarValor" required>
+                        <label class="text-xs font-semibold text-gray-700">Valor Cupom (R$)</label>
+                        <input type="text" id="custoVarValor" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
-                    <div class="md:col-span-3 flex gap-2">
-                        <button type="submit" id="btnSalvarCustoVar" class="btn btn-green flex-1">Registrar Cupom</button>
+                    <div class="md:col-span-3 flex gap-2 mt-2">
+                        <button type="submit" id="btnSalvarCustoVar" class="btn btn-green flex-1 py-3 text-xs">Registrar Cupom</button>
                         <button type="button" id="btnCancelarCustoVar" onclick="cancelarEdicaoCustoVariavel()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
                     </div>
                 </form>
@@ -454,23 +459,23 @@
             <div class="bg-purple-50 border-l-4 border-purple-600 p-3 text-xs md:text-sm text-purple-900 mb-4 rounded">
                 <i class="fas fa-info-circle mr-1"></i> As despesas desta aba representam retiradas particulares dos sócios. Elas <strong>não reduzem o Lucro Operacional</strong> da pizzaria no DRE, sendo abatidas somente no final do caixa acumulado.
             </div>
-            <div class="card mb-6">
+            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
                 <form id="formDespPessoal" onsubmit="salvarDespesaPessoal(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="despPessoalId">
                     <div>
-                        <label class="text-xs font-semibold">Data</label>
-                        <input type="date" id="despPessoalData" required>
+                        <label class="text-xs font-semibold text-gray-700">Data</label>
+                        <input type="date" id="despPessoalData" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Descrição (Ex: Conta de Luz da Casa)</label>
-                        <input type="text" id="despPessoalNome" placeholder="Ex: Mercado Pessoal" required>
+                        <label class="text-xs font-semibold text-gray-700">Descrição (Ex: Conta de Luz da Casa)</label>
+                        <input type="text" id="despPessoalNome" placeholder="Ex: Mercado Pessoal" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Valor (R$)</label>
-                        <input type="text" id="despPessoalValor" required>
+                        <label class="text-xs font-semibold text-gray-700">Valor (R$)</label>
+                        <input type="text" id="despPessoalValor" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
-                    <div class="md:col-span-3 flex gap-2">
-                        <button type="submit" id="btnSalvarDespPessoal" class="btn btn-green flex-1">Registrar Retirada Pessoal</button>
+                    <div class="md:col-span-3 flex gap-2 mt-2">
+                        <button type="submit" id="btnSalvarDespPessoal" class="btn btn-green flex-1 py-3 text-xs">Registrar Retirada Pessoal</button>
                         <button type="button" id="btnCancelarDespPessoal" onclick="cancelarEdicaoDespPessoal()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
                     </div>
                 </form>
@@ -493,31 +498,31 @@
         <!-- VIEW: INGREDIENTES -->
         <div id="view-ingredientes" class="tab-content">
             <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Ingredientes</h2>
-            <div class="card mb-6">
+            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
                 <form id="formIngrediente" onsubmit="salvarIngrediente(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
                     <input type="hidden" id="ingId">
                     <div>
-                        <label class="text-xs font-semibold">Nome Ingrediente</label>
-                        <input type="text" id="ingNome" placeholder="Ex: Mussarela" required>
+                        <label class="text-xs font-semibold text-gray-700">Nome Ingrediente</label>
+                        <input type="text" id="ingNome" placeholder="Ex: Mussarela" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Unidade</label>
-                        <select id="ingUnidade" required>
+                        <label class="text-xs font-semibold text-gray-700">Unidade</label>
+                        <select id="ingUnidade" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                             <option value="g">Grama (g)</option>
                             <option value="ml">Mililitro (ml)</option>
                             <option value="un">Unidade (un)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Qtd Embalagem</label>
-                        <input type="text" id="ingQtdEmb" placeholder="Ex: 1000 ou 1" required>
+                        <label class="text-xs font-semibold text-gray-700">Qtd Embalagem</label>
+                        <input type="text" id="ingQtdEmb" placeholder="Ex: 1000 ou 1" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Preço Pago (R$)</label>
-                        <input type="text" id="ingPrecoEmb" placeholder="Ex: 1,90 ou 35,00" required>
+                        <label class="text-xs font-semibold text-gray-700">Preço Pago (R$)</label>
+                        <input type="text" id="ingPrecoEmb" placeholder="Ex: 1,90 ou 35,00" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
-                    <div class="md:col-span-2 lg:col-span-4 flex gap-2">
-                        <button type="submit" id="btnSalvarIng" class="btn btn-green flex-1">Cadastrar Ingrediente</button>
+                    <div class="md:col-span-2 lg:col-span-4 flex gap-2 mt-2">
+                        <button type="submit" id="btnSalvarIng" class="btn btn-green flex-1 py-3 text-xs">Cadastrar Ingrediente</button>
                         <button type="button" id="btnCancelarIng" onclick="cancelarEdicaoIngrediente()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
                     </div>
                 </form>
@@ -543,27 +548,27 @@
         <div id="view-fichaTecnica" class="tab-content">
             <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Ficha Técnica</h2>
             
-            <div class="card mb-6">
+            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
                 <div class="mb-4">
                     <label class="font-bold text-sm text-mendonca-black">Selecione o Produto:</label>
-                    <select id="fichaProdutoSelect" onchange="renderFichaTecnica()" class="text-base p-2 font-semibold text-mendonca-red border-2 border-mendonca-gold mt-1"></select>
+                    <select id="fichaProdutoSelect" onchange="renderFichaTecnica()" class="text-base p-2.5 font-semibold text-mendonca-red border-2 border-mendonca-gold mt-1 bg-white rounded"></select>
                 </div>
 
-                <form id="formFichaItem" onsubmit="adicionarItemFicha(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-mendonca-cream p-3 rounded">
+                <form id="formFichaItem" onsubmit="adicionarItemFicha(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-white p-3 rounded border">
                     <div>
-                        <label class="text-xs font-semibold">Ingrediente</label>
-                        <div class="relative mt-1">
-                            <input type="text" id="fichaBuscaIngrediente" oninput="filtrarIngredientesFichaTecnica()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2 border rounded w-full mb-1 bg-white">
-                            <i class="fas fa-search absolute left-2.5 top-3 text-gray-400 text-xs"></i>
+                        <label class="text-xs font-semibold text-gray-700">Ingrediente</label>
+                        <div class="relative mt-1 mb-1">
+                            <input type="text" id="fichaBuscaIngrediente" oninput="filtrarIngredientesFichaTecnica()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white">
+                            <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
                         </div>
-                        <select id="fichaIngredienteSelect" required></select>
+                        <select id="fichaIngredienteSelect" required class="text-xs p-2.5 border rounded bg-white w-full"></select>
                     </div>
                     <div>
-                        <label class="text-xs font-semibold">Qtd Utilizada</label>
-                        <input type="text" id="fichaQtd" placeholder="Ex: 250 ou 1" required>
+                        <label class="text-xs font-semibold text-gray-700">Qtd Utilizada</label>
+                        <input type="text" id="fichaQtd" placeholder="Ex: 250 ou 1" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <button type="submit" class="btn btn-green w-full"><i class="fas fa-plus mr-1"></i>Adicionar</button>
+                        <button type="submit" class="btn btn-green w-full py-2.5 text-xs"><i class="fas fa-plus mr-1"></i>Adicionar à Ficha</button>
                     </div>
                 </form>
             </div>
@@ -680,10 +685,10 @@
                     <form id="formFormaPagamento" onsubmit="salvarFormaPagamento(event)" class="mb-4">
                         <input type="hidden" id="fpId">
                         <div class="grid grid-cols-1 gap-2">
-                            <div><label class="text-xs">Nome</label><input type="text" id="fpNome" placeholder="Ex: Pix" required></div>
+                            <div><label class="text-xs">Nome</label><input type="text" id="fpNome" placeholder="Ex: Pix" required class="p-2 border rounded"></div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-xs">Taxa (%)</label><input type="text" id="fpTaxa" value="0" required></div>
-                                <div><label class="text-xs">Taxa Fixa (R$)</label><input type="text" id="fpTaxaFixa" value="0,00" required></div>
+                                <div><label class="text-xs">Taxa (%)</label><input type="text" id="fpTaxa" value="0" required class="p-2 border rounded"></div>
+                                <div><label class="text-xs">Taxa Fixa (R$)</label><input type="text" id="fpTaxaFixa" value="0,00" required class="p-2 border rounded"></div>
                             </div>
                         </div>
                         <div class="mt-3 flex gap-2">
@@ -709,8 +714,8 @@
 
                 <div class="card space-y-3 h-fit">
                     <h3 class="text-base font-bold mb-2 border-b pb-2"><i class="fas fa-sliders-h mr-1"></i> Metas do Negócio</h3>
-                    <div><label class="text-xs font-semibold">CMV Máximo (%)</label><input type="text" id="cfgCmv" value="30"></div>
-                    <div><label class="text-xs font-semibold">Meta Margem Líquida (%)</label><input type="text" id="cfgMargem" value="20"></div>
+                    <div><label class="text-xs font-semibold">CMV Máximo (%)</label><input type="text" id="cfgCmv" value="30" class="p-2 border rounded"></div>
+                    <div><label class="text-xs font-semibold">Meta Margem Líquida (%)</label><input type="text" id="cfgMargem" value="20" class="p-2 border rounded"></div>
                     <button onclick="salvarConfig()" class="btn btn-gold w-full mt-2">Salvar Metas</button>
                 </div>
             </div>
@@ -1251,7 +1256,6 @@
             }).join('');
         }
 
-        // BUSCA RÁPIDA DE INGREDIENTES NO FORMULÁRIO DE PRODUTO
         function filtrarIngredientesProduto() {
             const busca = (document.getElementById('prodBuscaIngrediente')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('prodIngSelect');
@@ -1274,7 +1278,6 @@
             filtrarIngredientesProduto();
         }
 
-        // BUSCA RÁPIDA DE INGREDIENTES NA ABA FICHA TÉCNICA
         function filtrarIngredientesFichaTecnica() {
             const busca = (document.getElementById('fichaBuscaIngrediente')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('fichaIngredienteSelect');
@@ -1768,7 +1771,7 @@
         function cancelarEdicaoDespesa() {
             document.getElementById('formDespesa').reset();
             document.getElementById('despId').value = '';
-            document.getElementById('btnSalvarDesp').innerText = "Adicionar";
+            document.getElementById('btnSalvarDesp').innerText = "Adicionar Despesa";
             document.getElementById('btnCancelarEdicaoDesp').classList.add('hidden');
         }
 
