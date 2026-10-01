@@ -477,7 +477,8 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-md border border-gray-200">
+                    <!-- PRECIFICAÇÃO E CMV REAL (5 COLUNAS) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 bg-white p-3 rounded-md border border-gray-200">
                         <div>
                             <label class="text-xs font-semibold text-gray-600">Custo Ingredientes (Auto)</label>
                             <input type="text" id="prodCustoIng" readonly class="bg-gray-100 font-bold text-gray-800 cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
@@ -491,8 +492,12 @@
                             <input type="text" id="prodPrecoSugerido" readonly class="bg-blue-50 font-bold text-blue-800 border-blue-300 cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-green-800">Preço Cobrado Real (R$)</label>
+                            <label class="text-xs font-bold text-green-800">Preço Cobrado Real (R$)</label>
                             <input type="text" id="prodPreco" oninput="calcularSugestaoPreco()" placeholder="Ex: 49,90" required class="border-green-600 font-bold text-base bg-green-50/30 p-2 mt-1">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-purple-900">CMV Real (%)</label>
+                            <input type="text" id="prodCmvReal" readonly class="bg-purple-50 font-black text-purple-900 border-purple-300 cursor-not-allowed p-2.5 mt-1" value="0.0%">
                         </div>
                     </div>
 
@@ -781,7 +786,7 @@
             </div>
         </div>
 
-        <!-- VIEW: RESULTADOS E DRE (REFORMATADO) -->
+        <!-- VIEW: RESULTADOS E DRE -->
         <div id="view-dre" class="tab-content">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-gray-200 pb-4">
                 <div>
@@ -793,7 +798,6 @@
                 <span id="lblPeriodoDRE" class="text-xs font-bold bg-mendonca-black text-mendonca-gold px-3.5 py-1.5 rounded-md shadow border border-mendonca-gold/30"></span>
             </div>
 
-            <!-- KPIs DRE no Topo -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
                 <div class="card border-l-4 border-blue-600">
                     <p class="text-xs font-semibold text-gray-500">Fat. Líquido Total</p>
@@ -822,31 +826,26 @@
                 </div>
 
                 <div class="space-y-2.5 text-xs md:text-sm">
-                    <!-- 1. Receita Bruta -->
                     <div class="flex justify-between items-center bg-white p-3 rounded-md border shadow-sm">
                         <span class="font-bold text-gray-800">1. Faturamento Bruto (Vendas)</span>
                         <span id="dreFatBruto" class="font-bold text-green-600">R$ 0,00</span>
                     </div>
 
-                    <!-- Deduções -->
                     <div class="flex justify-between items-center bg-red-50/50 p-2.5 rounded-md border border-red-100 text-red-700">
                         <span>(-) Descontos Concedidos</span>
                         <span id="dreDesc" class="font-semibold">R$ 0,00</span>
                     </div>
 
-                    <!-- Faturamento Liquido -->
                     <div class="flex justify-between items-center bg-gray-100 p-3 rounded-md font-bold text-gray-900 border">
                         <span>2. Faturamento Líquido de Vendas</span>
                         <span id="dreFatLiq">R$ 0,00</span>
                     </div>
 
-                    <!-- Outras Receitas -->
                     <div class="flex justify-between items-center bg-blue-50/60 p-2.5 rounded-md border border-blue-100 text-blue-900 font-semibold">
                         <span>(+) Outras Receitas / Repasses de Incentivos</span>
                         <span id="dreOutrasReceitas" class="font-bold text-blue-700">R$ 0,00</span>
                     </div>
 
-                    <!-- Custos Variáveis Produção -->
                     <div class="space-y-1.5 pl-2 border-l-2 border-red-300">
                         <div class="flex justify-between items-center text-red-600">
                             <span>(-) CMV Ingredientes</span>
@@ -862,13 +861,11 @@
                         </div>
                     </div>
 
-                    <!-- Lucro Bruto -->
                     <div class="flex justify-between items-center bg-gray-100 p-3 rounded-md font-bold text-gray-900 border">
                         <span>3. Lucro Bruto</span>
                         <span id="dreLucroBruto">R$ 0,00</span>
                     </div>
 
-                    <!-- Taxas Comerciais -->
                     <div class="space-y-1.5 pl-2 border-l-2 border-yellow-400">
                         <div class="flex justify-between items-center text-red-600">
                             <span>(-) Taxas Meios Pgto</span>
@@ -880,38 +877,32 @@
                         </div>
                     </div>
 
-                    <!-- Margem de Contribuição -->
                     <div class="flex justify-between items-center bg-amber-100/70 p-3 rounded-md font-extrabold text-amber-950 border border-amber-300">
                         <span>4. MARGEM DE CONTRIBUIÇÃO</span>
                         <span id="dreMargemCont">R$ 0,00</span>
                     </div>
 
-                    <!-- Despesas Fixas -->
                     <div class="flex justify-between items-center bg-red-50/50 p-2.5 rounded-md border border-red-100 text-red-700">
                         <span>(-) Despesas Fixas (<span id="lblMultiplicadorFixas">Loja + Pró-Labore</span>)</span>
                         <span id="dreFixas" class="font-semibold">R$ 0,00</span>
                     </div>
 
-                    <!-- Lucro Líquido Operacional -->
                     <div class="flex justify-between items-center font-extrabold text-base p-3.5 bg-mendonca-black text-mendonca-gold rounded-md shadow-md border border-mendonca-gold/40">
                         <span>5. LUCRO LÍQUIDO OPERACIONAL</span>
                         <span id="dreLucroLiq" class="text-mendonca-gold text-lg">R$ 0,00</span>
                     </div>
                     
-                    <!-- Despesas Pessoais -->
                     <div class="flex justify-between items-center p-2.5 bg-purple-50 rounded-md border border-purple-200 text-purple-900 font-semibold">
                         <span>(-) Despesas Pessoais / Retiradas de Lucro</span>
                         <span id="dreDespPessoais" class="text-purple-700">R$ 0,00</span>
                     </div>
 
-                    <!-- Saldo Final -->
                     <div class="flex justify-between items-center font-black text-lg p-3.5 bg-mendonca-green text-white rounded-md shadow-md">
                         <span>6. SALDO CAIXA REMANESCENTE DA LOJA</span>
                         <span id="dreCaixaFinal" class="text-xl">R$ 0,00</span>
                     </div>
                 </div>
 
-                <!-- Indicadores Financeiros -->
                 <div class="mt-6 p-4 bg-white rounded-md border shadow-sm grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                     <div class="bg-gray-50 p-2.5 rounded border text-center">
                         <span class="text-gray-500 block font-semibold mb-0.5">Margem Líquida</span>
@@ -929,7 +920,7 @@
             </div>
         </div>
 
-        <!-- VIEW: CONFIGURAÇÕES (REFORMATADO) -->
+        <!-- VIEW: CONFIGURAÇÕES -->
         <div id="view-config" class="tab-content">
             <div class="mb-6 border-b border-gray-200 pb-4">
                 <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
@@ -939,7 +930,6 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Cartão Formas de Pagamento -->
                 <div class="card-mendonca">
                     <div class="flex items-center justify-between border-b border-mendonca-gold/40 pb-3 mb-4">
                         <h3 class="text-base font-bold text-mendonca-black flex items-center">
@@ -987,7 +977,6 @@
                     </div>
                 </div>
 
-                <!-- Cartão Metas do Negócio -->
                 <div class="card-mendonca h-fit">
                     <div class="flex items-center justify-between border-b border-mendonca-gold/40 pb-3 mb-4">
                         <h3 class="text-base font-bold text-mendonca-black flex items-center">
@@ -1622,9 +1611,24 @@
             let cmvMaxConfig = (db.config && db.config.cmvMax) ? parseValor(db.config.cmvMax) : 30;
             let precoSugerido = (cmvMaxConfig > 0) ? (custoTotal / (cmvMaxConfig / 100)) : custoTotal;
 
+            let precoCobrado = parseValor(document.getElementById('prodPreco').value);
+            let cmvReal = precoCobrado > 0 ? ((custoTotal / precoCobrado) * 100) : 0;
+
             document.getElementById('prodCustoIng').value = `R$ ${custoIngTotal.toFixed(2)}`;
             document.getElementById('prodCustoTotal').value = `R$ ${custoTotal.toFixed(2)}`;
             document.getElementById('prodPrecoSugerido').value = `R$ ${precoSugerido.toFixed(2)}`;
+            
+            const elCmvReal = document.getElementById('prodCmvReal');
+            if (elCmvReal) {
+                elCmvReal.value = `${cmvReal.toFixed(1)}%`;
+                if (cmvReal > cmvMaxConfig && precoCobrado > 0) {
+                    elCmvReal.className = "bg-red-100 font-black text-red-700 border border-red-300 cursor-not-allowed p-2.5 mt-1";
+                } else if (precoCobrado > 0) {
+                    elCmvReal.className = "bg-green-100 font-black text-green-800 border border-green-300 cursor-not-allowed p-2.5 mt-1";
+                } else {
+                    elCmvReal.className = "bg-purple-50 font-black text-purple-900 border border-purple-300 cursor-not-allowed p-2.5 mt-1";
+                }
+            }
         }
 
         function salvarProduto(e) {
