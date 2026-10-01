@@ -248,7 +248,58 @@
             </div>
         </div>
 
-        <!-- VIEW: OUTRAS RECEITAS & REPASSES (NOVA ABA) -->
+        <!-- VIEW: HISTÓRICO DE VENDAS (COM RESUMO POR FORMA DE PAGAMENTO) -->
+        <div id="view-vendas" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Histórico de Vendas</h2>
+            
+            <!-- Resumo por Forma de Pagamento -->
+            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b border-mendonca-gold/40 pb-2 gap-2">
+                    <h3 class="font-bold text-base md:text-lg text-mendonca-black flex items-center">
+                        <i class="fas fa-wallet text-mendonca-gold mr-2"></i> Totais Apurados por Forma de Pagamento
+                    </h3>
+                    <span id="lblPeriodoVendasResumo" class="text-xs font-bold bg-mendonca-black text-mendonca-gold px-3 py-1 rounded shadow"></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="text-xs md:text-sm w-full border border-gray-200 rounded bg-white">
+                        <thead>
+                            <tr class="bg-gray-100 border-b">
+                                <th class="p-2.5">Forma de Pagamento</th>
+                                <th class="p-2.5 text-center">Qtd. Vendas</th>
+                                <th class="p-2.5">Total Bruto</th>
+                                <th class="p-2.5 text-mendonca-red">Total Taxas</th>
+                                <th class="p-2.5 text-mendonca-green">Total Líquido</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyResumoPagamentos"></tbody>
+                        <tfoot id="tfootResumoPagamentos" class="bg-gray-100 font-bold border-t-2 border-gray-300"></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabela Detalhada das Vendas -->
+            <div class="card overflow-x-auto">
+                <h3 class="font-bold text-base mb-3 text-mendonca-black">Detalhamento Individual das Vendas</h3>
+                <table id="tabelaVendas">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Produto</th>
+                            <th>Qtd</th>
+                            <th>Canal</th>
+                            <th>Pagamento</th>
+                            <th>Bruto</th>
+                            <th>Taxa</th>
+                            <th>Líquido</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- VIEW: OUTRAS RECEITAS & REPASSES -->
         <div id="view-receitas" class="tab-content">
             <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Outras Receitas & Repasses (Incentivos)</h2>
             <div class="bg-blue-50 border-l-4 border-blue-600 p-3 text-xs md:text-sm text-blue-900 mb-4 rounded">
@@ -703,29 +754,6 @@
                 </div>
             </div>
         </div>
-        
-        <!-- VIEW: HISTÓRICO DE VENDAS -->
-        <div id="view-vendas" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Histórico de Vendas</h2>
-            <div class="card overflow-x-auto">
-                <table id="tabelaVendas">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Produto</th>
-                            <th>Qtd</th>
-                            <th>Canal</th>
-                            <th>Pagamento</th>
-                            <th>Bruto</th>
-                            <th>Taxa</th>
-                            <th>Líquido</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
 
         <!-- VIEW: CONFIGURAÇÕES -->
         <div id="view-config" class="tab-content">
@@ -972,7 +1000,7 @@
                     let local = txt.replace('lançar', '').replace('lancar', '').replace('custo variável', '').replace('custo variavel', '').replace(valor.toString(), '').replace('reais', '').trim() || 'Mercado Geral';
                     db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: local, valor: valor });
                     salvarBD();
-                    falarVoz(`Lançamento de ${valor} reais confirmado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                    falarVoz(`Lançamento de ${valor} reais confirmed! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
                 } else {
                     falarVoz("Qual foi o valor do custo variável?", 'CUSTO_VAR_VALOR');
                 }
@@ -1730,29 +1758,108 @@
         }
 
         function renderVendas() {
-            const tbody = document.querySelector('#tabelaVendas tbody');
-            if(!tbody) return;
-            tbody.innerHTML = garantirArray(db.vendas).map(v => {
-                let valorBruto = (parseValor(v.quantidade) * parseValor(v.precoUnitario)) - parseValor(v.desconto);
-                let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
-                let taxaCalculada = fp ? (valorBruto * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa) : 0;
-                let liqComTaxa = valorBruto - taxaCalculada;
+            let tipoFiltro = document.getElementById('tipoFiltro')?.value || 'mensal';
+            let anoFiltro, mesFiltro, textoPeriodo;
 
-                return `<tr>
-                    <td>${v.data}</td>
-                    <td class="font-semibold">${v.produtoNome}</td>
-                    <td>${v.quantidade}</td>
-                    <td>${v.canal}</td>
-                    <td>${fp ? fp.nome : 'N/A'}</td>
-                    <td>R$ ${valorBruto.toFixed(2)}</td>
-                    <td class="text-red-600">R$ ${taxaCalculada.toFixed(2)}</td>
-                    <td class="font-bold text-green-700">R$ ${liqComTaxa.toFixed(2)}</td>
-                    <td>
-                        <button onclick="editarVenda('${v.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
-                        <button onclick="excluirVenda('${v.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
-                    </td>
+            if (tipoFiltro === 'mensal') {
+                let filtroVal = document.getElementById('filtroMesAno')?.value;
+                if (filtroVal) [anoFiltro, mesFiltro] = filtroVal.split('-');
+                else {
+                    let hoje = new Date();
+                    anoFiltro = hoje.getFullYear().toString();
+                    mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
+                }
+                let nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                textoPeriodo = `${nomesMeses[parseInt(mesFiltro) - 1]} / ${anoFiltro}`;
+            } else {
+                anoFiltro = document.getElementById('filtroAnoOnly')?.value || new Date().getFullYear().toString();
+                textoPeriodo = `Ano Acumulado de ${anoFiltro}`;
+            }
+
+            const lblResumo = document.getElementById('lblPeriodoVendasResumo');
+            if (lblResumo) lblResumo.innerText = textoPeriodo;
+
+            let resumoPagamentos = {};
+            garantirArray(db.formasPagamento).forEach(fp => {
+                resumoPagamentos[fp.id] = { nome: fp.nome, qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
+            });
+
+            let totalGeralQtd = 0, totalGeralBruto = 0, totalGeralTaxa = 0, totalGeralLiquido = 0;
+            const tbodyVendas = document.querySelector('#tabelaVendas tbody');
+            let htmlVendas = '';
+
+            garantirArray(db.vendas).forEach(v => {
+                if (!v.data) return;
+                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
+                let pertence = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
+
+                if (pertence) {
+                    let valorBruto = (parseValor(v.quantidade) * parseValor(v.precoUnitario)) - parseValor(v.desconto);
+                    let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
+                    let taxaCalculada = fp ? (valorBruto * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa) : 0;
+                    let liqComTaxa = valorBruto - taxaCalculada;
+
+                    let key = fp ? fp.id : 'outros';
+                    if (!resumoPagamentos[key]) {
+                        resumoPagamentos[key] = { nome: fp ? fp.nome : 'Outros / Não especificado', qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
+                    }
+                    resumoPagamentos[key].qtd += 1;
+                    resumoPagamentos[key].bruto += valorBruto;
+                    resumoPagamentos[key].taxa += taxaCalculada;
+                    resumoPagamentos[key].liquido += liqComTaxa;
+
+                    totalGeralQtd += 1;
+                    totalGeralBruto += valorBruto;
+                    totalGeralTaxa += taxaCalculada;
+                    totalGeralLiquido += liqComTaxa;
+
+                    htmlVendas += `<tr>
+                        <td>${v.data}</td>
+                        <td class="font-semibold">${v.produtoNome}</td>
+                        <td>${v.quantidade}</td>
+                        <td>${v.canal}</td>
+                        <td>${fp ? fp.nome : 'N/A'}</td>
+                        <td>R$ ${valorBruto.toFixed(2)}</td>
+                        <td class="text-red-600">R$ ${taxaCalculada.toFixed(2)}</td>
+                        <td class="font-bold text-green-700">R$ ${liqComTaxa.toFixed(2)}</td>
+                        <td>
+                            <button onclick="editarVenda('${v.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                            <button onclick="excluirVenda('${v.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            if (tbodyVendas) tbodyVendas.innerHTML = htmlVendas || `<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhuma venda registrada para este período.</td></tr>`;
+
+            const tbodyResumo = document.getElementById('tbodyResumoPagamentos');
+            const tfootResumo = document.getElementById('tfootResumoPagamentos');
+
+            if (tbodyResumo) {
+                let htmlResumo = '';
+                Object.values(resumoPagamentos).forEach(item => {
+                    if (item.qtd > 0 || item.bruto > 0) {
+                        htmlResumo += `<tr class="hover:bg-gray-50">
+                            <td class="font-semibold text-gray-800 p-2.5">${item.nome}</td>
+                            <td class="text-center p-2.5">${item.qtd}</td>
+                            <td class="font-medium p-2.5">R$ ${item.bruto.toFixed(2)}</td>
+                            <td class="text-red-600 font-semibold p-2.5">R$ ${item.taxa.toFixed(2)}</td>
+                            <td class="text-green-700 font-bold p-2.5">R$ ${item.liquido.toFixed(2)}</td>
+                        </tr>`;
+                    }
+                });
+                tbodyResumo.innerHTML = htmlResumo || `<tr><td colspan="5" class="text-center text-gray-400 py-3">Nenhum valor apurado no período.</td></tr>`;
+            }
+
+            if (tfootResumo) {
+                tfootResumo.innerHTML = `<tr>
+                    <td class="p-2.5">TOTAL GERAL APURADO</td>
+                    <td class="p-2.5 text-center">${totalGeralQtd}</td>
+                    <td class="p-2.5 text-black font-extrabold">R$ ${totalGeralBruto.toFixed(2)}</td>
+                    <td class="p-2.5 text-red-600 font-extrabold">R$ ${totalGeralTaxa.toFixed(2)}</td>
+                    <td class="p-2.5 text-green-700 font-extrabold">R$ ${totalGeralLiquido.toFixed(2)}</td>
                 </tr>`;
-            }).join('');
+            }
         }
 
         function salvarDespesa(e) {
