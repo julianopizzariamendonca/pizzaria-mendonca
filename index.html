@@ -285,6 +285,10 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
                             <div>
                                 <label class="text-xs font-semibold text-gray-700">Selecione o Ingrediente</label>
+                                <div class="relative mt-1">
+                                    <input type="text" id="prodBuscaIngrediente" oninput="filtrarIngredientesProduto()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2 border rounded w-full mb-1 bg-white">
+                                    <i class="fas fa-search absolute left-2.5 top-3 text-gray-400 text-xs"></i>
+                                </div>
                                 <select id="prodIngSelect" class="text-xs p-2 mt-0.5 bg-white"></select>
                             </div>
                             <div>
@@ -548,6 +552,10 @@
                 <form id="formFichaItem" onsubmit="adicionarItemFicha(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-mendonca-cream p-3 rounded">
                     <div>
                         <label class="text-xs font-semibold">Ingrediente</label>
+                        <div class="relative mt-1">
+                            <input type="text" id="fichaBuscaIngrediente" oninput="filtrarIngredientesFichaTecnica()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2 border rounded w-full mb-1 bg-white">
+                            <i class="fas fa-search absolute left-2.5 top-3 text-gray-400 text-xs"></i>
+                        </div>
                         <select id="fichaIngredienteSelect" required></select>
                     </div>
                     <div>
@@ -827,7 +835,7 @@
 
                 const utterance = new SpeechSynthesisUtterance(texto);
                 utterance.lang = 'pt-BR';
-                utterance.rate = 1.25; // FALA RÁPIDA E DINÂMICA
+                utterance.rate = 1.25;
 
                 utterance.onend = () => {
                     if (proximoEstado === 'PERGUNTAR_OUTRO') {
@@ -877,7 +885,6 @@
         function processarVoz(texto) {
             const txt = texto.toLowerCase();
 
-            // RESPOSTA DE CONTINUAÇÃO (SIM / NÃO)
             if (estadoVoz === 'PERGUNTAR_OUTRO') {
                 if (txt.includes('não') || txt.includes('nao') || txt.includes('não preciso') || txt.includes('não obrigado') || txt.includes('cancelar')) {
                     falarVoz("Perfeito!", 'FINALIZAR_VOLTAR_DASHBOARD');
@@ -888,7 +895,6 @@
                 }
             }
 
-            // EXPLICAR DRE / RESUMO FINANCEIRO
             if (txt.includes('dre') || txt.includes('explicar dre') || txt.includes('resultado') || txt.includes('resumo') || txt.includes('como estão os resultados') || txt.includes('como esta o caixa')) {
                 nav('dre');
                 let fat = document.getElementById('dreFatLiq').innerText;
@@ -901,7 +907,6 @@
                 return;
             }
 
-            // LANÇAR CUSTO VARIÁVEL
             if (txt.includes('custo variável') || txt.includes('custo variavel') || txt.includes('cupom') || txt.includes('mercado')) {
                 let valor = extrairNumeroDeTexto(txt);
                 let hoje = new Date().toISOString().slice(0,10);
@@ -927,7 +932,6 @@
                 return;
             }
 
-            // LANÇAR DESPESA PESSOAL
             if (txt.includes('despesa pessoal') || txt.includes('retirada') || txt.includes('conta pessoal')) {
                 let valor = extrairNumeroDeTexto(txt);
                 let hoje = new Date().toISOString().slice(0,10);
@@ -950,7 +954,6 @@
                 return;
             }
 
-            // LANÇAR DESPESA FIXA
             if (txt.includes('despesa fixa') || txt.includes('aluguel') || txt.includes('pró-labore') || txt.includes('pro labore')) {
                 let valor = extrairNumeroDeTexto(txt);
                 if (valor > 0) {
@@ -971,7 +974,6 @@
                 return;
             }
 
-            // ADICIONAR INGREDIENTE
             if (txt.includes('ingrediente') || txt.includes('cadastrar ingrediente')) {
                 falarVoz("Qual é o nome do ingrediente e o preço pago?", 'ING_DETALHES');
                 return;
@@ -986,7 +988,6 @@
                 return;
             }
 
-            // LANÇAR VENDA
             if (txt.includes('venda') || txt.includes('lançar venda') || txt.includes('vendi')) {
                 let prods = garantirArray(db.produtos);
                 let pEncontrado = prods.find(p => txt.includes(p.nome.toLowerCase()));
@@ -1025,7 +1026,6 @@
                 return;
             }
 
-            // NAVEGAÇÃO RÁPIDA
             if (txt.includes('dashboard') || txt.includes('início')) { nav('dashboard'); fecharAssistenteVoz(); return; }
             if (txt.includes('produtos')) { nav('produtos'); fecharAssistenteVoz(); return; }
             if (txt.includes('vendas')) { nav('vendas'); fecharAssistenteVoz(); return; }
@@ -1251,12 +1251,41 @@
             }).join('');
         }
 
-        function preencherSelectIngredientesProduto() {
+        // BUSCA RÁPIDA DE INGREDIENTES NO FORMULÁRIO DE PRODUTO
+        function filtrarIngredientesProduto() {
+            const busca = (document.getElementById('prodBuscaIngrediente')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('prodIngSelect');
             if (!sel) return;
-            let ingredientes = garantirArray(db.ingredientes);
-            if (ingredientes.length === 0) sel.innerHTML = `<option value="">Nenhum ingrediente cadastrado</option>`;
-            else sel.innerHTML = ingredientes.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+
+            const ingredientesFiltrados = garantirArray(db.ingredientes).filter(i => i.nome.toLowerCase().includes(busca));
+            if (ingredientesFiltrados.length === 0) {
+                sel.innerHTML = `<option value="">Nenhum ingrediente encontrado</option>`;
+            } else {
+                sel.innerHTML = ingredientesFiltrados.map(i => {
+                    let c = i.qtdEmbalagem > 0 ? (i.precoEmbalagem / i.qtdEmbalagem) : 0;
+                    return `<option value="${i.id}">${i.nome} (R$ ${c.toFixed(4)}/${i.unidade})</option>`;
+                }).join('');
+            }
+        }
+
+        function preencherSelectIngredientesProduto() {
+            const buscaInput = document.getElementById('prodBuscaIngrediente');
+            if (buscaInput) buscaInput.value = '';
+            filtrarIngredientesProduto();
+        }
+
+        // BUSCA RÁPIDA DE INGREDIENTES NA ABA FICHA TÉCNICA
+        function filtrarIngredientesFichaTecnica() {
+            const busca = (document.getElementById('fichaBuscaIngrediente')?.value || '').toLowerCase().trim();
+            const sel = document.getElementById('fichaIngredienteSelect');
+            if (!sel) return;
+
+            const ingredientesFiltrados = garantirArray(db.ingredientes).filter(i => i.nome.toLowerCase().includes(busca));
+            if (ingredientesFiltrados.length === 0) {
+                sel.innerHTML = `<option value="">Nenhum ingrediente encontrado</option>`;
+            } else {
+                sel.innerHTML = ingredientesFiltrados.map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
+            }
         }
 
         function mostrarFormProduto(id = null) {
@@ -1502,10 +1531,9 @@
             if (selectedProdId && produtos.some(p => p.id == selectedProdId)) selProd.value = selectedProdId;
 
             let prodId = selProd.value;
-            const selIng = document.getElementById('fichaIngredienteSelect');
-            if(selIng) {
-                selIng.innerHTML = garantirArray(db.ingredientes).map(i => `<option value="${i.id}">${i.nome}</option>`).join('');
-            }
+            const buscaInputFicha = document.getElementById('fichaBuscaIngrediente');
+            if (buscaInputFicha) buscaInputFicha.value = '';
+            filtrarIngredientesFichaTecnica();
 
             const tbody = document.querySelector('#tabelaFichaTecnica tbody');
             let totalCusto = 0;
