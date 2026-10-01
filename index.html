@@ -45,19 +45,36 @@
         }
     </script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f5f7; -webkit-tap-highlight-color: transparent; }
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.2s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .card { background: white; border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); padding: 1rem; }
-        input, select { width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; }
-        button.btn { padding: 0.625rem 1rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card { background: white; border-radius: 0.5rem; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04); padding: 1.25rem; }
+        .card-mendonca { background: #FFF3E0; border: 1px solid #F9A825; border-radius: 0.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.05); padding: 1.25rem; }
+        
+        input, select { 
+            width: 100%; 
+            border: 1px solid #d1d5db; 
+            border-radius: 0.375rem; 
+            font-size: 0.875rem; 
+            outline: none;
+            transition: all 0.2s ease-in-out;
+        }
+        input:focus, select:focus {
+            border-color: #F9A825;
+            box-shadow: 0 0 0 2px rgba(249, 168, 37, 0.25);
+        }
+
+        button.btn { padding: 0.625rem 1rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-red { background: #E63946; color: white; } .btn-red:hover { background: #c5303c; }
         .btn-green { background: #2E7D32; color: white; } .btn-green:hover { background: #246328; }
         .btn-gold { background: #F9A825; color: #1A1A1A; } .btn-gold:hover { background: #d6901c; }
+        .btn-black { background: #1A1A1A; color: #F9A825; } .btn-black:hover { background: #000000; }
+
         table { width: 100%; text-align: left; border-collapse: collapse; font-size: 0.875rem; }
-        th, td { padding: 0.625rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
-        th { background: #FFF3E0; color: #1A1A1A; font-weight: 600; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+        th { background: #FFF3E0; color: #1A1A1A; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
         
         .pulse-mic { animation: pulse 1.2s infinite; }
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.8); } 70% { transform: scale(1.1); box-shadow: 0 0 0 18px rgba(230, 57, 70, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); } }
@@ -89,10 +106,10 @@
     <input type="file" id="cameraDespPessoalInput" accept="image/*" capture="environment" class="hidden" onchange="processarFotoComprovante(event, 'despPessoal')">
 
     <!-- Header Mobile -->
-    <header class="md:hidden bg-mendonca-black text-white p-4 flex justify-between items-center z-20 shadow-md">
+    <header class="md:hidden bg-mendonca-black text-white p-4 flex justify-between items-center z-20 shadow-md border-b border-mendonca-gold/30">
         <div class="flex items-center space-x-2">
             <i class="fas fa-pizza-slice text-mendonca-gold text-xl"></i>
-            <span class="font-bold text-lg text-mendonca-gold">Mendonça</span>
+            <span class="font-bold text-lg text-mendonca-gold tracking-wide">Mendonça</span>
         </div>
         <button onclick="toggleMobileMenu()" class="text-white text-2xl focus:outline-none p-1">
             <i class="fas fa-bars" id="menuIcon"></i>
@@ -104,26 +121,29 @@
 
     <!-- Sidebar / Nav -->
     <aside id="sidebar" class="fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-in-out w-64 bg-mendonca-black text-white flex flex-col h-full shadow-xl z-30">
-        <div class="p-6 text-center border-b border-gray-700 hidden md:block">
-            <h1 class="text-2xl font-bold text-mendonca-gold">Mendonça</h1>
-            <p class="text-xs text-gray-400">Gestão de Pizzaria</p>
+        <div class="p-6 text-center border-b border-gray-800 hidden md:block">
+            <div class="flex items-center justify-center space-x-2 mb-1">
+                <i class="fas fa-pizza-slice text-mendonca-gold text-2xl"></i>
+                <h1 class="text-2xl font-extrabold text-mendonca-gold tracking-wide">Mendonça</h1>
+            </div>
+            <p class="text-xs text-gray-400 font-medium">Gestão de Pizzaria</p>
         </div>
-        <nav class="flex-1 overflow-y-auto p-4 space-y-1.5">
-            <button onclick="nav('dashboard')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-chart-line w-6"></i> Dashboard</button>
-            <button onclick="nav('pdv')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cash-register w-6"></i> Lançar Venda</button>
-            <button onclick="nav('vendas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-shopping-cart w-6"></i> Histórico Vendas</button>
-            <button onclick="nav('receitas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-hand-holding-usd w-6"></i> Outras Receitas</button>
-            <button onclick="nav('produtos')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-pizza-slice w-6"></i> Produtos & CMV</button>
-            <button onclick="nav('despesas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-file-invoice-dollar w-6"></i> Despesas Fixas</button>
-            <button onclick="nav('custosVariaveis')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-receipt w-6"></i> Custos Variáveis</button>
-            <button onclick="nav('despesasPessoais')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-user-tag w-6"></i> Despesas Pessoais</button>
-            <button onclick="nav('ingredientes')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cubes w-6"></i> Ingredientes</button>
-            <button onclick="nav('fichaTecnica')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-clipboard-list w-6"></i> Ficha Técnica</button>
-            <button onclick="nav('dre')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-calculator w-6"></i> DRE & Resultado</button>
-            <button onclick="nav('config')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cog w-6"></i> Configurações</button>
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+            <button onclick="nav('dashboard')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-chart-line w-6 text-mendonca-gold"></i> Dashboard</button>
+            <button onclick="nav('pdv')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cash-register w-6 text-mendonca-gold"></i> Lançar Venda</button>
+            <button onclick="nav('vendas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-shopping-cart w-6 text-mendonca-gold"></i> Histórico Vendas</button>
+            <button onclick="nav('receitas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-hand-holding-usd w-6 text-mendonca-gold"></i> Outras Receitas</button>
+            <button onclick="nav('produtos')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-pizza-slice w-6 text-mendonca-gold"></i> Produtos & CMV</button>
+            <button onclick="nav('despesas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-file-invoice-dollar w-6 text-mendonca-gold"></i> Despesas Fixas</button>
+            <button onclick="nav('custosVariaveis')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-receipt w-6 text-mendonca-gold"></i> Custos Variáveis</button>
+            <button onclick="nav('despesasPessoais')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-user-tag w-6 text-mendonca-gold"></i> Despesas Pessoais</button>
+            <button onclick="nav('ingredientes')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cubes w-6 text-mendonca-gold"></i> Ingredientes</button>
+            <button onclick="nav('fichaTecnica')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-clipboard-list w-6 text-mendonca-gold"></i> Ficha Técnica</button>
+            <button onclick="nav('dre')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-calculator w-6 text-mendonca-gold"></i> DRE & Resultado</button>
+            <button onclick="nav('config')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cog w-6 text-mendonca-gold"></i> Configurações</button>
         </nav>
-        <div class="p-4 border-t border-gray-700">
-            <button onclick="exportarDados()" class="w-full text-left p-2 rounded hover:bg-gray-800 text-sm flex items-center"><i class="fas fa-download w-6"></i> Backup JSON</button>
+        <div class="p-4 border-t border-gray-800">
+            <button onclick="exportarDados()" class="w-full text-left p-2.5 rounded hover:bg-gray-800 text-xs font-semibold flex items-center text-gray-300 hover:text-white"><i class="fas fa-download w-6 text-mendonca-gold"></i> Backup JSON</button>
         </div>
     </aside>
 
@@ -131,7 +151,7 @@
     <main class="flex-1 h-full overflow-y-auto bg-gray-50 p-4 md:p-8 relative">
         
         <!-- Botão Flutuante Microfone -->
-        <button onclick="iniciarAssistenteVoz()" class="fixed bottom-6 right-6 z-40 bg-mendonca-red hover:bg-red-700 text-white rounded-full p-4 shadow-2xl flex items-center justify-center border-2 border-mendonca-gold" title="Ativar Assistente">
+        <button onclick="iniciarAssistenteVoz()" class="fixed bottom-6 right-6 z-40 bg-mendonca-red hover:bg-red-700 text-white rounded-full p-4 shadow-2xl flex items-center justify-center border-2 border-mendonca-gold transition transform hover:scale-105" title="Ativar Assistente">
             <i class="fas fa-microphone text-2xl"></i>
         </button>
 
@@ -140,54 +160,60 @@
 
         <!-- VIEW: DASHBOARD -->
         <div id="view-dashboard" class="tab-content active">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-2">
-                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Visão Geral</h2>
-                <div class="flex flex-wrap items-center gap-2 bg-white p-2 rounded border shadow-sm">
-                    <label class="text-xs font-semibold text-gray-600">Visão:</label>
-                    <select id="tipoFiltro" onchange="alternarTipoFiltro()" class="text-xs p-1 border rounded bg-gray-50 font-bold text-mendonca-black">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-gray-200 pb-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                        <i class="fas fa-chart-line text-mendonca-gold mr-2.5"></i> Visão Geral
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Acompanhamento dos principais indicadores de desempenho</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 bg-white p-2 rounded-lg border shadow-sm">
+                    <label class="text-xs font-bold text-gray-600">Visão:</label>
+                    <select id="tipoFiltro" onchange="alternarTipoFiltro()" class="text-xs p-1.5 border rounded bg-gray-50 font-bold text-mendonca-black">
                         <option value="mensal">Mensal</option>
                         <option value="anual">Anual (Acumulado)</option>
                     </select>
                     
                     <div id="containerFiltroMes" class="inline-block">
-                        <input type="month" id="filtroMesAno" onchange="atualizarTudo()" class="text-xs p-1 border rounded">
+                        <input type="month" id="filtroMesAno" onchange="atualizarTudo()" class="text-xs p-1.5 border rounded">
                     </div>
                     
                     <div id="containerFiltroAno" class="hidden inline-block">
-                        <select id="filtroAnoOnly" onchange="atualizarTudo()" class="text-xs p-1 border rounded font-semibold text-mendonca-red"></select>
+                        <select id="filtroAnoOnly" onchange="atualizarTudo()" class="text-xs p-1.5 border rounded font-semibold text-mendonca-red"></select>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
                 <div class="card border-l-4 border-blue-500">
-                    <p class="text-xs text-gray-500">Faturamento Líq.</p>
-                    <h3 class="text-base md:text-xl font-bold" id="dash-fat">R$ 0,00</h3>
+                    <p class="text-xs font-semibold text-gray-500">Faturamento Líq.</p>
+                    <h3 class="text-base md:text-xl font-black text-gray-800 mt-1" id="dash-fat">R$ 0,00</h3>
                 </div>
                 <div class="card border-l-4 border-mendonca-red">
-                    <p class="text-xs text-gray-500">Custo Total</p>
-                    <h3 class="text-base md:text-xl font-bold" id="dash-cmv">R$ 0,00</h3>
+                    <p class="text-xs font-semibold text-gray-500">Custo Total (CMV)</p>
+                    <h3 class="text-base md:text-xl font-black text-mendonca-red mt-1" id="dash-cmv">R$ 0,00</h3>
                 </div>
                 <div class="card border-l-4 border-mendonca-gold">
-                    <p class="text-xs text-gray-500">Despesas Fixas</p>
-                    <h3 class="text-base md:text-xl font-bold" id="dash-fixas">R$ 0,00</h3>
+                    <p class="text-xs font-semibold text-gray-500">Despesas Fixas</p>
+                    <h3 class="text-base md:text-xl font-black text-gray-800 mt-1" id="dash-fixas">R$ 0,00</h3>
                 </div>
                 <div class="card border-l-4 border-mendonca-green">
-                    <p class="text-xs text-gray-500">Lucro Líq. Operacional</p>
-                    <h3 class="text-base md:text-xl font-bold text-green-700" id="dash-lucro">R$ 0,00</h3>
+                    <p class="text-xs font-semibold text-gray-500">Lucro Operacional</p>
+                    <h3 class="text-base md:text-xl font-black text-green-700 mt-1" id="dash-lucro">R$ 0,00</h3>
                 </div>
-                <div class="card border-l-4 border-purple-600 bg-purple-50/30">
-                    <p class="text-xs text-purple-900 font-semibold">Despesas Pessoais</p>
-                    <h3 class="text-base md:text-xl font-bold text-purple-700" id="dash-pessoais">R$ 0,00</h3>
+                <div class="card border-l-4 border-purple-600 bg-purple-50/20">
+                    <p class="text-xs font-semibold text-purple-900">Despesas Pessoais</p>
+                    <h3 class="text-base md:text-xl font-black text-purple-700 mt-1" id="dash-pessoais">R$ 0,00</h3>
                 </div>
             </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="card">
-                    <h3 class="font-bold mb-4 text-sm md:text-base">Distribuição do Faturamento</h3>
+                    <h3 class="font-bold mb-4 text-sm md:text-base text-mendonca-black border-b pb-2">Distribuição do Faturamento</h3>
                     <canvas id="chartDist"></canvas>
                 </div>
                 <div class="card">
-                    <h3 class="font-bold mb-4 text-sm md:text-base">Top Pizzas Mais Lucrativas (R$)</h3>
+                    <h3 class="font-bold mb-4 text-sm md:text-base text-mendonca-black border-b pb-2">Top Pizzas Mais Lucrativas (R$)</h3>
                     <canvas id="chartTopPizzas"></canvas>
                 </div>
             </div>
@@ -195,18 +221,30 @@
 
         <!-- VIEW: LANÇAR VENDA (PDV) -->
         <div id="view-pdv" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Lançamento Rápido de Venda</h2>
-            <div class="card max-w-3xl mx-auto bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
-                <h3 class="font-bold text-lg mb-4 text-mendonca-black border-b border-mendonca-gold/40 pb-2">Registrar Nova Venda</h3>
+            <div class="mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                    <i class="fas fa-cash-register text-mendonca-gold mr-2.5"></i> Lançamento Rápido de Venda
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Registre aqui novas saídas de caixa e pedidos realizados</p>
+            </div>
+
+            <div class="card-mendonca max-w-3xl mx-auto">
+                <div class="flex items-center justify-between border-b border-mendonca-gold/40 pb-3 mb-4">
+                    <h3 class="font-bold text-lg text-mendonca-black flex items-center">
+                        <i class="fas fa-plus-circle text-mendonca-red mr-2"></i> Registrar Nova Venda
+                    </h3>
+                    <span class="text-xs bg-mendonca-black text-mendonca-gold px-2.5 py-1 rounded font-bold uppercase">PDV Mendonça</span>
+                </div>
+                
                 <form id="formVenda" onsubmit="salvarVenda(event)">
                     <input type="hidden" id="vendaId">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Data da Venda</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Data da Venda</label>
                             <input type="date" id="vendaData" required class="p-2.5 mt-1 border rounded bg-white font-medium text-xs">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Produto Vendido</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Produto Vendido</label>
                             <div class="relative mt-1 mb-1">
                                 <input type="text" id="vendaBuscaProduto" oninput="filtrarProdutosVenda()" placeholder="Pesquisar produto..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white font-normal">
                                 <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
@@ -214,11 +252,11 @@
                             <select id="vendaProduto" required class="text-xs p-2.5 border rounded bg-white font-semibold text-gray-800 w-full"></select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Quantidade</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Quantidade</label>
                             <input type="text" id="vendaQtd" value="1" required class="p-2.5 mt-1 border rounded bg-white text-xs font-semibold">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Canal de Vendas</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Canal de Vendas</label>
                             <select id="vendaCanal" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium">
                                 <option value="Brendi/Site">Brendi/Site</option>
                                 <option value="Delivery Much">Delivery Much</option>
@@ -226,34 +264,39 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Forma de Pagamento</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Forma de Pagamento</label>
                             <select id="vendaFormaPagamento" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium"></select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Desconto Concedido (R$)</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Desconto Concedido (R$)</label>
                             <input type="text" id="vendaDesconto" value="0" class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="text-xs font-semibold text-gray-700">Custo de Entrega Assumido pela Loja (R$)</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Custo de Entrega Assumido pela Loja (R$)</label>
                             <input type="text" id="vendaEntrega" value="0" class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                     </div>
                     <div class="mt-6">
-                        <button type="submit" id="btnSalvarVenda" class="btn btn-green w-full py-3 text-base shadow flex items-center justify-center gap-2">
+                        <button type="submit" id="btnSalvarVenda" class="btn btn-green w-full py-3 text-sm shadow-md flex items-center justify-center gap-2 font-bold uppercase tracking-wider">
                             <i class="fas fa-check-circle"></i> Registrar Venda
                         </button>
-                        <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-400 text-white mt-2 w-full text-xs hidden">Cancelar Edição</button>
+                        <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-500 text-white mt-2 w-full text-xs hidden uppercase font-bold">Cancelar Edição</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- VIEW: HISTÓRICO DE VENDAS (COM RESUMO POR FORMA DE PAGAMENTO) -->
+        <!-- VIEW: HISTÓRICO DE VENDAS -->
         <div id="view-vendas" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Histórico de Vendas</h2>
+            <div class="mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                    <i class="fas fa-shopping-cart text-mendonca-gold mr-2.5"></i> Histórico de Vendas
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Resumo financeiro das vendas apuradas e detalhamento das transações</p>
+            </div>
             
             <!-- Resumo por Forma de Pagamento -->
-            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+            <div class="card-mendonca mb-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b border-mendonca-gold/40 pb-2 gap-2">
                     <h3 class="font-bold text-base md:text-lg text-mendonca-black flex items-center">
                         <i class="fas fa-wallet text-mendonca-gold mr-2"></i> Totais Apurados por Forma de Pagamento
@@ -279,7 +322,7 @@
 
             <!-- Tabela Detalhada das Vendas -->
             <div class="card overflow-x-auto">
-                <h3 class="font-bold text-base mb-3 text-mendonca-black">Detalhamento Individual das Vendas</h3>
+                <h3 class="font-bold text-base mb-3 text-mendonca-black border-b pb-2">Detalhamento Individual das Vendas</h3>
                 <table id="tabelaVendas">
                     <thead>
                         <tr>
@@ -301,35 +344,43 @@
 
         <!-- VIEW: OUTRAS RECEITAS & REPASSES -->
         <div id="view-receitas" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Outras Receitas & Repasses (Incentivos)</h2>
-            <div class="bg-blue-50 border-l-4 border-blue-600 p-3 text-xs md:text-sm text-blue-900 mb-4 rounded">
-                <i class="fas fa-info-circle mr-1"></i> Utilize esta aba para registrar <strong>repasses de plataformas (ex: Delivery Much, iFood)</strong>, reembolso de cupons promocionais ou outras entradas financeiras que não são vendas diretas de balcão.
+            <div class="mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                    <i class="fas fa-hand-holding-usd text-mendonca-gold mr-2.5"></i> Outras Receitas & Repasses (Incentivos)
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Registre entradas extraordinárias, repasses do iFood/Delivery Much e bônus</p>
             </div>
-            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-3.5 text-xs text-blue-900 mb-6 rounded-lg shadow-sm">
+                <i class="fas fa-info-circle mr-1.5 text-blue-600 text-sm"></i> Utilize esta aba para registrar <strong>repasses de plataformas (ex: Delivery Much, iFood)</strong>, reembolso de cupons promocionais ou outras entradas financeiras que não são vendas diretas de balcão.
+            </div>
+
+            <div class="card-mendonca mb-6">
                 <form id="formReceita" onsubmit="salvarReceita(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                     <input type="hidden" id="recId">
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Data do Repasse</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Data do Repasse</label>
                         <input type="date" id="recData" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Origem / Canal</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Origem / Canal</label>
                         <input type="text" id="recOrigem" placeholder="Ex: Delivery Much" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Descrição</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição</label>
                         <input type="text" id="recDescricao" placeholder="Ex: Reembolso cupons de incentivo" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Valor Creditado (R$)</label>
-                        <input type="text" id="recValor" required placeholder="Ex: 150,00" class="p-2.5 mt-1 border rounded bg-white text-xs font-semibold text-green-700">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Valor Creditado (R$)</label>
+                        <input type="text" id="recValor" required placeholder="Ex: 150,00" class="p-2.5 mt-1 border rounded bg-white text-xs font-bold text-green-700">
                     </div>
                     <div class="md:col-span-4 flex gap-2 mt-2">
-                        <button type="submit" id="btnSalvarRec" class="btn btn-green flex-1 py-3 text-xs">Registrar Receita / Repasse</button>
-                        <button type="button" id="btnCancelarRec" onclick="cancelarEdicaoReceita()" class="btn bg-gray-400 text-white hidden">Cancelar Edição</button>
+                        <button type="submit" id="btnSalvarRec" class="btn btn-green flex-1 py-3 text-xs uppercase font-bold tracking-wider">Registrar Receita / Repasse</button>
+                        <button type="button" id="btnCancelarRec" onclick="cancelarEdicaoReceita()" class="btn bg-gray-400 text-white hidden text-xs font-bold uppercase">Cancelar Edição</button>
                     </div>
                 </form>
             </div>
+
             <div class="card overflow-x-auto">
                 <table id="tabelaReceitas">
                     <thead>
@@ -348,31 +399,36 @@
 
         <!-- VIEW: PRODUTOS -->
         <div id="view-produtos" class="tab-content">
-            <div class="flex justify-between items-center mb-4 md:mb-6">
-                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Produtos e Custos</h2>
-                <button onclick="mostrarFormProduto()" class="btn btn-red text-sm">+ Novo Produto</button>
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                        <i class="fas fa-pizza-slice text-mendonca-gold mr-2.5"></i> Produtos e Custos
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Gestão de catálogo, precificação e CMV unitário</p>
+                </div>
+                <button onclick="mostrarFormProduto()" class="btn btn-red text-xs uppercase font-bold tracking-wider shadow-md">+ Novo Produto</button>
             </div>
             
-            <div id="formProdutoContainer" class="card mb-6 hidden bg-mendonca-cream border border-mendonca-gold shadow-md">
+            <div id="formProdutoContainer" class="card-mendonca mb-6 hidden">
                 <h3 class="font-bold text-lg mb-4 text-mendonca-black border-b border-mendonca-gold/40 pb-2" id="formProdTitle">Novo Produto & Precificação Inteligente</h3>
                 <form id="formProduto" onsubmit="salvarProduto(event)">
                     <input type="hidden" id="prodId">
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Nome do Produto</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Nome do Produto</label>
                             <input type="text" id="prodNome" placeholder="Ex: Pizza Calabresa Especial" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Categoria</label>
-                            <select id="prodCat" class="p-2.5 mt-1 border rounded bg-white text-xs">
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Categoria</label>
+                            <select id="prodCat" class="p-2.5 mt-1 border rounded bg-white text-xs font-medium">
                                 <option value="Pizza">Pizza</option>
                                 <option value="Bebida">Bebida</option>
                                 <option value="Outros">Outros</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-700">Custo Embalagem (R$)</label>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Custo Embalagem (R$)</label>
                             <input type="text" id="prodCustoEmb" value="0,00" oninput="calcularSugestaoPreco()" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                         </div>
                     </div>
@@ -400,7 +456,7 @@
                                 <input type="text" id="prodIngQtd" placeholder="Ex: 250 (g/ml/un)" class="text-xs p-2.5 mt-1 border rounded bg-white">
                             </div>
                             <div>
-                                <button type="button" onclick="adicionarIngredienteAoProdutoTemp()" class="btn btn-green text-xs w-full py-2.5 flex justify-center items-center gap-1">
+                                <button type="button" onclick="adicionarIngredienteAoProdutoTemp()" class="btn btn-green text-xs w-full py-2.5 flex justify-center items-center gap-1 font-bold">
                                     <i class="fas fa-plus-circle"></i> Adicionar à Ficha
                                 </button>
                             </div>
@@ -445,8 +501,8 @@
                     </div>
 
                     <div class="mt-4 flex gap-2">
-                        <button type="submit" class="btn btn-green flex-1 text-sm py-2.5">Guardar Produto e Ficha Técnica</button>
-                        <button type="button" onclick="fecharFormProduto()" class="btn bg-gray-400 text-white flex-1 text-sm py-2.5">Cancelar</button>
+                        <button type="submit" class="btn btn-green flex-1 text-xs py-2.5 uppercase font-bold tracking-wider">Guardar Produto e Ficha Técnica</button>
+                        <button type="button" onclick="fecharFormProduto()" class="btn bg-gray-400 text-white flex-1 text-xs py-2.5 uppercase font-bold">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -471,24 +527,31 @@
 
         <!-- VIEW: DESPESAS FIXAS -->
         <div id="view-despesas" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Despesas Fixas (Inclusos Pró-Labore)</h2>
-            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+            <div class="mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                    <i class="fas fa-file-invoice-dollar text-mendonca-gold mr-2.5"></i> Despesas Fixas (Inclusos Pró-Labore)
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Cadastre o custo fixo operacional recorrente da pizzaria</p>
+            </div>
+
+            <div class="card-mendonca mb-6">
                 <form id="formDespesa" onsubmit="salvarDespesa(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="despId">
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Descrição (Ex: Aluguel, Pró-Labore)</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição (Ex: Aluguel, Pró-Labore)</label>
                         <input type="text" id="despNome" placeholder="Ex: Pró-Labore Juliano" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Valor Mensal (R$)</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Valor Mensal (R$)</label>
                         <input type="text" id="despValor" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div class="flex gap-2">
-                        <button type="submit" id="btnSalvarDesp" class="btn btn-green flex-1 text-xs py-3">Adicionar Despesa</button>
+                        <button type="submit" id="btnSalvarDesp" class="btn btn-green flex-1 text-xs py-3 uppercase font-bold tracking-wider">Adicionar Despesa</button>
                         <button type="button" id="btnCancelarEdicaoDesp" onclick="cancelarEdicaoDespesa()" class="btn bg-gray-400 text-white hidden">X</button>
                     </div>
                 </form>
             </div>
+
             <div class="card overflow-x-auto">
                 <table id="tabelaDespesas">
                     <thead>
@@ -505,33 +568,40 @@
 
         <!-- VIEW: CUSTOS VARIÁVEIS -->
         <div id="view-custosVariaveis" class="tab-content">
-            <div class="flex justify-between items-center mb-4 md:mb-6">
-                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Custos Variáveis (Cupons)</h2>
-                <button onclick="abrirCamera('custoVar')" class="btn bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm flex items-center gap-2">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                        <i class="fas fa-receipt text-mendonca-gold mr-2.5"></i> Custos Variáveis (Cupons)
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Registro de compras de suprimentos emergenciais e cupons</p>
+                </div>
+                <button onclick="abrirCamera('custoVar')" class="btn bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md">
                     <i class="fas fa-camera text-base"></i> Escanear Comprovante
                 </button>
             </div>
-            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+
+            <div class="card-mendonca mb-6">
                 <form id="formCustoVar" onsubmit="salvarCustoVariavel(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="custoVarId">
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Data Compra</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Data Compra</label>
                         <input type="date" id="custoVarData" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Mercado / Loja</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Mercado / Loja</label>
                         <input type="text" id="custoVarLocal" placeholder="Ex: Mercado X" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Valor Cupom (R$)</label>
-                        <input type="text" id="custoVarValor" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Valor Cupom (R$)</label>
+                        <input type="text" id="custoVarValor" required class="p-2.5 mt-1 border rounded bg-white text-xs font-semibold">
                     </div>
                     <div class="md:col-span-3 flex gap-2 mt-2">
-                        <button type="submit" id="btnSalvarCustoVar" class="btn btn-green flex-1 py-3 text-xs">Registrar Cupom</button>
-                        <button type="button" id="btnCancelarCustoVar" onclick="cancelarEdicaoCustoVariavel()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
+                        <button type="submit" id="btnSalvarCustoVar" class="btn btn-green flex-1 py-3 text-xs uppercase font-bold tracking-wider">Registrar Cupom</button>
+                        <button type="button" id="btnCancelarCustoVar" onclick="cancelarEdicaoCustoVariavel()" class="btn bg-gray-400 text-white hidden text-xs font-bold uppercase">Cancelar</button>
                     </div>
                 </form>
             </div>
+
             <div class="card overflow-x-auto">
                 <table id="tabelaCustosVariaveis">
                     <thead>
@@ -549,36 +619,44 @@
 
         <!-- VIEW: DESPESAS PESSOAIS -->
         <div id="view-despesasPessoais" class="tab-content">
-            <div class="flex justify-between items-center mb-4 md:mb-6">
-                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">Despesas Pessoais / Retiradas</h2>
-                <button onclick="abrirCamera('despPessoal')" class="btn bg-purple-600 hover:bg-purple-700 text-white text-xs md:text-sm flex items-center gap-2">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                        <i class="fas fa-user-tag text-mendonca-gold mr-2.5"></i> Despesas Pessoais / Retiradas
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Controle de retiradas particulares de sócios</p>
+                </div>
+                <button onclick="abrirCamera('despPessoal')" class="btn bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md">
                     <i class="fas fa-camera text-base"></i> Escanear Comprovante
                 </button>
             </div>
-            <div class="bg-purple-50 border-l-4 border-purple-600 p-3 text-xs md:text-sm text-purple-900 mb-4 rounded">
-                <i class="fas fa-info-circle mr-1"></i> As despesas desta aba representam retiradas particulares dos sócios. Elas <strong>não reduzem o Lucro Operacional</strong> da pizzaria no DRE, sendo abatidas somente no final do caixa acumulado.
+
+            <div class="bg-purple-50 border-l-4 border-purple-600 p-3.5 text-xs text-purple-900 mb-6 rounded-lg shadow-sm">
+                <i class="fas fa-info-circle mr-1.5 text-purple-600 text-sm"></i> As despesas desta aba representam retiradas particulares dos sócios. Elas <strong>não reduzem o Lucro Operacional</strong> da pizzaria no DRE, sendo abatidas somente no final do caixa acumulado.
             </div>
-            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+
+            <div class="card-mendonca mb-6">
                 <form id="formDespPessoal" onsubmit="salvarDespesaPessoal(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="despPessoalId">
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Data</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Data</label>
                         <input type="date" id="despPessoalData" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Descrição (Ex: Conta de Luz da Casa)</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição (Ex: Conta de Luz da Casa)</label>
                         <input type="text" id="despPessoalNome" placeholder="Ex: Mercado Pessoal" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Valor (R$)</label>
-                        <input type="text" id="despPessoalValor" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Valor (R$)</label>
+                        <input type="text" id="despPessoalValor" required class="p-2.5 mt-1 border rounded bg-white text-xs font-semibold">
                     </div>
                     <div class="md:col-span-3 flex gap-2 mt-2">
-                        <button type="submit" id="btnSalvarDespPessoal" class="btn btn-green flex-1 py-3 text-xs">Registrar Retirada Pessoal</button>
-                        <button type="button" id="btnCancelarDespPessoal" onclick="cancelarEdicaoDespPessoal()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
+                        <button type="submit" id="btnSalvarDespPessoal" class="btn btn-green flex-1 py-3 text-xs uppercase font-bold tracking-wider">Registrar Retirada Pessoal</button>
+                        <button type="button" id="btnCancelarDespPessoal" onclick="cancelarEdicaoDespPessoal()" class="btn bg-gray-400 text-white hidden text-xs font-bold uppercase">Cancelar</button>
                     </div>
                 </form>
             </div>
+
             <div class="card overflow-x-auto">
                 <table id="tabelaDespesasPessoais">
                     <thead>
@@ -596,33 +674,39 @@
 
         <!-- VIEW: INGREDIENTES -->
         <div id="view-ingredientes" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Ingredientes</h2>
-            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+            <div class="mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                    <i class="fas fa-cubes text-mendonca-gold mr-2.5"></i> Ingredientes
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Cadastro de insumos e custos unitários de matérias-primas</p>
+            </div>
+
+            <div class="card-mendonca mb-6">
                 <form id="formIngrediente" onsubmit="salvarIngrediente(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
                     <input type="hidden" id="ingId">
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Nome Ingrediente</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Nome Ingrediente</label>
                         <input type="text" id="ingNome" placeholder="Ex: Mussarela" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Unidade</label>
-                        <select id="ingUnidade" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Unidade</label>
+                        <select id="ingUnidade" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium">
                             <option value="g">Grama (g)</option>
                             <option value="ml">Mililitro (ml)</option>
                             <option value="un">Unidade (un)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Qtd Embalagem</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Qtd Embalagem</label>
                         <input type="text" id="ingQtdEmb" placeholder="Ex: 1000 ou 1" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Preço Pago (R$)</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Preço Pago (R$)</label>
                         <input type="text" id="ingPrecoEmb" placeholder="Ex: 1,90 ou 35,00" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div class="md:col-span-2 lg:col-span-4 flex gap-2 mt-2">
-                        <button type="submit" id="btnSalvarIng" class="btn btn-green flex-1 py-3 text-xs">Cadastrar Ingrediente</button>
-                        <button type="button" id="btnCancelarIng" onclick="cancelarEdicaoIngrediente()" class="btn bg-gray-400 text-white hidden">Cancelar</button>
+                        <button type="submit" id="btnSalvarIng" class="btn btn-green flex-1 py-3 text-xs uppercase font-bold tracking-wider">Cadastrar Ingrediente</button>
+                        <button type="button" id="btnCancelarIng" onclick="cancelarEdicaoIngrediente()" class="btn bg-gray-400 text-white hidden text-xs font-bold uppercase">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -645,17 +729,22 @@
 
         <!-- VIEW: FICHA TÉCNICA -->
         <div id="view-fichaTecnica" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Ficha Técnica</h2>
+            <div class="mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                    <i class="fas fa-clipboard-list text-mendonca-gold mr-2.5"></i> Ficha Técnica
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Composição detalhada das receitas e cálculo de insumos</p>
+            </div>
             
-            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+            <div class="card-mendonca mb-6">
                 <div class="mb-4">
-                    <label class="font-bold text-sm text-mendonca-black">Selecione o Produto:</label>
-                    <select id="fichaProdutoSelect" onchange="renderFichaTecnica()" class="text-base p-2.5 font-semibold text-mendonca-red border-2 border-mendonca-gold mt-1 bg-white rounded"></select>
+                    <label class="font-bold text-sm text-mendonca-black uppercase tracking-wider">Selecione o Produto:</label>
+                    <select id="fichaProdutoSelect" onchange="renderFichaTecnica()" class="text-base p-2.5 font-bold text-mendonca-red border-2 border-mendonca-gold mt-1 bg-white rounded-md shadow-sm"></select>
                 </div>
 
-                <form id="formFichaItem" onsubmit="adicionarItemFicha(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-white p-3 rounded border">
+                <form id="formFichaItem" onsubmit="adicionarItemFicha(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-white p-3.5 rounded border">
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Ingrediente</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Ingrediente</label>
                         <div class="relative mt-1 mb-1">
                             <input type="text" id="fichaBuscaIngrediente" oninput="filtrarIngredientesFichaTecnica()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white">
                             <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
@@ -663,11 +752,11 @@
                         <select id="fichaIngredienteSelect" required class="text-xs p-2.5 border rounded bg-white w-full"></select>
                     </div>
                     <div>
-                        <label class="text-xs font-semibold text-gray-700">Qtd Utilizada</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Qtd Utilizada</label>
                         <input type="text" id="fichaQtd" placeholder="Ex: 250 ou 1" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <button type="submit" class="btn btn-green w-full py-2.5 text-xs"><i class="fas fa-plus mr-1"></i>Adicionar à Ficha</button>
+                        <button type="submit" class="btn btn-green w-full py-2.5 text-xs font-bold uppercase tracking-wider"><i class="fas fa-plus mr-1"></i>Adicionar à Ficha</button>
                     </div>
                 </form>
             </div>
@@ -685,98 +774,205 @@
                     </thead>
                     <tbody></tbody>
                 </table>
-                <div class="mt-4 p-3 bg-gray-100 rounded flex justify-between items-center">
-                    <span class="font-bold text-sm md:text-base">CMV Total da Pizza:</span>
-                    <span id="fichaTotalCusto" class="font-bold text-xl text-mendonca-red">R$ 0,00</span>
+                <div class="mt-4 p-3.5 bg-gray-100 rounded-md flex justify-between items-center border">
+                    <span class="font-bold text-sm md:text-base text-mendonca-black">CMV Total da Pizza:</span>
+                    <span id="fichaTotalCusto" class="font-extrabold text-xl text-mendonca-red">R$ 0,00</span>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW: RESULTADOS E DRE -->
+        <!-- VIEW: RESULTADOS E DRE (REFORMATADO) -->
         <div id="view-dre" class="tab-content">
-            <div class="flex justify-between items-center mb-4 md:mb-6">
-                <h2 class="text-xl md:text-2xl font-bold text-mendonca-black">DRE & Resultado</h2>
-                <span id="lblPeriodoDRE" class="text-xs md:text-sm font-bold bg-mendonca-black text-mendonca-gold px-3 py-1 rounded shadow"></span>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-gray-200 pb-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                        <i class="fas fa-calculator text-mendonca-gold mr-2.5"></i> DRE & Demonstrativo de Resultados
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Visão consolidada do resultado operacional e saúde financeira</p>
+                </div>
+                <span id="lblPeriodoDRE" class="text-xs font-bold bg-mendonca-black text-mendonca-gold px-3.5 py-1.5 rounded-md shadow border border-mendonca-gold/30"></span>
+            </div>
+
+            <!-- KPIs DRE no Topo -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
+                <div class="card border-l-4 border-blue-600">
+                    <p class="text-xs font-semibold text-gray-500">Fat. Líquido Total</p>
+                    <h3 class="text-base md:text-lg font-black text-blue-900 mt-1" id="dreFatLiqTop">R$ 0,00</h3>
+                </div>
+                <div class="card border-l-4 border-mendonca-gold">
+                    <p class="text-xs font-semibold text-gray-500">Margem Contribuição</p>
+                    <h3 class="text-base md:text-lg font-black text-mendonca-black mt-1" id="dreMargemTop">R$ 0,00</h3>
+                </div>
+                <div class="card border-l-4 border-mendonca-green">
+                    <p class="text-xs font-semibold text-gray-500">Lucro Operacional</p>
+                    <h3 class="text-base md:text-lg font-black text-green-700 mt-1" id="dreLucroTop">R$ 0,00</h3>
+                </div>
+                <div class="card border-l-4 border-purple-600">
+                    <p class="text-xs font-semibold text-gray-500">Caixa Remanescente</p>
+                    <h3 class="text-base md:text-lg font-black text-purple-800 mt-1" id="dreCaixaTop">R$ 0,00</h3>
+                </div>
             </div>
             
-            <div class="card max-w-2xl mx-auto text-sm">
-                <div class="flex justify-between border-b pb-2 mb-2 font-bold">
-                    <span>1. Faturamento Bruto (Vendas)</span><span id="dreFatBruto" class="text-green-600">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Descontos Concedidos</span><span id="dreDesc">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 font-bold bg-gray-100 p-1.5">
-                    <span>2. Faturamento Líquido de Vendas</span><span id="dreFatLiq">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-green-700 font-semibold bg-blue-50/50 p-1.5">
-                    <span>(+) Outras Receitas / Repasses de Incentivos</span><span id="dreOutrasReceitas">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) CMV Ingredientes</span><span id="dreCmv">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Embalagens</span><span id="dreEmb">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Custos Variáveis (Cupons)</span><span id="dreCustosVar">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 font-bold bg-gray-100 p-1.5">
-                    <span>3. Lucro Bruto</span><span id="dreLucroBruto">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Taxas Meios Pgto</span><span id="dreTaxas">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Custo Entrega Loja</span><span id="dreEntregas">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 font-bold bg-mendonca-cream p-1.5">
-                    <span>4. Margem Contribuição</span><span id="dreMargemCont">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
-                    <span>(-) Despesas Fixas (<span id="lblMultiplicadorFixas">Loja + Pró-Labore</span>)</span><span id="dreFixas">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between font-bold text-base p-2 bg-gray-800 text-white rounded">
-                    <span>5. LUCRO LÍQUIDO OPERACIONAL</span><span id="dreLucroLiq">R$ 0,00</span>
-                </div>
-                
-                <div class="flex justify-between border-b border-t mt-3 pt-2 pb-2 text-purple-700 font-semibold">
-                    <span>(-) Despesas Pessoais / Retiradas de Lucro</span><span id="dreDespPessoais">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between font-bold text-lg p-2.5 bg-mendonca-green text-white rounded mt-1">
-                    <span>6. SALDO CAIXA REMANESCENTE DA LOJA</span><span id="dreCaixaFinal">R$ 0,00</span>
+            <div class="card-mendonca max-w-3xl mx-auto">
+                <div class="flex items-center justify-between border-b border-mendonca-gold/40 pb-3 mb-4">
+                    <h3 class="font-bold text-base md:text-lg text-mendonca-black flex items-center">
+                        <i class="fas fa-file-contract text-mendonca-gold mr-2"></i> Demonstração do Resultado do Exercício
+                    </h3>
+                    <span class="text-xs font-bold text-mendonca-black uppercase tracking-wider">Regime de Caixa</span>
                 </div>
 
-                <div class="mt-4 p-3 bg-blue-50 rounded text-xs md:text-sm space-y-1">
-                    <p>Margem Líquida Operacional: <span id="indMargemLiq" class="font-bold">0%</span></p>
-                    <p>CMV Geral: <span id="indCmvPerc" class="font-bold">0%</span></p>
-                    <p>Ponto de Equilíbrio: <span id="indPontoEquilibrio" class="font-bold text-blue-700">R$ 0,00</span></p>
+                <div class="space-y-2.5 text-xs md:text-sm">
+                    <!-- 1. Receita Bruta -->
+                    <div class="flex justify-between items-center bg-white p-3 rounded-md border shadow-sm">
+                        <span class="font-bold text-gray-800">1. Faturamento Bruto (Vendas)</span>
+                        <span id="dreFatBruto" class="font-bold text-green-600">R$ 0,00</span>
+                    </div>
+
+                    <!-- Deduções -->
+                    <div class="flex justify-between items-center bg-red-50/50 p-2.5 rounded-md border border-red-100 text-red-700">
+                        <span>(-) Descontos Concedidos</span>
+                        <span id="dreDesc" class="font-semibold">R$ 0,00</span>
+                    </div>
+
+                    <!-- Faturamento Liquido -->
+                    <div class="flex justify-between items-center bg-gray-100 p-3 rounded-md font-bold text-gray-900 border">
+                        <span>2. Faturamento Líquido de Vendas</span>
+                        <span id="dreFatLiq">R$ 0,00</span>
+                    </div>
+
+                    <!-- Outras Receitas -->
+                    <div class="flex justify-between items-center bg-blue-50/60 p-2.5 rounded-md border border-blue-100 text-blue-900 font-semibold">
+                        <span>(+) Outras Receitas / Repasses de Incentivos</span>
+                        <span id="dreOutrasReceitas" class="font-bold text-blue-700">R$ 0,00</span>
+                    </div>
+
+                    <!-- Custos Variáveis Produção -->
+                    <div class="space-y-1.5 pl-2 border-l-2 border-red-300">
+                        <div class="flex justify-between items-center text-red-600">
+                            <span>(-) CMV Ingredientes</span>
+                            <span id="dreCmv">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-red-600">
+                            <span>(-) Embalagens</span>
+                            <span id="dreEmb">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-red-600">
+                            <span>(-) Custos Variáveis (Cupons)</span>
+                            <span id="dreCustosVar">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <!-- Lucro Bruto -->
+                    <div class="flex justify-between items-center bg-gray-100 p-3 rounded-md font-bold text-gray-900 border">
+                        <span>3. Lucro Bruto</span>
+                        <span id="dreLucroBruto">R$ 0,00</span>
+                    </div>
+
+                    <!-- Taxas Comerciais -->
+                    <div class="space-y-1.5 pl-2 border-l-2 border-yellow-400">
+                        <div class="flex justify-between items-center text-red-600">
+                            <span>(-) Taxas Meios Pgto</span>
+                            <span id="dreTaxas">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-red-600">
+                            <span>(-) Custo Entrega Loja</span>
+                            <span id="dreEntregas">R$ 0,00</span>
+                        </div>
+                    </div>
+
+                    <!-- Margem de Contribuição -->
+                    <div class="flex justify-between items-center bg-amber-100/70 p-3 rounded-md font-extrabold text-amber-950 border border-amber-300">
+                        <span>4. MARGEM DE CONTRIBUIÇÃO</span>
+                        <span id="dreMargemCont">R$ 0,00</span>
+                    </div>
+
+                    <!-- Despesas Fixas -->
+                    <div class="flex justify-between items-center bg-red-50/50 p-2.5 rounded-md border border-red-100 text-red-700">
+                        <span>(-) Despesas Fixas (<span id="lblMultiplicadorFixas">Loja + Pró-Labore</span>)</span>
+                        <span id="dreFixas" class="font-semibold">R$ 0,00</span>
+                    </div>
+
+                    <!-- Lucro Líquido Operacional -->
+                    <div class="flex justify-between items-center font-extrabold text-base p-3.5 bg-mendonca-black text-mendonca-gold rounded-md shadow-md border border-mendonca-gold/40">
+                        <span>5. LUCRO LÍQUIDO OPERACIONAL</span>
+                        <span id="dreLucroLiq" class="text-mendonca-gold text-lg">R$ 0,00</span>
+                    </div>
+                    
+                    <!-- Despesas Pessoais -->
+                    <div class="flex justify-between items-center p-2.5 bg-purple-50 rounded-md border border-purple-200 text-purple-900 font-semibold">
+                        <span>(-) Despesas Pessoais / Retiradas de Lucro</span>
+                        <span id="dreDespPessoais" class="text-purple-700">R$ 0,00</span>
+                    </div>
+
+                    <!-- Saldo Final -->
+                    <div class="flex justify-between items-center font-black text-lg p-3.5 bg-mendonca-green text-white rounded-md shadow-md">
+                        <span>6. SALDO CAIXA REMANESCENTE DA LOJA</span>
+                        <span id="dreCaixaFinal" class="text-xl">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- Indicadores Financeiros -->
+                <div class="mt-6 p-4 bg-white rounded-md border shadow-sm grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div class="bg-gray-50 p-2.5 rounded border text-center">
+                        <span class="text-gray-500 block font-semibold mb-0.5">Margem Líquida</span>
+                        <span id="indMargemLiq" class="font-extrabold text-base text-gray-800">0%</span>
+                    </div>
+                    <div class="bg-gray-50 p-2.5 rounded border text-center">
+                        <span class="text-gray-500 block font-semibold mb-0.5">CMV Geral</span>
+                        <span id="indCmvPerc" class="font-extrabold text-base text-mendonca-red">0%</span>
+                    </div>
+                    <div class="bg-gray-50 p-2.5 rounded border text-center">
+                        <span class="text-gray-500 block font-semibold mb-0.5">Ponto de Equilíbrio</span>
+                        <span id="indPontoEquilibrio" class="font-extrabold text-base text-blue-700">R$ 0,00</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW: CONFIGURAÇÕES -->
+        <!-- VIEW: CONFIGURAÇÕES (REFORMATADO) -->
         <div id="view-config" class="tab-content">
-            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Configurações & Taxas</h2>
+            <div class="mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
+                    <i class="fas fa-cog text-mendonca-gold mr-2.5"></i> Configurações & Taxas
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Defina as taxas de meios de pagamento e metas operacionais do negócio</p>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="card">
-                    <h3 class="text-base font-bold mb-3 border-b pb-2"><i class="fas fa-credit-card mr-1"></i> Formas de Pagamento</h3>
-                    <form id="formFormaPagamento" onsubmit="salvarFormaPagamento(event)" class="mb-4">
+                <!-- Cartão Formas de Pagamento -->
+                <div class="card-mendonca">
+                    <div class="flex items-center justify-between border-b border-mendonca-gold/40 pb-3 mb-4">
+                        <h3 class="text-base font-bold text-mendonca-black flex items-center">
+                            <i class="fas fa-credit-card text-mendonca-gold mr-2"></i> Formas de Pagamento & Taxas
+                        </h3>
+                        <span class="text-xs font-bold bg-mendonca-black text-mendonca-gold px-2 py-0.5 rounded">Taxas</span>
+                    </div>
+
+                    <form id="formFormaPagamento" onsubmit="salvarFormaPagamento(event)" class="mb-5 bg-white p-3.5 rounded border shadow-sm">
                         <input type="hidden" id="fpId">
-                        <div class="grid grid-cols-1 gap-2">
-                            <div><label class="text-xs">Nome</label><input type="text" id="fpNome" placeholder="Ex: Pix" required class="p-2 border rounded"></div>
+                        <div class="grid grid-cols-1 gap-3">
+                            <div>
+                                <label class="text-xs font-bold text-gray-700 uppercase">Nome da Forma</label>
+                                <input type="text" id="fpNome" placeholder="Ex: Pix, Crédito Múltiplo" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                            </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-xs">Taxa (%)</label><input type="text" id="fpTaxa" value="0" required class="p-2 border rounded"></div>
-                                <div><label class="text-xs">Taxa Fixa (R$)</label><input type="text" id="fpTaxaFixa" value="0,00" required class="p-2 border rounded"></div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-700 uppercase">Taxa (%)</label>
+                                    <input type="text" id="fpTaxa" value="0" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-700 uppercase">Taxa Fixa (R$)</label>
+                                    <input type="text" id="fpTaxaFixa" value="0,00" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                                </div>
                             </div>
                         </div>
                         <div class="mt-3 flex gap-2">
-                            <button type="submit" id="btnSalvarFP" class="btn btn-green w-full text-xs">Salvar Forma</button>
-                            <button type="button" id="btnCancelarFP" onclick="cancelarEdicaoFP()" class="btn bg-gray-400 text-white text-xs hidden">X</button>
+                            <button type="submit" id="btnSalvarFP" class="btn btn-green w-full text-xs font-bold uppercase tracking-wider">Salvar Forma</button>
+                            <button type="button" id="btnCancelarFP" onclick="cancelarEdicaoFP()" class="btn bg-gray-400 text-white text-xs font-bold hidden">X</button>
                         </div>
                     </form>
 
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto bg-white rounded border">
                         <table id="tabelaFormasPagamento">
                             <thead>
                                 <tr>
@@ -791,11 +987,30 @@
                     </div>
                 </div>
 
-                <div class="card space-y-3 h-fit">
-                    <h3 class="text-base font-bold mb-2 border-b pb-2"><i class="fas fa-sliders-h mr-1"></i> Metas do Negócio</h3>
-                    <div><label class="text-xs font-semibold">CMV Máximo (%)</label><input type="text" id="cfgCmv" value="30" class="p-2 border rounded"></div>
-                    <div><label class="text-xs font-semibold">Meta Margem Líquida (%)</label><input type="text" id="cfgMargem" value="20" class="p-2 border rounded"></div>
-                    <button onclick="salvarConfig()" class="btn btn-gold w-full mt-2">Salvar Metas</button>
+                <!-- Cartão Metas do Negócio -->
+                <div class="card-mendonca h-fit">
+                    <div class="flex items-center justify-between border-b border-mendonca-gold/40 pb-3 mb-4">
+                        <h3 class="text-base font-bold text-mendonca-black flex items-center">
+                            <i class="fas fa-bullseye text-mendonca-gold mr-2"></i> Metas do Negócio
+                        </h3>
+                        <span class="text-xs font-bold bg-mendonca-black text-mendonca-gold px-2 py-0.5 rounded">Parâmetros</span>
+                    </div>
+
+                    <div class="bg-white p-4 rounded border shadow-sm space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 uppercase">CMV Máximo Desejado (%)</label>
+                            <p class="text-xs text-gray-500 mb-1">Define o alerta para custos de ingrediente e preço sugerido</p>
+                            <input type="text" id="cfgCmv" value="30" class="p-2.5 border rounded font-bold text-mendonca-red">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-700 uppercase">Meta Margem Líquida (%)</label>
+                            <p class="text-xs text-gray-500 mb-1">Alvo de rentabilidade operacional do negócio</p>
+                            <input type="text" id="cfgMargem" value="20" class="p-2.5 border rounded font-bold text-mendonca-green">
+                        </div>
+                        <button onclick="salvarConfig()" class="btn btn-gold w-full py-3 text-xs uppercase font-bold tracking-wider shadow-sm">
+                            <i class="fas fa-save mr-1.5"></i> Salvar Metas do Negócio
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1000,7 +1215,7 @@
                     let local = txt.replace('lançar', '').replace('lancar', '').replace('custo variável', '').replace('custo variavel', '').replace(valor.toString(), '').replace('reais', '').trim() || 'Mercado Geral';
                     db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: local, valor: valor });
                     salvarBD();
-                    falarVoz(`Lançamento de ${valor} reais confirmed! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
+                    falarVoz(`Lançamento de ${valor} reais confirmado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
                 } else {
                     falarVoz("Qual foi o valor do custo variável?", 'CUSTO_VAR_VALOR');
                 }
@@ -1167,7 +1382,6 @@
             finally { modal.classList.add('hidden'); event.target.value = ''; }
         }
 
-        // LÓGICA DE OUTRAS RECEITAS & REPASSES
         function salvarReceita(e) {
             e.preventDefault();
             let id = document.getElementById('recId').value;
@@ -2050,6 +2264,7 @@
             let lucroLiquidoOperacional = margemContrib - despesasFixas;
             let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
 
+            // Preenchimento DRE
             document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
             document.getElementById('dreDesc').innerText = `R$ ${descontos.toFixed(2)}`;
             document.getElementById('dreFatLiq').innerText = `R$ ${fatLiquido.toFixed(2)}`;
@@ -2065,6 +2280,13 @@
             document.getElementById('dreLucroLiq').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
             document.getElementById('dreDespPessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
             document.getElementById('dreCaixaFinal').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
+
+            // KPIs DRE Topo
+            const totalFatComOutras = fatLiquido + outrasReceitasTotal;
+            document.getElementById('dreFatLiqTop').innerText = `R$ ${totalFatComOutras.toFixed(2)}`;
+            document.getElementById('dreMargemTop').innerText = `R$ ${margemContrib.toFixed(2)}`;
+            document.getElementById('dreLucroTop').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
+            document.getElementById('dreCaixaTop').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
 
             let receitamTotalGlobal = fatLiquido + outrasReceitasTotal;
             let margemLiqPerc = receitamTotalGlobal > 0 ? (lucroLiquidoOperacional / receitamTotalGlobal) * 100 : 0;
@@ -2144,8 +2366,11 @@
                 let cmvMaxConfig = (db.config ? db.config.cmvMax : 30);
 
                 if (cmvReal > cmvMaxConfig) {
-                    container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2.5 text-xs rounded shadow-sm">
-                        <strong>Atenção ao CMV:</strong> O produto <b>${p.nome}</b> está com CMV de <b>${cmvReal.toFixed(1)}%</b>.
+                    container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 text-xs rounded shadow-sm flex items-center justify-between">
+                        <div>
+                            <strong class="font-bold">Atenção ao CMV:</strong> O produto <b>${p.nome}</b> está com CMV de <b>${cmvReal.toFixed(1)}%</b>.
+                        </div>
+                        <span class="text-red-800 font-extrabold uppercase text-xs">Meta: ${cmvMaxConfig}%</span>
                     </div>`;
                 }
             });
