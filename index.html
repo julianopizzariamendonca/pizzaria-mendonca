@@ -1437,9 +1437,23 @@
         function salvarIngrediente(e) {
             e.preventDefault();
             let id = document.getElementById('ingId').value;
+            let nomeInput = document.getElementById('ingNome').value.trim();
+
+            if (!nomeInput) return;
+
+            // Impedir ingredientes duplicados (case-insensitive)
+            let jaExiste = garantirArray(db.ingredientes).some(x => 
+                x.nome.trim().toLowerCase() === nomeInput.toLowerCase() && x.id != id
+            );
+
+            if (jaExiste) {
+                alert("Já existe um ingrediente cadastrado com este nome!");
+                return;
+            }
+
             let ing = {
                 id: id ? id : Date.now().toString(),
-                nome: document.getElementById('ingNome').value,
+                nome: nomeInput,
                 unidade: document.getElementById('ingUnidade').value,
                 qtdEmbalagem: parseValor(document.getElementById('ingQtdEmb').value) || 1,
                 precoEmbalagem: parseValor(document.getElementById('ingPrecoEmb').value)
@@ -1486,7 +1500,13 @@
         function renderIngredientes() {
             const tbody = document.querySelector('#tabelaIngredientes tbody');
             if(!tbody) return;
-            tbody.innerHTML = garantirArray(db.ingredientes).map(ing => {
+
+            // Ordenação alfabética
+            let listaOrdenada = [...garantirArray(db.ingredientes)].sort((a, b) => 
+                a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+            );
+
+            tbody.innerHTML = listaOrdenada.map(ing => {
                 let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
                 return `<tr>
                     <td class="font-semibold">${ing.nome}</td>
@@ -1506,7 +1526,10 @@
             const sel = document.getElementById('prodIngSelect');
             if (!sel) return;
 
-            const ingredientesFiltrados = garantirArray(db.ingredientes).filter(i => i.nome.toLowerCase().includes(busca));
+            const ingredientesFiltrados = garantirArray(db.ingredientes)
+                .filter(i => i.nome.toLowerCase().includes(busca))
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
             if (ingredientesFiltrados.length === 0) {
                 sel.innerHTML = `<option value="">Nenhum ingrediente encontrado</option>`;
             } else {
@@ -1528,7 +1551,10 @@
             const sel = document.getElementById('fichaIngredienteSelect');
             if (!sel) return;
 
-            const ingredientesFiltrados = garantirArray(db.ingredientes).filter(i => i.nome.toLowerCase().includes(busca));
+            const ingredientesFiltrados = garantirArray(db.ingredientes)
+                .filter(i => i.nome.toLowerCase().includes(busca))
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
             if (ingredientesFiltrados.length === 0) {
                 sel.innerHTML = `<option value="">Nenhum ingrediente encontrado</option>`;
             } else {
