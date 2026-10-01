@@ -112,6 +112,7 @@
             <button onclick="nav('dashboard')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-chart-line w-6"></i> Dashboard</button>
             <button onclick="nav('pdv')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-cash-register w-6"></i> Lançar Venda</button>
             <button onclick="nav('vendas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-shopping-cart w-6"></i> Histórico Vendas</button>
+            <button onclick="nav('receitas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-hand-holding-usd w-6"></i> Outras Receitas</button>
             <button onclick="nav('produtos')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-pizza-slice w-6"></i> Produtos & CMV</button>
             <button onclick="nav('despesas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-file-invoice-dollar w-6"></i> Despesas Fixas</button>
             <button onclick="nav('custosVariaveis')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center"><i class="fas fa-receipt w-6"></i> Custos Variáveis</button>
@@ -192,7 +193,7 @@
             </div>
         </div>
 
-        <!-- VIEW: LANÇAR VENDA (PDV - PADRONIZADO) -->
+        <!-- VIEW: LANÇAR VENDA (PDV) -->
         <div id="view-pdv" class="tab-content">
             <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Lançamento Rápido de Venda</h2>
             <div class="card max-w-3xl mx-auto bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
@@ -244,6 +245,53 @@
                         <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-400 text-white mt-2 w-full text-xs hidden">Cancelar Edição</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- VIEW: OUTRAS RECEITAS & REPASSES (NOVA ABA) -->
+        <div id="view-receitas" class="tab-content">
+            <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-mendonca-black">Outras Receitas & Repasses (Incentivos)</h2>
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-3 text-xs md:text-sm text-blue-900 mb-4 rounded">
+                <i class="fas fa-info-circle mr-1"></i> Utilize esta aba para registrar <strong>repasses de plataformas (ex: Delivery Much, iFood)</strong>, reembolso de cupons promocionais ou outras entradas financeiras que não são vendas diretas de balcão.
+            </div>
+            <div class="card mb-6 bg-mendonca-cream border border-mendonca-gold shadow-md p-5">
+                <form id="formReceita" onsubmit="salvarReceita(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                    <input type="hidden" id="recId">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700">Data do Repasse</label>
+                        <input type="date" id="recData" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700">Origem / Canal</label>
+                        <input type="text" id="recOrigem" placeholder="Ex: Delivery Much" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700">Descrição</label>
+                        <input type="text" id="recDescricao" placeholder="Ex: Reembolso cupons de incentivo" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-700">Valor Creditado (R$)</label>
+                        <input type="text" id="recValor" required placeholder="Ex: 150,00" class="p-2.5 mt-1 border rounded bg-white text-xs font-semibold text-green-700">
+                    </div>
+                    <div class="md:col-span-4 flex gap-2 mt-2">
+                        <button type="submit" id="btnSalvarRec" class="btn btn-green flex-1 py-3 text-xs">Registrar Receita / Repasse</button>
+                        <button type="button" id="btnCancelarRec" onclick="cancelarEdicaoReceita()" class="btn bg-gray-400 text-white hidden">Cancelar Edição</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card overflow-x-auto">
+                <table id="tabelaReceitas">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Origem</th>
+                            <th>Descrição</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
 
@@ -602,13 +650,16 @@
             
             <div class="card max-w-2xl mx-auto text-sm">
                 <div class="flex justify-between border-b pb-2 mb-2 font-bold">
-                    <span>1. Faturamento Bruto</span><span id="dreFatBruto" class="text-green-600">R$ 0,00</span>
+                    <span>1. Faturamento Bruto (Vendas)</span><span id="dreFatBruto" class="text-green-600">R$ 0,00</span>
                 </div>
                 <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
                     <span>(-) Descontos Concedidos</span><span id="dreDesc">R$ 0,00</span>
                 </div>
                 <div class="flex justify-between border-b pb-2 mb-2 font-bold bg-gray-100 p-1.5">
-                    <span>2. Faturamento Líquido</span><span id="dreFatLiq">R$ 0,00</span>
+                    <span>2. Faturamento Líquido de Vendas</span><span id="dreFatLiq">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 mb-2 text-green-700 font-semibold bg-blue-50/50 p-1.5">
+                    <span>(+) Outras Receitas / Repasses de Incentivos</span><span id="dreOutrasReceitas">R$ 0,00</span>
                 </div>
                 <div class="flex justify-between border-b pb-2 mb-2 text-red-600">
                     <span>(-) CMV Ingredientes</span><span id="dreCmv">R$ 0,00</span>
@@ -790,6 +841,7 @@
         let db = {
             produtos: [],
             vendas: [],
+            receitas: [],
             despesas: [],
             custosVariaveis: [],
             despesasPessoais: [],
@@ -927,114 +979,10 @@
                 return;
             }
 
-            if (estadoVoz === 'CUSTO_VAR_VALOR') {
-                let valor = extrairNumeroDeTexto(txt);
-                if (valor <= 0) { falarVoz("Por favor, diga o valor em reais.", 'CUSTO_VAR_VALOR'); return; }
-                let hoje = new Date().toISOString().slice(0,10);
-                db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: 'Mercado / Loja', valor: valor });
-                salvarBD();
-                falarVoz(`Lançamento de ${valor} reais confirmado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                return;
-            }
-
-            if (txt.includes('despesa pessoal') || txt.includes('retirada') || txt.includes('conta pessoal')) {
-                let valor = extrairNumeroDeTexto(txt);
-                let hoje = new Date().toISOString().slice(0,10);
-                if (valor > 0) {
-                    db.despesasPessoais.push({ id: Date.now().toString(), data: hoje, nome: 'Retirada Pessoal', valor: valor });
-                    salvarBD();
-                    falarVoz(`Despesa pessoal de ${valor} reais confirmada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                } else {
-                    falarVoz("Qual foi o valor da retirada pessoal?", 'DESPESA_PESSOAL_VALOR');
-                }
-                return;
-            }
-
-            if (estadoVoz === 'DESPESA_PESSOAL_VALOR') {
-                let valor = extrairNumeroDeTexto(txt);
-                let hoje = new Date().toISOString().slice(0,10);
-                db.despesasPessoais.push({ id: Date.now().toString(), data: hoje, nome: 'Retirada Pessoal', valor: valor });
-                salvarBD();
-                falarVoz(`Despesa pessoal de ${valor} reais confirmada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                return;
-            }
-
-            if (txt.includes('despesa fixa') || txt.includes('aluguel') || txt.includes('pró-labore') || txt.includes('pro labore')) {
-                let valor = extrairNumeroDeTexto(txt);
-                if (valor > 0) {
-                    db.despesas.push({ id: Date.now().toString(), nome: 'Despesa Fixa', valor: valor });
-                    salvarBD();
-                    falarVoz(`Despesa fixa de ${valor} reais adicionada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                } else {
-                    falarVoz("Qual é o valor mensal da despesa fixa?", 'DESPESA_FIXA_VALOR');
-                }
-                return;
-            }
-
-            if (estadoVoz === 'DESPESA_FIXA_VALOR') {
-                let valor = extrairNumeroDeTexto(txt);
-                db.despesas.push({ id: Date.now().toString(), nome: 'Despesa Fixa', valor: valor });
-                salvarBD();
-                falarVoz(`Despesa fixa de ${valor} reais adicionada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                return;
-            }
-
-            if (txt.includes('ingrediente') || txt.includes('cadastrar ingrediente')) {
-                falarVoz("Qual é o nome do ingrediente e o preço pago?", 'ING_DETALHES');
-                return;
-            }
-
-            if (estadoVoz === 'ING_DETALHES') {
-                let valor = extrairNumeroDeTexto(txt) || 10;
-                let nome = txt.replace(valor.toString(), '').replace('reais', '').trim() || 'Novo Ingrediente';
-                db.ingredientes.push({ id: Date.now().toString(), nome: nome, unidade: 'g', qtdEmbalagem: 1000, precoEmbalagem: valor });
-                salvarBD();
-                falarVoz(`Ingrediente ${nome} cadastrado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                return;
-            }
-
-            if (txt.includes('venda') || txt.includes('lançar venda') || txt.includes('vendi')) {
-                let prods = garantirArray(db.produtos);
-                let pEncontrado = prods.find(p => txt.includes(p.nome.toLowerCase()));
-
-                if (pEncontrado) {
-                    let hoje = new Date().toISOString().slice(0,10);
-                    db.vendas.push({
-                        id: Date.now().toString(), data: hoje, produtoId: pEncontrado.id, produtoNome: pEncontrado.nome,
-                        quantidade: 1, precoUnitario: pEncontrado.preco, custoIngUnitario: pEncontrado.custoIng || 0,
-                        custoEmbUnitario: pEncontrado.custoEmb || 0, canal: 'Atendente', formaPagamentoId: db.formasPagamento[0]?.id || '',
-                        desconto: 0, entregaLoja: 0
-                    });
-                    salvarBD();
-                    falarVoz(`Venda de ${pEncontrado.nome} registrada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                } else {
-                    falarVoz("Qual produto foi vendido?", 'VENDA_PRODUTO');
-                }
-                return;
-            }
-
-            if (estadoVoz === 'VENDA_PRODUTO') {
-                let pEncontrado = garantirArray(db.produtos).find(p => txt.includes(p.nome.toLowerCase())) || db.produtos[0];
-                if (pEncontrado) {
-                    let hoje = new Date().toISOString().slice(0,10);
-                    db.vendas.push({
-                        id: Date.now().toString(), data: hoje, produtoId: pEncontrado.id, produtoNome: pEncontrado.nome,
-                        quantidade: 1, precoUnitario: pEncontrado.preco, custoIngUnitario: pEncontrado.custoIng || 0,
-                        custoEmbUnitario: pEncontrado.custoEmb || 0, canal: 'Atendente', formaPagamentoId: db.formasPagamento[0]?.id || '',
-                        desconto: 0, entregaLoja: 0
-                    });
-                    salvarBD();
-                    falarVoz(`Venda de ${pEncontrado.nome} registrada! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                } else {
-                    falarVoz("Produto não encontrado.", 'AGUARDANDO_COMANDO');
-                }
-                return;
-            }
-
             if (txt.includes('dashboard') || txt.includes('início')) { nav('dashboard'); fecharAssistenteVoz(); return; }
             if (txt.includes('produtos')) { nav('produtos'); fecharAssistenteVoz(); return; }
             if (txt.includes('vendas')) { nav('vendas'); fecharAssistenteVoz(); return; }
-            if (txt.includes('ingredientes')) { nav('ingredientes'); fecharAssistenteVoz(); return; }
+            if (txt.includes('receitas') || txt.includes('repasse')) { nav('receitas'); fecharAssistenteVoz(); return; }
 
             falarVoz("Não entendi. O que deseja lançar?", 'AGUARDANDO_COMANDO');
         }
@@ -1042,6 +990,7 @@
         function sanitizarBanco() {
             db.produtos = garantirArray(db.produtos);
             db.vendas = garantirArray(db.vendas);
+            db.receitas = garantirArray(db.receitas);
             db.despesas = garantirArray(db.despesas);
             db.custosVariaveis = garantirArray(db.custosVariaveis);
             db.despesasPessoais = garantirArray(db.despesasPessoais);
@@ -1127,6 +1076,7 @@
             renderFichaTecnica();
             renderProdutos();
             renderVendas();
+            renderReceitas();
             renderDespesas();
             renderCustosVariaveis();
             renderDespesasPessoais();
@@ -1187,6 +1137,70 @@
                 }
             } catch (err) { alert("Erro ao ler comprovativo."); }
             finally { modal.classList.add('hidden'); event.target.value = ''; }
+        }
+
+        // LÓGICA DE OUTRAS RECEITAS & REPASSES
+        function salvarReceita(e) {
+            e.preventDefault();
+            let id = document.getElementById('recId').value;
+            let rec = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('recData').value,
+                origem: document.getElementById('recOrigem').value,
+                descricao: document.getElementById('recDescricao').value,
+                valor: parseValor(document.getElementById('recValor').value)
+            };
+            db.receitas = garantirArray(db.receitas);
+            if (id) {
+                let idx = db.receitas.findIndex(x => x.id == id);
+                if (idx !== -1) db.receitas[idx] = rec;
+            } else {
+                db.receitas.push(rec);
+            }
+            cancelarEdicaoReceita();
+            salvarBD();
+        }
+
+        function editarReceita(id) {
+            let rec = garantirArray(db.receitas).find(x => x.id == id);
+            if (!rec) return;
+            document.getElementById('recId').value = rec.id;
+            document.getElementById('recData').value = rec.data;
+            document.getElementById('recOrigem').value = rec.origem;
+            document.getElementById('recDescricao').value = rec.descricao;
+            document.getElementById('recValor').value = rec.valor;
+            document.getElementById('btnSalvarRec').innerText = "Atualizar Receita";
+            document.getElementById('btnCancelarRec').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoReceita() {
+            document.getElementById('formReceita').reset();
+            document.getElementById('recId').value = '';
+            document.getElementById('recData').valueAsDate = new Date();
+            document.getElementById('btnSalvarRec').innerText = "Registrar Receita / Repasse";
+            document.getElementById('btnCancelarRec').classList.add('hidden');
+        }
+
+        function excluirReceita(id) {
+            if (confirm("Deseja excluir este registro de receita?")) {
+                db.receitas = garantirArray(db.receitas).filter(x => x.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderReceitas() {
+            const tbody = document.querySelector('#tabelaReceitas tbody');
+            if(!tbody) return;
+            tbody.innerHTML = garantirArray(db.receitas).map(r => `<tr>
+                <td>${r.data}</td>
+                <td class="font-semibold text-blue-800">${r.origem}</td>
+                <td>${r.descricao}</td>
+                <td class="text-green-700 font-bold">R$ ${parseValor(r.valor).toFixed(2)}</td>
+                <td>
+                    <button onclick="editarReceita('${r.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirReceita('${r.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
         }
 
         function salvarIngrediente(e) {
@@ -1899,6 +1913,13 @@
                 }
             });
 
+            let outrasReceitasTotal = garantirArray(db.receitas).reduce((acc, r) => {
+                if (!r.data) return acc;
+                let { ano: rAno, mes: rMes } = extrairAnoMes(r.data);
+                let pertence = (tipoFiltro === 'mensal') ? (rAno === anoFiltro && rMes === mesFiltro) : (rAno === anoFiltro);
+                return pertence ? acc + parseValor(r.valor) : acc;
+            }, 0);
+
             let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => {
                 if (!cv.data) return acc;
                 let { ano: cAno, mes: cMes } = extrairAnoMes(cv.data);
@@ -1917,7 +1938,7 @@
             let despesasFixas = (tipoFiltro === 'anual') ? (despesasFixasMensais * 12) : despesasFixasMensais;
 
             let fatLiquido = fatBruto - descontos;
-            let lucroBruto = fatLiquido - cmvTotal - embTotal - custosVarTotal;
+            let lucroBruto = (fatLiquido + outrasReceitasTotal) - cmvTotal - embTotal - custosVarTotal;
             let margemContrib = lucroBruto - taxasTotal - entregasTotal;
             let lucroLiquidoOperacional = margemContrib - despesasFixas;
             let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
@@ -1925,6 +1946,7 @@
             document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
             document.getElementById('dreDesc').innerText = `R$ ${descontos.toFixed(2)}`;
             document.getElementById('dreFatLiq').innerText = `R$ ${fatLiquido.toFixed(2)}`;
+            document.getElementById('dreOutrasReceitas').innerText = `R$ ${outrasReceitasTotal.toFixed(2)}`;
             document.getElementById('dreCmv').innerText = `R$ ${cmvTotal.toFixed(2)}`;
             document.getElementById('dreEmb').innerText = `R$ ${embTotal.toFixed(2)}`;
             document.getElementById('dreCustosVar').innerText = `R$ ${custosVarTotal.toFixed(2)}`;
@@ -1937,22 +1959,23 @@
             document.getElementById('dreDespPessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
             document.getElementById('dreCaixaFinal').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
 
-            let margemLiqPerc = fatLiquido > 0 ? (lucroLiquidoOperacional / fatLiquido) * 100 : 0;
-            let cmvPerc = fatLiquido > 0 ? ((cmvTotal + embTotal + custosVarTotal) / fatLiquido) * 100 : 0;
-            let indiceMargemContrib = fatLiquido > 0 ? (margemContrib / fatLiquido) : 0;
+            let receitamTotalGlobal = fatLiquido + outrasReceitasTotal;
+            let margemLiqPerc = receitamTotalGlobal > 0 ? (lucroLiquidoOperacional / receitamTotalGlobal) * 100 : 0;
+            let cmvPerc = receitamTotalGlobal > 0 ? ((cmvTotal + embTotal + custosVarTotal) / receitamTotalGlobal) * 100 : 0;
+            let indiceMargemContrib = receitamTotalGlobal > 0 ? (margemContrib / receitamTotalGlobal) : 0;
             let pontoEquilibrio = indiceMargemContrib > 0 ? (despesasFixas / indiceMargemContrib) : 0;
 
             document.getElementById('indMargemLiq').innerText = `${margemLiqPerc.toFixed(1)}%`;
             document.getElementById('indCmvPerc').innerText = `${cmvPerc.toFixed(1)}%`;
             document.getElementById('indPontoEquilibrio').innerText = `R$ ${pontoEquilibrio.toFixed(2)}`;
 
-            document.getElementById('dash-fat').innerText = `R$ ${fatLiquido.toFixed(2)}`;
+            document.getElementById('dash-fat').innerText = `R$ ${(fatLiquido + outrasReceitasTotal).toFixed(2)}`;
             document.getElementById('dash-cmv').innerText = `R$ ${(cmvTotal + embTotal + custosVarTotal).toFixed(2)}`;
             document.getElementById('dash-fixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
             document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
             document.getElementById('dash-pessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
 
-            renderGraficos(fatLiquido, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro, tipoFiltro);
+            renderGraficos(fatLiquido + outrasReceitasTotal, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro, tipoFiltro);
         }
 
         function renderGraficos(fat, cmv, taxas, fixas, lucro, ano, mes, tipoFiltro) {
@@ -2036,6 +2059,7 @@
             let mesStr = String(hoje.getMonth() + 1).padStart(2, '0');
             document.getElementById('filtroMesAno').value = `${hoje.getFullYear()}-${mesStr}`;
             document.getElementById('vendaData').valueAsDate = hoje;
+            document.getElementById('recData').valueAsDate = hoje;
             document.getElementById('custoVarData').valueAsDate = hoje;
             document.getElementById('despPessoalData').valueAsDate = hoje;
             init();
