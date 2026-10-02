@@ -82,6 +82,22 @@
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden text-gray-800">
 
+    <!-- Modal de Alertas CMV -->
+    <div id="modalAlertasCMV" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-lg font-bold text-mendonca-red flex items-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i> Produtos Fora do CMV Máximo
+                </h3>
+                <button onclick="fecharModalAlertasCMV()" class="text-gray-500 hover:text-black font-bold text-xl">&times;</button>
+            </div>
+            <div id="listaAlertasCMVModal" class="space-y-3 max-h-80 overflow-y-auto"></div>
+            <div class="mt-5 text-right">
+                <button onclick="fecharModalAlertasCMV()" class="btn bg-gray-800 text-white text-xs uppercase font-bold px-4 py-2">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal de Voz Ultrarrápido -->
     <div id="voiceModal" class="fixed inset-0 bg-black/85 z-50 flex flex-col items-center justify-center text-white hidden p-4">
         <div class="relative mb-4">
@@ -155,9 +171,6 @@
             <i class="fas fa-microphone text-2xl"></i>
         </button>
 
-        <!-- Alertas -->
-        <div id="alertsContainer" class="mb-4 space-y-2"></div>
-
         <!-- VIEW: DASHBOARD -->
         <div id="view-dashboard" class="tab-content active">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-gray-200 pb-4">
@@ -167,19 +180,24 @@
                     </h2>
                     <p class="text-xs text-gray-500 font-medium mt-0.5">Acompanhamento dos principais indicadores de desempenho</p>
                 </div>
-                <div class="flex flex-wrap items-center gap-2 bg-white p-2 rounded-lg border shadow-sm">
-                    <label class="text-xs font-bold text-gray-600">Visão:</label>
-                    <select id="tipoFiltro" onchange="alternarTipoFiltro()" class="text-xs p-1.5 border rounded bg-gray-50 font-bold text-mendonca-black">
-                        <option value="mensal">Mensal</option>
-                        <option value="anual">Anual (Acumulado)</option>
-                    </select>
-                    
-                    <div id="containerFiltroMes" class="inline-block">
-                        <input type="month" id="filtroMesAno" onchange="atualizarTudo()" class="text-xs p-1.5 border rounded">
-                    </div>
-                    
-                    <div id="containerFiltroAno" class="hidden inline-block">
-                        <select id="filtroAnoOnly" onchange="atualizarTudo()" class="text-xs p-1.5 border rounded font-semibold text-mendonca-red"></select>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="abrirModalAlertasCMV()" id="btnAlertasCMV" class="hidden btn bg-red-100 hover:bg-red-200 text-mendonca-red border border-red-300 font-bold text-xs py-2 px-3 shadow-sm flex items-center gap-1.5">
+                        <i class="fas fa-exclamation-triangle"></i> Alertas CMV (<span id="qtdAlertasCMV">0</span>)
+                    </button>
+                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border shadow-sm">
+                        <label class="text-xs font-bold text-gray-600">Visão:</label>
+                        <select id="tipoFiltro" onchange="alternarTipoFiltro()" class="text-xs p-1.5 border rounded bg-gray-50 font-bold text-mendonca-black">
+                            <option value="mensal">Mensal</option>
+                            <option value="anual">Anual (Acumulado)</option>
+                        </select>
+                        
+                        <div id="containerFiltroMes" class="inline-block">
+                            <input type="month" id="filtroMesAno" onchange="atualizarTudo()" class="text-xs p-1.5 border rounded">
+                        </div>
+                        
+                        <div id="containerFiltroAno" class="hidden inline-block">
+                            <select id="filtroAnoOnly" onchange="atualizarTudo()" class="text-xs p-1.5 border rounded font-semibold text-mendonca-red"></select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -219,16 +237,16 @@
             </div>
         </div>
 
-        <!-- VIEW: LANÇAR VENDA (PDV) -->
+        <!-- VIEW: LANÇAR VENDA (PDV MULTI-ITEM E MULTI-PAGAMENTO) -->
         <div id="view-pdv" class="tab-content">
             <div class="mb-6 border-b border-gray-200 pb-4">
                 <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
                     <i class="fas fa-cash-register text-mendonca-gold mr-2.5"></i> Lançamento Rápido de Venda
                 </h2>
-                <p class="text-xs text-gray-500 font-medium mt-0.5">Registre aqui novas saídas de caixa e pedidos realizados</p>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Registre pedidos com múltiplos produtos e formas de pagamento divididas</p>
             </div>
 
-            <div class="card-mendonca max-w-3xl mx-auto">
+            <div class="card-mendonca max-w-4xl mx-auto">
                 <div class="flex items-center justify-between border-b border-mendonca-gold/40 pb-3 mb-4">
                     <h3 class="font-bold text-lg text-mendonca-black flex items-center">
                         <i class="fas fa-plus-circle text-mendonca-red mr-2"></i> Registrar Nova Venda
@@ -238,49 +256,124 @@
                 
                 <form id="formVenda" onsubmit="salvarVenda(event)">
                     <input type="hidden" id="vendaId">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <!-- Configurações Gerais do Pedido -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4 bg-white p-3.5 rounded border shadow-sm">
                         <div>
                             <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Data da Venda</label>
-                            <input type="date" id="vendaData" required class="p-2.5 mt-1 border rounded bg-white font-medium text-xs">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Produto Vendido</label>
-                            <div class="relative mt-1 mb-1">
-                                <input type="text" id="vendaBuscaProduto" oninput="filtrarProdutosVenda()" placeholder="Pesquisar produto..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white font-normal">
-                                <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
-                            </div>
-                            <select id="vendaProduto" required class="text-xs p-2.5 border rounded bg-white font-semibold text-gray-800 w-full"></select>
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Quantidade</label>
-                            <input type="text" id="vendaQtd" value="1" required class="p-2.5 mt-1 border rounded bg-white text-xs font-semibold">
+                            <input type="date" id="vendaData" required class="p-2 mt-1 border rounded bg-white text-xs font-medium">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Canal de Vendas</label>
-                            <select id="vendaCanal" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium">
+                            <select id="vendaCanal" required class="p-2 mt-1 border rounded bg-white text-xs font-medium">
                                 <option value="Brendi/Site">Brendi/Site</option>
                                 <option value="Delivery Much">Delivery Much</option>
                                 <option value="Atendente">Atendente</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Forma de Pagamento</label>
-                            <select id="vendaFormaPagamento" required class="p-2.5 mt-1 border rounded bg-white text-xs font-medium"></select>
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Desconto (R$)</label>
+                            <input type="text" id="vendaDesconto" value="0" oninput="atualizarTotaisPedidoTemp()" class="p-2 mt-1 border rounded bg-white text-xs">
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Desconto Concedido (R$)</label>
-                            <input type="text" id="vendaDesconto" value="0" class="p-2.5 mt-1 border rounded bg-white text-xs">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Custo de Entrega Assumido pela Loja (R$)</label>
-                            <input type="text" id="vendaEntrega" value="0" class="p-2.5 mt-1 border rounded bg-white text-xs">
+                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Custo Entrega Loja (R$)</label>
+                            <input type="text" id="vendaEntrega" value="0" oninput="atualizarTotaisPedidoTemp()" class="p-2 mt-1 border rounded bg-white text-xs">
                         </div>
                     </div>
-                    <div class="mt-6">
-                        <button type="submit" id="btnSalvarVenda" class="btn btn-green w-full py-3 text-sm shadow-md flex items-center justify-center gap-2 font-bold uppercase tracking-wider">
-                            <i class="fas fa-check-circle"></i> Registrar Venda
+
+                    <!-- 1. Adicionar Produtos ao Pedido -->
+                    <div class="p-3.5 bg-white rounded-md border border-gray-200 mb-4 shadow-sm">
+                        <h4 class="font-bold text-xs text-mendonca-black mb-2 flex items-center">
+                            <i class="fas fa-pizza-slice mr-1.5 text-mendonca-gold"></i> 1. Adicionar Produtos ao Pedido
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
+                            <div>
+                                <label class="text-xs font-semibold text-gray-700">Selecione o Produto</label>
+                                <div class="relative mt-1 mb-1">
+                                    <input type="text" id="vendaBuscaProduto" oninput="filtrarProdutosVenda()" placeholder="Pesquisar..." class="pl-8 text-xs p-2 border rounded w-full bg-white">
+                                    <i class="fas fa-search absolute left-2.5 top-3 text-gray-400 text-xs"></i>
+                                </div>
+                                <select id="vendaProduto" class="text-xs p-2 border rounded bg-white w-full"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-gray-700">Quantidade</label>
+                                <input type="text" id="vendaQtd" value="1" class="text-xs p-2 mt-1 border rounded bg-white font-bold">
+                            </div>
+                            <div>
+                                <button type="button" onclick="adicionarItemAoPedidoTemp()" class="btn btn-green text-xs w-full py-2.5 flex justify-center items-center gap-1 font-bold">
+                                    <i class="fas fa-plus-circle"></i> Adicionar Produto
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabela de Produtos no Pedido Atual -->
+                        <div class="overflow-x-auto">
+                            <table class="text-xs w-full border rounded">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b">
+                                        <th class="p-2">Produto</th>
+                                        <th class="p-2 text-center">Qtd</th>
+                                        <th class="p-2">Preço Unit.</th>
+                                        <th class="p-2">Subtotal</th>
+                                        <th class="p-2 text-center">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaItensPedidoTemp"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 2. Formas de Pagamento (Múltiplas) -->
+                    <div class="p-3.5 bg-white rounded-md border border-gray-200 mb-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-bold text-xs text-mendonca-black flex items-center">
+                                <i class="fas fa-wallet mr-1.5 text-mendonca-gold"></i> 2. Formas de Pagamento (Divisão de Pagamento)
+                            </h4>
+                            <span class="text-xs font-bold text-mendonca-red" id="lblSaldoRestantePedido">Falta Pagar: R$ 0,00</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
+                            <div>
+                                <label class="text-xs font-semibold text-gray-700">Forma de Pagamento</label>
+                                <select id="vendaFormaPagamento" class="text-xs p-2 border rounded bg-white mt-1 w-full"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-gray-700">Valor Pago Nesta Forma (R$)</label>
+                                <input type="text" id="vendaValorPagamento" placeholder="Ex: 50,00" class="text-xs p-2 mt-1 border rounded bg-white font-bold text-green-700">
+                            </div>
+                            <div>
+                                <button type="button" onclick="adicionarPagamentoAoPedidoTemp()" class="btn btn-gold text-xs w-full py-2.5 flex justify-center items-center gap-1 font-bold">
+                                    <i class="fas fa-plus-circle"></i> Adicionar Pagamento
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabela de Pagamentos Registrados no Pedido -->
+                        <div class="overflow-x-auto">
+                            <table class="text-xs w-full border rounded">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b">
+                                        <th class="p-2">Forma de Pagamento</th>
+                                        <th class="p-2">Valor Pago</th>
+                                        <th class="p-2 text-center">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listaPagamentosPedidoTemp"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Painel de Totais do Pedido -->
+                    <div class="bg-mendonca-black text-white p-3.5 rounded-md flex flex-wrap justify-between items-center text-xs md:text-sm font-bold mb-4 shadow-md border border-mendonca-gold/30">
+                        <div>Subtotal Itens: <span id="lblTotalBrutoItens" class="text-mendonca-gold">R$ 0,00</span></div>
+                        <div>Total do Pedido: <span id="lblTotalFinalPedido" class="text-green-400">R$ 0,00</span></div>
+                        <div>Total Pago: <span id="lblTotalPagamentosPedido" class="text-blue-300">R$ 0,00</span></div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" id="btnSalvarVenda" class="btn btn-green w-full py-3.5 text-sm shadow-md flex items-center justify-center gap-2 font-bold uppercase tracking-wider">
+                            <i class="fas fa-check-circle"></i> Registrar Venda Completa
                         </button>
-                        <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-500 text-white mt-2 w-full text-xs hidden uppercase font-bold">Cancelar Edição</button>
+                        <button type="button" id="btnCancelarEdicaoVenda" onclick="cancelarEdicaoVenda()" class="btn bg-gray-500 text-white mt-2 w-full text-xs hidden uppercase font-bold py-2">Cancelar Edição</button>
                     </div>
                 </form>
             </div>
@@ -308,7 +401,7 @@
                         <thead>
                             <tr class="bg-gray-100 border-b">
                                 <th class="p-2.5">Forma de Pagamento</th>
-                                <th class="p-2.5 text-center">Qtd. Vendas</th>
+                                <th class="p-2.5 text-center">Qtd. Lançamentos</th>
                                 <th class="p-2.5">Total Bruto</th>
                                 <th class="p-2.5 text-mendonca-red">Total Taxas</th>
                                 <th class="p-2.5 text-mendonca-green">Total Líquido</th>
@@ -327,10 +420,10 @@
                     <thead>
                         <tr>
                             <th>Data</th>
-                            <th>Produto</th>
-                            <th>Qtd</th>
+                            <th>Itens Vendidos</th>
+                            <th>Qtd Total</th>
                             <th>Canal</th>
-                            <th>Pagamento</th>
+                            <th>Formas de Pagamento</th>
                             <th>Bruto</th>
                             <th>Taxa</th>
                             <th>Líquido</th>
@@ -477,7 +570,7 @@
                         </div>
                     </div>
 
-                    <!-- PRECIFICAÇÃO E CMV REAL (5 COLUNAS) -->
+                    <!-- PRECIFICAÇÃO E CMV REAL -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 bg-white p-3 rounded-md border border-gray-200">
                         <div>
                             <label class="text-xs font-semibold text-gray-600">Custo Ingredientes (Auto)</label>
@@ -499,10 +592,6 @@
                             <label class="text-xs font-bold text-purple-900">CMV Real (%)</label>
                             <input type="text" id="prodCmvReal" readonly class="bg-purple-50 font-black text-purple-900 border-purple-300 cursor-not-allowed p-2.5 mt-1" value="0.0%">
                         </div>
-                    </div>
-
-                    <div id="alertaPrecoForaDaFaixa" class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-900 text-xs font-semibold hidden rounded shadow-sm">
-                        <i class="fas fa-exclamation-triangle text-yellow-600 text-sm mr-1"></i> <span id="msgAlertaPreco"></span>
                     </div>
 
                     <div class="mt-4 flex gap-2">
@@ -1084,14 +1173,41 @@
         };
 
         let ingredientesTempProduto = [];
+        let itensPedidoTemp = [];
+        let pagamentosPedidoTemp = [];
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
+
+        // FUNÇÕES AUXILIARES DE COMPATIBILIDADE DE VENDAS
+        function getItensVenda(v) {
+            if (v.itens && Array.isArray(v.itens) && v.itens.length > 0) return v.itens;
+            return [{
+                produtoId: v.produtoId || '',
+                produtoNome: v.produtoNome || 'Produto',
+                quantidade: parseValor(v.quantidade) || 1,
+                precoUnitario: parseValor(v.precoUnitario),
+                custoIngUnitario: parseValor(v.custoIngUnitario),
+                custoEmbUnitario: parseValor(v.custoEmbUnitario)
+            }];
+        }
+
+        function getPagamentosVenda(v) {
+            if (v.pagamentos && Array.isArray(v.pagamentos) && v.pagamentos.length > 0) return v.pagamentos;
+            let itens = getItensVenda(v);
+            let subtotalItens = itens.reduce((acc, i) => acc + (i.quantidade * i.precoUnitario), 0);
+            let valorBruto = Math.max(0, subtotalItens - parseValor(v.desconto));
+            let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
+            return [{
+                formaPagamentoId: v.formaPagamentoId || '',
+                formaPagamentoNome: fp ? fp.nome : 'Outros',
+                valor: valorBruto
+            }];
+        }
 
         // MOTOR DA ASSISTENTE DE VOZ ULTRARRÁPIDA
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
         let estadoVoz = 'INATIVO';
-        let tempVoz = {};
 
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -1151,7 +1267,6 @@
 
         function iniciarAssistenteVoz() {
             document.getElementById('voiceModal').classList.remove('hidden');
-            tempVoz = {};
             falarVoz(getSaudacao(), 'AGUARDANDO_COMANDO');
         }
 
@@ -1162,61 +1277,13 @@
             document.getElementById('voiceModal').classList.add('hidden');
         }
 
-        function extrairNumeroDeTexto(texto) {
-            let palavras = texto.replace('reais', '').replace('real', '').replace('r$', '').trim();
-            let num = parseFloat(palavras.replace(',', '.'));
-            if (!isNaN(num)) return num;
-
-            const numerosExtenso = { "um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8, "nove": 9, "dez": 10, "vinte": 20, "trinta": 30, "quarenta": 40, "cinquenta": 50, "cem": 100, "oitenta": 80, "noventa": 90 };
-            return numerosExtenso[palavras] || 0;
-        }
-
         function processarVoz(texto) {
             const txt = texto.toLowerCase();
-
-            if (estadoVoz === 'PERGUNTAR_OUTRO') {
-                if (txt.includes('não') || txt.includes('nao') || txt.includes('não preciso') || txt.includes('não obrigado') || txt.includes('cancelar')) {
-                    falarVoz("Perfeito!", 'FINALIZAR_VOLTAR_DASHBOARD');
-                    return;
-                } else if (txt.includes('sim') || txt.includes('quero') || txt.includes('outra')) {
-                    falarVoz("Pode falar o próximo comando.", 'AGUARDANDO_COMANDO');
-                    return;
-                }
-            }
-
-            if (txt.includes('dre') || txt.includes('explicar dre') || txt.includes('resultado') || txt.includes('resumo') || txt.includes('como estão os resultados') || txt.includes('como esta o caixa')) {
-                nav('dre');
-                let fat = document.getElementById('dreFatLiq').innerText;
-                let lucro = document.getElementById('dreLucroLiq').innerText;
-                let cmv = document.getElementById('indCmvPerc').innerText;
-                let caixa = document.getElementById('dreCaixaFinal').innerText;
-
-                let resumo = `Neste mês, seu faturamento líquido é de ${fat}, com lucro operacional de ${lucro}. O CMV geral está em ${cmv}, e o saldo restante em caixa é de ${caixa}. Deseja fazer algum lançamento?`;
-                falarVoz(resumo, 'PERGUNTAR_OUTRO');
-                return;
-            }
-
-            if (txt.includes('custo variável') || txt.includes('custo variavel') || txt.includes('cupom') || txt.includes('mercado')) {
-                let valor = extrairNumeroDeTexto(txt);
-                let hoje = new Date().toISOString().slice(0,10);
-
-                if (valor > 0) {
-                    let local = txt.replace('lançar', '').replace('lancar', '').replace('custo variável', '').replace('custo variavel', '').replace(valor.toString(), '').replace('reais', '').trim() || 'Mercado Geral';
-                    db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: local, valor: valor });
-                    salvarBD();
-                    falarVoz(`Lançamento de ${valor} reais confirmed! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                } else {
-                    falarVoz("Qual foi o valor do custo variável?", 'CUSTO_VAR_VALOR');
-                }
-                return;
-            }
-
             if (txt.includes('dashboard') || txt.includes('início')) { nav('dashboard'); fecharAssistenteVoz(); return; }
             if (txt.includes('produtos')) { nav('produtos'); fecharAssistenteVoz(); return; }
             if (txt.includes('vendas')) { nav('vendas'); fecharAssistenteVoz(); return; }
             if (txt.includes('receitas') || txt.includes('repasse')) { nav('receitas'); fecharAssistenteVoz(); return; }
-
-            falarVoz("Não entendi. O que deseja lançar?", 'AGUARDANDO_COMANDO');
+            falarVoz("Não entendi. O que deseja fazer?", 'AGUARDANDO_COMANDO');
         }
 
         function sanitizarBanco() {
@@ -1337,111 +1404,378 @@
             alert("Metas atualizadas com sucesso!");
         }
 
-        function abrirCamera(tipo) {
-            if (tipo === 'custoVar') document.getElementById('cameraCustoVarInput').click();
-            else document.getElementById('cameraDespPessoalInput').click();
-        }
+        // LÓGICA DE ALERTAS CMV (DASHBOARD & MODAL)
+        function verificarAlertas() {
+            let cmvMaxConfig = (db.config ? parseValor(db.config.cmvMax) : 30);
+            let produtosFora = [];
 
-        async function processarFotoComprovante(event, tipo) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const modal = document.getElementById('ocrLoadingModal');
-            modal.classList.remove('hidden');
+            garantirArray(db.produtos).forEach(p => {
+                let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
+                let cmvReal = p.preco > 0 ? (custoTotal / p.preco) * 100 : 0;
 
-            try {
-                const result = await Tesseract.recognize(file, 'por');
-                const text = result.data.text;
-                let valor = extrairValorDoTexto(text);
-
-                if (valor && valor > 0) {
-                    let hoje = new Date().toISOString().slice(0,10);
-                    if (tipo === 'custoVar') {
-                        db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: "Comprovante Escaneado", valor: valor });
-                        salvarBD();
-                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registrado com sucesso!`);
-                    } else if (tipo === 'despPessoal') {
-                        db.despesasPessoais.push({ id: Date.now().toString(), data: hoje, nome: "Comprovante Escaneado", valor: valor });
-                        salvarBD();
-                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registrado com sucesso!`);
-                    }
-                } else {
-                    alert("Não foi possível ler o valor.");
+                if (cmvReal > cmvMaxConfig) {
+                    produtosFora.push({ nome: p.nome, cmvReal, cmvMaxConfig });
                 }
-            } catch (err) { alert("Erro ao ler comprovativo."); }
-            finally { modal.classList.add('hidden'); event.target.value = ''; }
+            });
+
+            const btnAlertas = document.getElementById('btnAlertasCMV');
+            const qtdAlertas = document.getElementById('qtdAlertasCMV');
+            const listaModal = document.getElementById('listaAlertasCMVModal');
+
+            if (produtosFora.length > 0) {
+                if (btnAlertas) btnAlertas.classList.remove('hidden');
+                if (qtdAlertas) qtdAlertas.innerText = produtosFora.length;
+
+                if (listaModal) {
+                    listaModal.innerHTML = produtosFora.map(p => `
+                        <div class="p-3 bg-red-50 border-l-4 border-mendonca-red text-red-900 text-xs rounded shadow-sm flex justify-between items-center font-semibold">
+                            <div>
+                                <span class="font-bold text-sm block">${p.nome}</span>
+                                <span class="text-gray-600">CMV Real: <b class="text-mendonca-red text-sm">${p.cmvReal.toFixed(1)}%</b></span>
+                            </div>
+                            <span class="bg-red-200 text-red-900 px-2.5 py-1 rounded-full text-xs font-bold">META: ${p.cmvMaxConfig}%</span>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                if (btnAlertas) btnAlertas.classList.add('hidden');
+            }
         }
 
-        function salvarReceita(e) {
-            e.preventDefault();
-            let id = document.getElementById('recId').value;
-            let rec = {
-                id: id ? id : Date.now().toString(),
-                data: document.getElementById('recData').value,
-                origem: document.getElementById('recOrigem').value,
-                descricao: document.getElementById('recDescricao').value,
-                valor: parseValor(document.getElementById('recValor').value)
-            };
-            db.receitas = garantirArray(db.receitas);
-            if (id) {
-                let idx = db.receitas.findIndex(x => x.id == id);
-                if (idx !== -1) db.receitas[idx] = rec;
+        function abrirModalAlertasCMV() {
+            document.getElementById('modalAlertasCMV').classList.remove('hidden');
+        }
+
+        function fecharModalAlertasCMV() {
+            document.getElementById('modalAlertasCMV').classList.add('hidden');
+        }
+
+        // LÓGICA DE VENDAS MULTI-ITEM E MULTI-PAGAMENTO
+        function adicionarItemAoPedidoTemp() {
+            let prodId = document.getElementById('vendaProduto').value;
+            let qtd = parseValor(document.getElementById('vendaQtd').value);
+            if (!prodId || qtd <= 0) return;
+
+            let prod = garantirArray(db.produtos).find(p => p.id == prodId);
+            if (!prod) return;
+
+            let idx = itensPedidoTemp.findIndex(x => x.produtoId == prodId);
+            if (idx !== -1) {
+                itensPedidoTemp[idx].quantidade += qtd;
             } else {
-                db.receitas.push(rec);
+                itensPedidoTemp.push({
+                    produtoId: prod.id,
+                    produtoNome: prod.nome,
+                    quantidade: qtd,
+                    precoUnitario: prod.preco,
+                    custoIngUnitario: prod.custoIng || 0,
+                    custoEmbUnitario: prod.custoEmb || 0
+                });
             }
-            cancelarEdicaoReceita();
+            document.getElementById('vendaQtd').value = '1';
+            renderItensPedidoTemp();
+        }
+
+        function removerItemPedidoTemp(idx) {
+            itensPedidoTemp.splice(idx, 1);
+            renderItensPedidoTemp();
+        }
+
+        function renderItensPedidoTemp() {
+            const tbody = document.getElementById('listaItensPedidoTemp');
+            if (!tbody) return;
+            if (itensPedidoTemp.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-3">Nenhum produto adicionado ao pedido.</td></tr>`;
+            } else {
+                tbody.innerHTML = itensPedidoTemp.map((item, idx) => {
+                    let subtotal = item.quantidade * item.precoUnitario;
+                    return `<tr class="border-b">
+                        <td class="p-2 font-semibold">${item.produtoNome}</td>
+                        <td class="p-2 text-center font-bold">${item.quantidade}</td>
+                        <td class="p-2">R$ ${item.precoUnitario.toFixed(2)}</td>
+                        <td class="p-2 font-bold text-green-700">R$ ${subtotal.toFixed(2)}</td>
+                        <td class="p-2 text-center"><button type="button" onclick="removerItemPedidoTemp(${idx})" class="text-red-600"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+                }).join('');
+            }
+            atualizarTotaisPedidoTemp();
+        }
+
+        function adicionarPagamentoAoPedidoTemp() {
+            let fpId = document.getElementById('vendaFormaPagamento').value;
+            let valor = parseValor(document.getElementById('vendaValorPagamento').value);
+            if (!fpId || valor <= 0) return;
+
+            let fp = garantirArray(db.formasPagamento).find(f => f.id == fpId);
+            if (!fp) return;
+
+            let idx = pagamentosPedidoTemp.findIndex(x => x.formaPagamentoId == fpId);
+            if (idx !== -1) {
+                pagamentosPedidoTemp[idx].valor += valor;
+            } else {
+                pagamentosPedidoTemp.push({
+                    formaPagamentoId: fp.id,
+                    formaPagamentoNome: fp.nome,
+                    valor: valor
+                });
+            }
+            document.getElementById('vendaValorPagamento').value = '';
+            renderPagamentosPedidoTemp();
+        }
+
+        function removerPagamentoPedidoTemp(idx) {
+            pagamentosPedidoTemp.splice(idx, 1);
+            renderPagamentosPedidoTemp();
+        }
+
+        function renderPagamentosPedidoTemp() {
+            const tbody = document.getElementById('listaPagamentosPedidoTemp');
+            if (!tbody) return;
+            if (pagamentosPedidoTemp.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 py-3">Nenhum pagamento registrado.</td></tr>`;
+            } else {
+                tbody.innerHTML = pagamentosPedidoTemp.map((p, idx) => {
+                    return `<tr class="border-b">
+                        <td class="p-2 font-semibold">${p.formaPagamentoNome}</td>
+                        <td class="p-2 font-bold text-green-700">R$ ${p.valor.toFixed(2)}</td>
+                        <td class="p-2 text-center"><button type="button" onclick="removerPagamentoPedidoTemp(${idx})" class="text-red-600"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+                }).join('');
+            }
+            atualizarTotaisPedidoTemp();
+        }
+
+        function atualizarTotaisPedidoTemp() {
+            let subtotalBrutoItens = itensPedidoTemp.reduce((acc, i) => acc + (i.quantidade * i.precoUnitario), 0);
+            let desconto = parseValor(document.getElementById('vendaDesconto')?.value);
+            let totalPedido = Math.max(0, subtotalBrutoItens - desconto);
+            let totalPagos = pagamentosPedidoTemp.reduce((acc, p) => acc + p.valor, 0);
+            let saldoRestante = Math.max(0, totalPedido - totalPagos);
+
+            const elBruto = document.getElementById('lblTotalBrutoItens');
+            if (elBruto) elBruto.innerText = `R$ ${subtotalBrutoItens.toFixed(2)}`;
+
+            const elTotal = document.getElementById('lblTotalFinalPedido');
+            if (elTotal) elTotal.innerText = `R$ ${totalPedido.toFixed(2)}`;
+
+            const elPagos = document.getElementById('lblTotalPagamentosPedido');
+            if (elPagos) elPagos.innerText = `R$ ${totalPagos.toFixed(2)}`;
+
+            const elSaldo = document.getElementById('lblSaldoRestantePedido');
+            if (elSaldo) {
+                if (saldoRestante > 0) {
+                    elSaldo.innerText = `Falta Pagar: R$ ${saldoRestante.toFixed(2)}`;
+                    elSaldo.className = "text-xs font-bold text-mendonca-red";
+                } else {
+                    elSaldo.innerText = `Pago Integralmente!`;
+                    elSaldo.className = "text-xs font-bold text-green-700";
+                }
+            }
+
+            const inputValorPag = document.getElementById('vendaValorPagamento');
+            if (inputValorPag && (!inputValorPag.value || inputValorPag.value === '0')) {
+                if (saldoRestante > 0) inputValorPag.placeholder = `Ex: ${saldoRestante.toFixed(2)}`;
+            }
+        }
+
+        function salvarVenda(e) {
+            e.preventDefault();
+            if (itensPedidoTemp.length === 0) {
+                alert("Adicione pelo menos um produto ao pedido!");
+                return;
+            }
+            if (pagamentosPedidoTemp.length === 0) {
+                alert("Adicione pelo menos uma forma de pagamento ao pedido!");
+                return;
+            }
+
+            let id = document.getElementById('vendaId').value;
+            let venda = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('vendaData').value,
+                canal: document.getElementById('vendaCanal').value,
+                desconto: parseValor(document.getElementById('vendaDesconto').value),
+                entregaLoja: parseValor(document.getElementById('vendaEntrega').value),
+                itens: [...itensPedidoTemp],
+                pagamentos: [...pagamentosPedidoTemp]
+            };
+
+            db.vendas = garantirArray(db.vendas);
+            if (id) {
+                let idx = db.vendas.findIndex(x => x.id == id);
+                if (idx !== -1) db.vendas[idx] = venda;
+            } else {
+                db.vendas.push(venda);
+            }
+
+            cancelarEdicaoVenda();
             salvarBD();
         }
 
-        function editarReceita(id) {
-            let rec = garantirArray(db.receitas).find(x => x.id == id);
-            if (!rec) return;
-            document.getElementById('recId').value = rec.id;
-            document.getElementById('recData').value = rec.data;
-            document.getElementById('recOrigem').value = rec.origem;
-            document.getElementById('recDescricao').value = rec.descricao;
-            document.getElementById('recValor').value = rec.valor;
-            document.getElementById('btnSalvarRec').innerText = "Atualizar Receita";
-            document.getElementById('btnCancelarRec').classList.remove('hidden');
+        function editarVenda(id) {
+            let v = garantirArray(db.vendas).find(x => x.id == id);
+            if (!v) return;
+            document.getElementById('vendaId').value = v.id;
+            document.getElementById('vendaData').value = v.data;
+            document.getElementById('vendaCanal').value = v.canal || 'Brendi/Site';
+            document.getElementById('vendaDesconto').value = v.desconto || 0;
+            document.getElementById('vendaEntrega').value = v.entregaLoja || 0;
+
+            itensPedidoTemp = JSON.parse(JSON.stringify(getItensVenda(v)));
+            pagamentosPedidoTemp = JSON.parse(JSON.stringify(getPagamentosVenda(v)));
+
+            renderItensPedidoTemp();
+            renderPagamentosPedidoTemp();
+
+            document.getElementById('btnSalvarVenda').innerHTML = '<i class="fas fa-save"></i> Atualizar Venda';
+            document.getElementById('btnCancelarEdicaoVenda').classList.remove('hidden');
         }
 
-        function cancelarEdicaoReceita() {
-            document.getElementById('formReceita').reset();
-            document.getElementById('recId').value = '';
-            document.getElementById('recData').valueAsDate = new Date();
-            document.getElementById('btnSalvarRec').innerText = "Registrar Receita / Repasse";
-            document.getElementById('btnCancelarRec').classList.add('hidden');
+        function cancelarEdicaoVenda() {
+            document.getElementById('formVenda').reset();
+            document.getElementById('vendaId').value = '';
+            document.getElementById('vendaData').valueAsDate = new Date();
+            itensPedidoTemp = [];
+            pagamentosPedidoTemp = [];
+            renderItensPedidoTemp();
+            renderPagamentosPedidoTemp();
+            document.getElementById('btnSalvarVenda').innerHTML = '<i class="fas fa-check-circle"></i> Registrar Venda Completa';
+            document.getElementById('btnCancelarEdicaoVenda').classList.add('hidden');
         }
 
-        function excluirReceita(id) {
-            if (confirm("Deseja excluir este registro de receita?")) {
-                db.receitas = garantirArray(db.receitas).filter(x => x.id != id);
+        function excluirVenda(id) {
+            if(confirm("Deseja excluir esta venda?")) {
+                db.vendas = garantirArray(db.vendas).filter(v => v.id != id);
                 salvarBD();
             }
         }
 
-        function renderReceitas() {
-            const tbody = document.querySelector('#tabelaReceitas tbody');
-            if(!tbody) return;
-            tbody.innerHTML = garantirArray(db.receitas).map(r => `<tr>
-                <td>${r.data}</td>
-                <td class="font-semibold text-blue-800">${r.origem}</td>
-                <td>${r.descricao}</td>
-                <td class="text-green-700 font-bold">R$ ${parseValor(r.valor).toFixed(2)}</td>
-                <td>
-                    <button onclick="editarReceita('${r.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
-                    <button onclick="excluirReceita('${r.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`).join('');
+        function renderVendas() {
+            let tipoFiltro = document.getElementById('tipoFiltro')?.value || 'mensal';
+            let anoFiltro, mesFiltro, textoPeriodo;
+
+            if (tipoFiltro === 'mensal') {
+                let filtroVal = document.getElementById('filtroMesAno')?.value;
+                if (filtroVal) [anoFiltro, mesFiltro] = filtroVal.split('-');
+                else {
+                    let hoje = new Date();
+                    anoFiltro = hoje.getFullYear().toString();
+                    mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
+                }
+                let nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                textoPeriodo = `${nomesMeses[parseInt(mesFiltro) - 1]} / ${anoFiltro}`;
+            } else {
+                anoFiltro = document.getElementById('filtroAnoOnly')?.value || new Date().getFullYear().toString();
+                textoPeriodo = `Ano Acumulado de ${anoFiltro}`;
+            }
+
+            const lblResumo = document.getElementById('lblPeriodoVendasResumo');
+            if (lblResumo) lblResumo.innerText = textoPeriodo;
+
+            let resumoPagamentos = {};
+            garantirArray(db.formasPagamento).forEach(fp => {
+                resumoPagamentos[fp.id] = { nome: fp.nome, qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
+            });
+
+            let totalGeralQtd = 0, totalGeralBruto = 0, totalGeralTaxa = 0, totalGeralLiquido = 0;
+            const tbodyVendas = document.querySelector('#tabelaVendas tbody');
+            let htmlVendas = '';
+
+            garantirArray(db.vendas).forEach(v => {
+                if (!v.data) return;
+                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
+                let pertence = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
+
+                if (pertence) {
+                    let itens = getItensVenda(v);
+                    let pagamentos = getPagamentosVenda(v);
+
+                    let subtotalItens = itens.reduce((acc, i) => acc + (i.quantidade * i.precoUnitario), 0);
+                    let valorBrutoPedido = Math.max(0, subtotalItens - parseValor(v.desconto));
+                    let qtdTotalItens = itens.reduce((acc, i) => acc + i.quantidade, 0);
+
+                    let taxaTotalPedido = 0;
+                    pagamentos.forEach(p => {
+                        let fp = garantirArray(db.formasPagamento).find(x => x.id == p.formaPagamentoId);
+                        let t = fp ? (p.valor * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa) : 0;
+                        taxaTotalPedido += t;
+
+                        let key = fp ? fp.id : 'outros';
+                        if (!resumoPagamentos[key]) {
+                            resumoPagamentos[key] = { nome: fp ? fp.nome : 'Outros', qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
+                        }
+                        resumoPagamentos[key].qtd += 1;
+                        resumoPagamentos[key].bruto += p.valor;
+                        resumoPagamentos[key].taxa += t;
+                        resumoPagamentos[key].liquido += (p.valor - t);
+                    });
+
+                    let liqComTaxa = valorBrutoPedido - taxaTotalPedido;
+
+                    totalGeralQtd += qtdTotalItens;
+                    totalGeralBruto += valorBrutoPedido;
+                    totalGeralTaxa += taxaTotalPedido;
+                    totalGeralLiquido += liqComTaxa;
+
+                    let textoItens = itens.map(i => `${i.quantidade}x ${i.produtoNome}`).join(', ');
+                    let textoPagamentos = pagamentos.map(p => `${p.formaPagamentoNome}: R$ ${p.valor.toFixed(2)}`).join('<br>');
+
+                    htmlVendas += `<tr>
+                        <td>${v.data}</td>
+                        <td class="font-semibold">${textoItens}</td>
+                        <td class="text-center font-bold">${qtdTotalItens}</td>
+                        <td>${v.canal || 'N/A'}</td>
+                        <td class="text-xs">${textoPagamentos}</td>
+                        <td class="font-bold">R$ ${valorBrutoPedido.toFixed(2)}</td>
+                        <td class="text-red-600">R$ ${taxaTotalPedido.toFixed(2)}</td>
+                        <td class="font-bold text-green-700">R$ ${liqComTaxa.toFixed(2)}</td>
+                        <td>
+                            <button onclick="editarVenda('${v.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                            <button onclick="excluirVenda('${v.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            if (tbodyVendas) tbodyVendas.innerHTML = htmlVendas || `<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhuma venda registrada para este período.</td></tr>`;
+
+            const tbodyResumo = document.getElementById('tbodyResumoPagamentos');
+            const tfootResumo = document.getElementById('tfootResumoPagamentos');
+
+            if (tbodyResumo) {
+                let htmlResumo = '';
+                Object.values(resumoPagamentos).forEach(item => {
+                    if (item.qtd > 0 || item.bruto > 0) {
+                        htmlResumo += `<tr class="hover:bg-gray-50">
+                            <td class="font-semibold text-gray-800 p-2.5">${item.nome}</td>
+                            <td class="text-center p-2.5">${item.qtd}</td>
+                            <td class="font-medium p-2.5">R$ ${item.bruto.toFixed(2)}</td>
+                            <td class="text-red-600 font-semibold p-2.5">R$ ${item.taxa.toFixed(2)}</td>
+                            <td class="text-green-700 font-bold p-2.5">R$ ${item.liquido.toFixed(2)}</td>
+                        </tr>`;
+                    }
+                });
+                tbodyResumo.innerHTML = htmlResumo || `<tr><td colspan="5" class="text-center text-gray-400 py-3">Nenhum valor apurado no período.</td></tr>`;
+            }
+
+            if (tfootResumo) {
+                tfootResumo.innerHTML = `<tr>
+                    <td class="p-2.5">TOTAL GERAL APURADO</td>
+                    <td class="p-2.5 text-center">${totalGeralQtd}</td>
+                    <td class="p-2.5 text-black font-extrabold">R$ ${totalGeralBruto.toFixed(2)}</td>
+                    <td class="p-2.5 text-red-600 font-extrabold">R$ ${totalGeralTaxa.toFixed(2)}</td>
+                    <td class="p-2.5 text-green-700 font-extrabold">R$ ${totalGeralLiquido.toFixed(2)}</td>
+                </tr>`;
+            }
         }
 
+        // OUTRAS FUNÇÕES DO SISTEMA (INGREDIENTES, PRODUTOS, DRE, ETC.)
         function salvarIngrediente(e) {
             e.preventDefault();
             let id = document.getElementById('ingId').value;
             let nomeInput = document.getElementById('ingNome').value.trim();
-
             if (!nomeInput) return;
 
-            // Impedir ingredientes duplicados (case-insensitive)
             let jaExiste = garantirArray(db.ingredientes).some(x => 
                 x.nome.trim().toLowerCase() === nomeInput.toLowerCase() && x.id != id
             );
@@ -1501,7 +1835,6 @@
             const tbody = document.querySelector('#tabelaIngredientes tbody');
             if(!tbody) return;
 
-            // Ordenação alfabética
             let listaOrdenada = [...garantirArray(db.ingredientes)].sort((a, b) => 
                 a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
             );
@@ -1947,173 +2280,65 @@
             filtrarProdutosVenda();
         }
 
-        function salvarVenda(e) {
+        function salvarReceita(e) {
             e.preventDefault();
-            let id = document.getElementById('vendaId').value;
-            let prodId = document.getElementById('vendaProduto').value;
-            if (!prodId) return;
-
-            let prod = garantirArray(db.produtos).find(p => p.id == prodId);
-            let formaPagId = document.getElementById('vendaFormaPagamento').value;
-
-            let venda = {
+            let id = document.getElementById('recId').value;
+            let rec = {
                 id: id ? id : Date.now().toString(),
-                data: document.getElementById('vendaData').value,
-                produtoId: prodId,
-                produtoNome: prod ? prod.nome : 'Produto',
-                quantidade: parseValor(document.getElementById('vendaQtd').value) || 1,
-                precoUnitario: prod ? prod.preco : 0,
-                custoIngUnitario: prod ? prod.custoIng : 0,
-                custoEmbUnitario: prod ? prod.custoEmb : 0,
-                canal: document.getElementById('vendaCanal').value,
-                formaPagamentoId: formaPagId,
-                desconto: parseValor(document.getElementById('vendaDesconto').value),
-                entregaLoja: parseValor(document.getElementById('vendaEntrega').value)
+                data: document.getElementById('recData').value,
+                origem: document.getElementById('recOrigem').value,
+                descricao: document.getElementById('recDescricao').value,
+                valor: parseValor(document.getElementById('recValor').value)
             };
-
-            db.vendas = garantirArray(db.vendas);
-            if(id) {
-                let idx = db.vendas.findIndex(x => x.id == id);
-                if(idx !== -1) db.vendas[idx] = venda;
-            } else db.vendas.push(venda);
-
-            cancelarEdicaoVenda();
+            db.receitas = garantirArray(db.receitas);
+            if (id) {
+                let idx = db.receitas.findIndex(x => x.id == id);
+                if (idx !== -1) db.receitas[idx] = rec;
+            } else db.receitas.push(rec);
+            cancelarEdicaoReceita();
             salvarBD();
         }
 
-        function editarVenda(id) {
-            let v = garantirArray(db.vendas).find(x => x.id == id);
-            if(!v) return;
-            document.getElementById('vendaId').value = v.id;
-            document.getElementById('vendaData').value = v.data;
-            document.getElementById('vendaProduto').value = v.produtoId;
-            document.getElementById('vendaQtd').value = v.quantidade;
-            document.getElementById('vendaCanal').value = v.canal;
-            document.getElementById('vendaFormaPagamento').value = v.formaPagamentoId || '';
-            document.getElementById('vendaDesconto').value = v.desconto || 0;
-            document.getElementById('vendaEntrega').value = v.entregaLoja || 0;
-            document.getElementById('btnSalvarVenda').innerText = 'Atualizar Venda';
-            document.getElementById('btnCancelarEdicaoVenda').classList.remove('hidden');
+        function editarReceita(id) {
+            let rec = garantirArray(db.receitas).find(x => x.id == id);
+            if (!rec) return;
+            document.getElementById('recId').value = rec.id;
+            document.getElementById('recData').value = rec.data;
+            document.getElementById('recOrigem').value = rec.origem;
+            document.getElementById('recDescricao').value = rec.descricao;
+            document.getElementById('recValor').value = rec.valor;
+            document.getElementById('btnSalvarRec').innerText = "Atualizar Receita";
+            document.getElementById('btnCancelarRec').classList.remove('hidden');
         }
 
-        function cancelarEdicaoVenda() {
-            document.getElementById('formVenda').reset();
-            document.getElementById('vendaId').value = '';
-            document.getElementById('vendaData').valueAsDate = new Date();
-            document.getElementById('btnSalvarVenda').innerText = 'Registrar Venda';
-            document.getElementById('btnCancelarEdicaoVenda').classList.add('hidden');
+        function cancelarEdicaoReceita() {
+            document.getElementById('formReceita').reset();
+            document.getElementById('recId').value = '';
+            document.getElementById('recData').valueAsDate = new Date();
+            document.getElementById('btnSalvarRec').innerText = "Registrar Receita / Repasse";
+            document.getElementById('btnCancelarRec').classList.add('hidden');
         }
 
-        function excluirVenda(id) {
-            if(confirm("Deseja excluir esta venda?")) {
-                db.vendas = garantirArray(db.vendas).filter(v => v.id != id);
+        function excluirReceita(id) {
+            if (confirm("Deseja excluir este registro de receita?")) {
+                db.receitas = garantirArray(db.receitas).filter(x => x.id != id);
                 salvarBD();
             }
         }
 
-        function renderVendas() {
-            let tipoFiltro = document.getElementById('tipoFiltro')?.value || 'mensal';
-            let anoFiltro, mesFiltro, textoPeriodo;
-
-            if (tipoFiltro === 'mensal') {
-                let filtroVal = document.getElementById('filtroMesAno')?.value;
-                if (filtroVal) [anoFiltro, mesFiltro] = filtroVal.split('-');
-                else {
-                    let hoje = new Date();
-                    anoFiltro = hoje.getFullYear().toString();
-                    mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
-                }
-                let nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                textoPeriodo = `${nomesMeses[parseInt(mesFiltro) - 1]} / ${anoFiltro}`;
-            } else {
-                anoFiltro = document.getElementById('filtroAnoOnly')?.value || new Date().getFullYear().toString();
-                textoPeriodo = `Ano Acumulado de ${anoFiltro}`;
-            }
-
-            const lblResumo = document.getElementById('lblPeriodoVendasResumo');
-            if (lblResumo) lblResumo.innerText = textoPeriodo;
-
-            let resumoPagamentos = {};
-            garantirArray(db.formasPagamento).forEach(fp => {
-                resumoPagamentos[fp.id] = { nome: fp.nome, qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
-            });
-
-            let totalGeralQtd = 0, totalGeralBruto = 0, totalGeralTaxa = 0, totalGeralLiquido = 0;
-            const tbodyVendas = document.querySelector('#tabelaVendas tbody');
-            let htmlVendas = '';
-
-            garantirArray(db.vendas).forEach(v => {
-                if (!v.data) return;
-                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
-                let pertence = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
-
-                if (pertence) {
-                    let valorBruto = (parseValor(v.quantidade) * parseValor(v.precoUnitario)) - parseValor(v.desconto);
-                    let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
-                    let taxaCalculada = fp ? (valorBruto * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa) : 0;
-                    let liqComTaxa = valorBruto - taxaCalculada;
-
-                    let key = fp ? fp.id : 'outros';
-                    if (!resumoPagamentos[key]) {
-                        resumoPagamentos[key] = { nome: fp ? fp.nome : 'Outros / Não especificado', qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
-                    }
-                    resumoPagamentos[key].qtd += 1;
-                    resumoPagamentos[key].bruto += valorBruto;
-                    resumoPagamentos[key].taxa += taxaCalculada;
-                    resumoPagamentos[key].liquido += liqComTaxa;
-
-                    totalGeralQtd += 1;
-                    totalGeralBruto += valorBruto;
-                    totalGeralTaxa += taxaCalculada;
-                    totalGeralLiquido += liqComTaxa;
-
-                    htmlVendas += `<tr>
-                        <td>${v.data}</td>
-                        <td class="font-semibold">${v.produtoNome}</td>
-                        <td>${v.quantidade}</td>
-                        <td>${v.canal}</td>
-                        <td>${fp ? fp.nome : 'N/A'}</td>
-                        <td>R$ ${valorBruto.toFixed(2)}</td>
-                        <td class="text-red-600">R$ ${taxaCalculada.toFixed(2)}</td>
-                        <td class="font-bold text-green-700">R$ ${liqComTaxa.toFixed(2)}</td>
-                        <td>
-                            <button onclick="editarVenda('${v.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
-                            <button onclick="excluirVenda('${v.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-                }
-            });
-
-            if (tbodyVendas) tbodyVendas.innerHTML = htmlVendas || `<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhuma venda registrada para este período.</td></tr>`;
-
-            const tbodyResumo = document.getElementById('tbodyResumoPagamentos');
-            const tfootResumo = document.getElementById('tfootResumoPagamentos');
-
-            if (tbodyResumo) {
-                let htmlResumo = '';
-                Object.values(resumoPagamentos).forEach(item => {
-                    if (item.qtd > 0 || item.bruto > 0) {
-                        htmlResumo += `<tr class="hover:bg-gray-50">
-                            <td class="font-semibold text-gray-800 p-2.5">${item.nome}</td>
-                            <td class="text-center p-2.5">${item.qtd}</td>
-                            <td class="font-medium p-2.5">R$ ${item.bruto.toFixed(2)}</td>
-                            <td class="text-red-600 font-semibold p-2.5">R$ ${item.taxa.toFixed(2)}</td>
-                            <td class="text-green-700 font-bold p-2.5">R$ ${item.liquido.toFixed(2)}</td>
-                        </tr>`;
-                    }
-                });
-                tbodyResumo.innerHTML = htmlResumo || `<tr><td colspan="5" class="text-center text-gray-400 py-3">Nenhum valor apurado no período.</td></tr>`;
-            }
-
-            if (tfootResumo) {
-                tfootResumo.innerHTML = `<tr>
-                    <td class="p-2.5">TOTAL GERAL APURADO</td>
-                    <td class="p-2.5 text-center">${totalGeralQtd}</td>
-                    <td class="p-2.5 text-black font-extrabold">R$ ${totalGeralBruto.toFixed(2)}</td>
-                    <td class="p-2.5 text-red-600 font-extrabold">R$ ${totalGeralTaxa.toFixed(2)}</td>
-                    <td class="p-2.5 text-green-700 font-extrabold">R$ ${totalGeralLiquido.toFixed(2)}</td>
-                </tr>`;
-            }
+        function renderReceitas() {
+            const tbody = document.querySelector('#tabelaReceitas tbody');
+            if(!tbody) return;
+            tbody.innerHTML = garantirArray(db.receitas).map(r => `<tr>
+                <td>${r.data}</td>
+                <td class="font-semibold text-blue-800">${r.origem}</td>
+                <td>${r.descricao}</td>
+                <td class="text-green-700 font-bold">R$ ${parseValor(r.valor).toFixed(2)}</td>
+                <td>
+                    <button onclick="editarReceita('${r.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirReceita('${r.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
         }
 
         function salvarDespesa(e) {
@@ -2258,19 +2483,23 @@
                 let pertence = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
 
                 if (pertence) {
-                    let qtd = parseValor(v.quantidade) || 1;
-                    let precoUnit = parseValor(v.precoUnitario);
-                    let desc = parseValor(v.desconto);
-                    let bruto = qtd * precoUnit;
+                    let itens = getItensVenda(v);
+                    let pagamentos = getPagamentosVenda(v);
 
-                    fatBruto += bruto; descontos += desc;
-                    cmvTotal += qtd * parseValor(v.custoIngUnitario);
-                    embTotal += qtd * parseValor(v.custoEmbUnitario);
+                    itens.forEach(item => {
+                        let qtd = parseValor(item.quantidade) || 1;
+                        fatBruto += qtd * parseValor(item.precoUnitario);
+                        cmvTotal += qtd * parseValor(item.custoIngUnitario);
+                        embTotal += qtd * parseValor(item.custoEmbUnitario);
+                    });
+
+                    descontos += parseValor(v.desconto);
                     entregasTotal += parseValor(v.entregaLoja);
 
-                    let valorComDesc = bruto - desc;
-                    let fp = garantirArray(db.formasPagamento).find(x => x.id == v.formaPagamentoId);
-                    if (fp) taxasTotal += (valorComDesc * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa);
+                    pagamentos.forEach(p => {
+                        let fp = garantirArray(db.formasPagamento).find(x => x.id == p.formaPagamentoId);
+                        if (fp) taxasTotal += (p.valor * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa);
+                    });
                 }
             });
 
@@ -2304,7 +2533,6 @@
             let lucroLiquidoOperacional = margemContrib - despesasFixas;
             let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
 
-            // Preenchimento DRE
             document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
             document.getElementById('dreDesc').innerText = `R$ ${descontos.toFixed(2)}`;
             document.getElementById('dreFatLiq').innerText = `R$ ${fatLiquido.toFixed(2)}`;
@@ -2321,7 +2549,6 @@
             document.getElementById('dreDespPessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
             document.getElementById('dreCaixaFinal').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
 
-            // KPIs DRE Topo
             const totalFatComOutras = fatLiquido + outrasReceitasTotal;
             document.getElementById('dreFatLiqTop').innerText = `R$ ${totalFatComOutras.toFixed(2)}`;
             document.getElementById('dreMargemTop').innerText = `R$ ${margemContrib.toFixed(2)}`;
@@ -2373,9 +2600,12 @@
                 let pertence = (tipoFiltro === 'mensal') ? (vAno === ano && vMes === mes) : (vAno === ano);
                 
                 if (pertence) {
-                    let lucroUnit = parseValor(v.precoUnitario) - parseValor(v.custoIngUnitario) - parseValor(v.custoEmbUnitario);
-                    let totalLucro = (lucroUnit * parseValor(v.quantidade)) - parseValor(v.desconto);
-                    lucrosPorProd[v.produtoNome] = (lucrosPorProd[v.produtoNome] || 0) + totalLucro;
+                    let itens = getItensVenda(v);
+                    itens.forEach(i => {
+                        let lucroUnit = parseValor(i.precoUnitario) - parseValor(i.custoIngUnitario) - parseValor(i.custoEmbUnitario);
+                        let totalLucro = (lucroUnit * parseValor(i.quantidade));
+                        lucrosPorProd[i.produtoNome] = (lucrosPorProd[i.produtoNome] || 0) + totalLucro;
+                    });
                 }
             });
 
@@ -2393,26 +2623,6 @@
                     }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
-            });
-        }
-
-        function verificarAlertas() {
-            let container = document.getElementById('alertsContainer');
-            if(!container) return;
-            container.innerHTML = '';
-            garantirArray(db.produtos).forEach(p => {
-                let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
-                let cmvReal = p.preco > 0 ? (custoTotal / p.preco) * 100 : 0;
-                let cmvMaxConfig = (db.config ? db.config.cmvMax : 30);
-
-                if (cmvReal > cmvMaxConfig) {
-                    container.innerHTML += `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 text-xs rounded shadow-sm flex items-center justify-between">
-                        <div>
-                            <strong class="font-bold">Atenção ao CMV:</strong> O produto <b>${p.nome}</b> está com CMV de <b>${cmvReal.toFixed(1)}%</b>.
-                        </div>
-                        <span class="text-red-800 font-extrabold uppercase text-xs">Meta: ${cmvMaxConfig}%</span>
-                    </div>`;
-                }
             });
         }
 
