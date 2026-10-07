@@ -241,7 +241,7 @@
             </div>
         </div>
 
-        <!-- VIEW: LANÇAR VENDA (PDV COM TAXA DO APP) -->
+        <!-- VIEW: LANÇAR VENDA (PDV COM TAXA DO APP REESTRUTURADA) -->
         <div id="view-pdv" class="tab-content">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-gray-200 pb-4">
                 <div>
@@ -368,20 +368,22 @@
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 3: CUSTO ENTREGA, TAXA DO APP E RESUMO DA VENDA -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center bg-white p-3.5 rounded-md border border-gray-200 mb-4">
-                        <div>
-                            <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Custo Entrega Assumido pela Loja (R$)</label>
-                            <input type="text" id="vendaEntrega" value="0" oninput="atualizarResumoPDV()" class="p-2.5 mt-1 border rounded bg-white text-xs">
+                    <!-- SEÇÃO 3: CUSTO ENTREGA, TAXA DO APP E RESUMO DA VENDA (ALINHAMENTO EM COLUNAS) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-white p-4 rounded-md border border-gray-200 mb-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs font-bold text-gray-700 uppercase tracking-wider block">Custo Entrega Assumido pela Loja (R$)</label>
+                                <input type="text" id="vendaEntrega" value="0" oninput="atualizarResumoPDV()" class="p-2.5 mt-1 border rounded bg-white text-xs">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-blue-800 uppercase tracking-wider block">Taxa do APP / Delivery Much (R$)</label>
+                                <input type="text" id="vendaTaxaApp" value="0" oninput="atualizarResumoPDV()" placeholder="Ex: 2,50" class="p-2.5 mt-1 border rounded bg-blue-50 border-blue-300 font-bold text-blue-900 text-xs">
+                                <p class="text-[10px] text-gray-500 mt-0.5">Cobrada do cliente para repasse à plataforma</p>
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="text-xs font-bold text-blue-800 uppercase tracking-wider">Taxa do APP / Delivery Much (R$)</label>
-                            <input type="text" id="vendaTaxaApp" value="0" oninput="atualizarResumoPDV()" placeholder="Ex: 2,50" class="p-2.5 mt-1 border rounded bg-blue-50 border-blue-300 font-bold text-blue-900 text-xs">
-                            <p class="text-[10px] text-gray-500 mt-0.5">Cobrada do cliente para repasse à plataforma</p>
-                        </div>
-
-                        <div class="bg-gray-50 p-3 rounded border text-right">
+                        <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-right flex flex-col justify-center h-full">
                             <div class="text-xs text-gray-600 font-semibold mb-1">
                                 Subtotal Produtos: <span id="pdvTotalItens" class="font-bold text-gray-800">R$ 0,00</span>
                             </div>
