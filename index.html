@@ -94,7 +94,7 @@
         <button onclick="fecharAssistenteVoz()" class="bg-gray-800 hover:bg-gray-700 text-white text-xs px-5 py-2 rounded-full uppercase tracking-wider font-semibold border border-gray-600">Fechar</button>
     </div>
 
-    <!-- Modal de Alertas do CMV (Exclusivo Dashboard) -->
+    <!-- Modal de Alertas do CMV -->
     <div id="modalAlertasCmv" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative animate-fadeIn">
             <button onclick="fecharModalAlertasCmv()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-lg">&times;</button>
@@ -183,7 +183,6 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Botão de Alerta do CMV (Exclusivo do Dashboard) -->
                     <button id="btnAlertaCmvDash" onclick="abrirModalAlertasCmv()" class="hidden bg-red-100 hover:bg-red-200 border border-red-400 text-red-800 text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-2 transition shadow-sm animate-bounce">
                         <i class="fas fa-exclamation-triangle text-mendonca-red text-sm"></i>
                         <span id="lblAlertaCmvQtd">0 Produtos com CMV Alto</span>
@@ -242,7 +241,7 @@
             </div>
         </div>
 
-        <!-- VIEW: LANÇAR VENDA (PDV MULTI-ITENS, MULTI-PAGAMENTOS & ESCANEAR COMANDA) -->
+        <!-- VIEW: LANÇAR VENDA (PDV COM TAXA DO APP) -->
         <div id="view-pdv" class="tab-content">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-gray-200 pb-4">
                 <div>
@@ -369,19 +368,28 @@
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 3: TAXA DE ENTREGA DA LOJA & RESUMO DA VENDA -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-white p-3.5 rounded-md border border-gray-200 mb-4">
+                    <!-- SEÇÃO 3: CUSTO ENTREGA, TAXA DO APP E RESUMO DA VENDA -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center bg-white p-3.5 rounded-md border border-gray-200 mb-4">
                         <div>
                             <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Custo Entrega Assumido pela Loja (R$)</label>
                             <input type="text" id="vendaEntrega" value="0" oninput="atualizarResumoPDV()" class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-blue-800 uppercase tracking-wider">Taxa do APP / Delivery Much (R$)</label>
+                            <input type="text" id="vendaTaxaApp" value="0" oninput="atualizarResumoPDV()" placeholder="Ex: 2,50" class="p-2.5 mt-1 border rounded bg-blue-50 border-blue-300 font-bold text-blue-900 text-xs">
+                            <p class="text-[10px] text-gray-500 mt-0.5">Cobrada do cliente para repasse à plataforma</p>
                         </div>
 
                         <div class="bg-gray-50 p-3 rounded border text-right">
                             <div class="text-xs text-gray-600 font-semibold mb-1">
                                 Subtotal Produtos: <span id="pdvTotalItens" class="font-bold text-gray-800">R$ 0,00</span>
                             </div>
+                            <div class="text-xs text-blue-700 font-semibold mb-1">
+                                (+) Taxa do APP: <span id="pdvTotalTaxaApp" class="font-bold">R$ 0,00</span>
+                            </div>
                             <div class="text-xs text-gray-600 font-semibold mb-1">
-                                Total Pedido: <span id="pdvTotalPedido" class="font-extrabold text-sm text-mendonca-black">R$ 0,00</span>
+                                Total Pedido (Cliente): <span id="pdvTotalPedido" class="font-extrabold text-sm text-mendonca-black">R$ 0,00</span>
                             </div>
                             <div class="text-xs text-gray-600 font-semibold mb-1">
                                 Total Pago: <span id="pdvTotalPago" class="font-extrabold text-sm text-mendonca-green">R$ 0,00</span>
@@ -448,8 +456,9 @@
                             <th>Canal</th>
                             <th>Formas de Pagamento</th>
                             <th>Bruto</th>
-                            <th>Taxa</th>
-                            <th>Líquido</th>
+                            <th>Taxa APP</th>
+                            <th>Taxa Meio Pgto</th>
+                            <th>Líquido Loja</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -943,8 +952,13 @@
 
                 <div class="space-y-2.5 text-xs md:text-sm">
                     <div class="flex justify-between items-center bg-white p-3 rounded-md border shadow-sm">
-                        <span class="font-bold text-gray-800">1. Faturamento Bruto (Vendas)</span>
+                        <span class="font-bold text-gray-800">1. Total Pago pelos Clientes (Cobrado)</span>
                         <span id="dreFatBruto" class="font-bold text-green-600">R$ 0,00</span>
+                    </div>
+
+                    <div class="flex justify-between items-center bg-blue-50/70 p-2.5 rounded-md border border-blue-200 text-blue-900 font-semibold">
+                        <span>(-) Taxas do APP Repassadas (Delivery Much)</span>
+                        <span id="dreTaxasAppRepassadas" class="font-bold text-blue-700">R$ 0,00</span>
                     </div>
 
                     <div class="flex justify-between items-center bg-red-50/50 p-2.5 rounded-md border border-red-100 text-red-700">
@@ -953,7 +967,7 @@
                     </div>
 
                     <div class="flex justify-between items-center bg-gray-100 p-3 rounded-md font-bold text-gray-900 border">
-                        <span>2. Faturamento Líquido de Vendas</span>
+                        <span>2. Faturamento Líquido Efetivo da Loja</span>
                         <span id="dreFatLiq">R$ 0,00</span>
                     </div>
 
@@ -1206,7 +1220,6 @@
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
 
-        // MOTOR DA ASSISTENTE DE VOZ ULTRARRÁPIDA
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition = null;
         let estadoVoz = 'INATIVO';
@@ -1352,7 +1365,7 @@
         }
 
         function normalizarVenda(v) {
-            if (!v) return { id: '', data: '', canal: 'Atendente', desconto: 0, entregaLoja: 0, itens: [], pagamentos: [] };
+            if (!v) return { id: '', data: '', canal: 'Atendente', desconto: 0, entregaLoja: 0, taxaApp: 0, itens: [], pagamentos: [] };
 
             let itens = [];
             if (v.itens && Array.isArray(v.itens) && v.itens.length > 0) {
@@ -1383,7 +1396,7 @@
                 }));
             } else if (v.formaPagamentoId) {
                 let brutoItens = itens.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
-                let valPag = Math.max(0, brutoItens - parseValor(v.desconto));
+                let valPag = Math.max(0, brutoItens - parseValor(v.desconto) + parseValor(v.taxaApp));
                 pagamentos = [{
                     formaPagamentoId: v.formaPagamentoId,
                     valor: valPag
@@ -1396,6 +1409,7 @@
                 canal: v.canal || 'Atendente',
                 desconto: parseValor(v.desconto) || 0,
                 entregaLoja: parseValor(v.entregaLoja) || 0,
+                taxaApp: parseValor(v.taxaApp) || 0,
                 itens: itens,
                 pagamentos: pagamentos
             };
@@ -1512,7 +1526,6 @@
             else document.getElementById('cameraDespPessoalInput').click();
         }
 
-        // LEITOR INTELIGENTE DE COMANDAS DE VENDAS (OCR DE COMANDA)
         async function processarFotoComanda(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1532,6 +1545,7 @@
                 let linhas = text.split('\n');
                 let itensEncontrados = [];
                 let pagamentosEncontrados = [];
+                let taxaAppEncontrada = 0;
 
                 let produtosDb = garantirArray(db.produtos);
                 let formasDb = garantirArray(db.formasPagamento);
@@ -1540,7 +1554,11 @@
                     let linhaClean = linha.trim();
                     if (!linhaClean) return;
 
-                    // Busca de produtos cadastrados na comanda
+                    if (linhaClean.toLowerCase().includes('taxa') && (linhaClean.toLowerCase().includes('app') || linhaClean.toLowerCase().includes('plataforma') || linhaClean.toLowerCase().includes('delivery'))) {
+                        let matchVal = linhaClean.match(/(\d+[\.,]\d{2})/);
+                        if (matchVal) taxaAppEncontrada = parseValor(matchVal[1]);
+                    }
+
                     produtosDb.forEach(p => {
                         let nomeP = p.nome.toLowerCase().trim();
                         if (linhaClean.toLowerCase().includes(nomeP)) {
@@ -1561,7 +1579,6 @@
                         }
                     });
 
-                    // Busca de formas de pagamento na comanda
                     formasDb.forEach(fp => {
                         let nomeFP = fp.nome.toLowerCase().trim();
                         if (linhaClean.toLowerCase().includes(nomeFP)) {
@@ -1588,8 +1605,12 @@
                     renderVendaPagamentosTemp();
                 }
 
+                if (taxaAppEncontrada > 0) {
+                    document.getElementById('vendaTaxaApp').value = taxaAppEncontrada.toFixed(2);
+                }
+
                 atualizarResumoPDV();
-                alert(`Comanda processada!\nItens encontrados: ${itensEncontrados.length}\nPagamentos encontrados: ${pagamentosEncontrados.length}\nRevise os campos antes de registrar.`);
+                alert(`Comanda processada!\nItens encontrados: ${itensEncontrados.length}\nPagamentos encontrados: ${pagamentosEncontrados.length}\nTaxa do APP: R$ ${taxaAppEncontrada.toFixed(2)}\nRevise os campos antes de registrar.`);
             } catch (err) {
                 alert("Erro ao ler a imagem da comanda.");
             } finally {
@@ -2160,17 +2181,21 @@
             let totalItens = vendaItensTemp.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
             let desc = parseValor(document.getElementById('vendaDesconto')?.value);
             let entrega = parseValor(document.getElementById('vendaEntrega')?.value);
-            let totalPedido = Math.max(0, totalItens - desc + entrega);
+            let taxaApp = parseValor(document.getElementById('vendaTaxaApp')?.value);
+
+            let totalPedido = Math.max(0, totalItens - desc + taxaApp);
 
             let totalPago = vendaPagamentosTemp.reduce((acc, p) => acc + p.valor, 0);
             let diferenca = totalPago - totalPedido;
 
             let elTotalItens = document.getElementById('pdvTotalItens');
+            let elTotalTaxaApp = document.getElementById('pdvTotalTaxaApp');
             let elTotalPedido = document.getElementById('pdvTotalPedido');
             let elTotalPago = document.getElementById('pdvTotalPago');
             let elStatus = document.getElementById('pdvStatusPagamento');
 
             if (elTotalItens) elTotalItens.innerText = `R$ ${totalItens.toFixed(2)}`;
+            if (elTotalTaxaApp) elTotalTaxaApp.innerText = `R$ ${taxaApp.toFixed(2)}`;
             if (elTotalPedido) elTotalPedido.innerText = `R$ ${totalPedido.toFixed(2)}`;
             if (elTotalPago) elTotalPago.innerText = `R$ ${totalPago.toFixed(2)}`;
 
@@ -2210,6 +2235,7 @@
                 canal: document.getElementById('vendaCanal').value,
                 desconto: parseValor(document.getElementById('vendaDesconto').value),
                 entregaLoja: parseValor(document.getElementById('vendaEntrega').value),
+                taxaApp: parseValor(document.getElementById('vendaTaxaApp').value),
                 itens: [...vendaItensTemp],
                 pagamentos: vendaPagamentosTemp.map(p => ({ formaPagamentoId: p.formaPagamentoId, valor: p.valor }))
             };
@@ -2236,6 +2262,7 @@
             document.getElementById('vendaCanal').value = v.canal;
             document.getElementById('vendaDesconto').value = v.desconto;
             document.getElementById('vendaEntrega').value = v.entregaLoja;
+            document.getElementById('vendaTaxaApp').value = v.taxaApp || 0;
 
             vendaItensTemp = [...v.itens];
             vendaPagamentosTemp = v.pagamentos.map(p => {
@@ -2255,6 +2282,8 @@
             document.getElementById('formVenda').reset();
             document.getElementById('vendaId').value = '';
             document.getElementById('vendaData').valueAsDate = new Date();
+            document.getElementById('vendaEntrega').value = '0';
+            document.getElementById('vendaTaxaApp').value = '0';
             vendaItensTemp = [];
             vendaPagamentosTemp = [];
             renderVendaItensTemp();
@@ -2298,7 +2327,7 @@
                 resumoPagamentos[fp.id] = { nome: fp.nome, qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
             });
 
-            let totalGeralQtd = 0, totalGeralBruto = 0, totalGeralTaxa = 0, totalGeralLiquido = 0;
+            let totalGeralQtd = 0, totalGeralBruto = 0, totalGeralTaxaApp = 0, totalGeralTaxaMeio = 0, totalGeralLiquido = 0;
             const tbodyVendas = document.querySelector('#tabelaVendas tbody');
             let htmlVendas = '';
 
@@ -2310,9 +2339,9 @@
 
                 if (pertence) {
                     let valorBrutoItens = v.itens.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
-                    let valorBrutoFinal = Math.max(0, valorBrutoItens - v.desconto);
+                    let valorTotalCobradoCliente = Math.max(0, valorBrutoItens - v.desconto + v.taxaApp);
 
-                    let taxaTotalVenda = 0;
+                    let taxaMeioTotalVenda = 0;
                     let nomesPagamentos = [];
 
                     v.pagamentos.forEach(p => {
@@ -2329,18 +2358,19 @@
                         resumoPagamentos[key].taxa += taxaCalculada;
                         resumoPagamentos[key].liquido += liqComTaxa;
 
-                        taxaTotalVenda += taxaCalculada;
+                        taxaMeioTotalVenda += taxaCalculada;
                         nomesPagamentos.push(`${fp ? fp.nome : 'Outro'}: R$ ${p.valor.toFixed(2)}`);
                     });
 
-                    let liqVenda = valorBrutoFinal - taxaTotalVenda;
+                    let liqVendaLoja = (valorTotalCobradoCliente - v.taxaApp) - taxaMeioTotalVenda;
                     let qtdTotalItens = v.itens.reduce((acc, it) => acc + it.quantidade, 0);
                     let descricaoItens = v.itens.map(it => `${it.quantidade}x ${it.produtoNome}`).join(', ');
 
                     totalGeralQtd += qtdTotalItens;
-                    totalGeralBruto += valorBrutoFinal;
-                    totalGeralTaxa += taxaTotalVenda;
-                    totalGeralLiquido += liqVenda;
+                    totalGeralBruto += valorTotalCobradoCliente;
+                    totalGeralTaxaApp += v.taxaApp;
+                    totalGeralTaxaMeio += taxaMeioTotalVenda;
+                    totalGeralLiquido += liqVendaLoja;
 
                     htmlVendas += `<tr>
                         <td>${v.data}</td>
@@ -2348,9 +2378,10 @@
                         <td class="text-center">${qtdTotalItens}</td>
                         <td>${v.canal}</td>
                         <td class="text-xs font-medium text-gray-700">${nomesPagamentos.join('<br>') || 'N/A'}</td>
-                        <td>R$ ${valorBrutoFinal.toFixed(2)}</td>
-                        <td class="text-red-600">R$ ${taxaTotalVenda.toFixed(2)}</td>
-                        <td class="font-bold text-green-700">R$ ${liqVenda.toFixed(2)}</td>
+                        <td class="font-semibold">R$ ${valorTotalCobradoCliente.toFixed(2)}</td>
+                        <td class="text-blue-700 font-bold">R$ ${v.taxaApp.toFixed(2)}</td>
+                        <td class="text-red-600">R$ ${taxaMeioTotalVenda.toFixed(2)}</td>
+                        <td class="font-bold text-green-700">R$ ${liqVendaLoja.toFixed(2)}</td>
                         <td>
                             <button onclick="editarVenda('${v.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
                             <button onclick="excluirVenda('${v.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
@@ -2359,7 +2390,7 @@
                 }
             });
 
-            if (tbodyVendas) tbodyVendas.innerHTML = htmlVendas || `<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhuma venda registrada para este período.</td></tr>`;
+            if (tbodyVendas) tbodyVendas.innerHTML = htmlVendas || `<tr><td colspan="10" class="text-center py-4 text-gray-500">Nenhuma venda registrada para este período.</td></tr>`;
 
             const tbodyResumo = document.getElementById('tbodyResumoPagamentos');
             const tfootResumo = document.getElementById('tfootResumoPagamentos');
@@ -2385,7 +2416,7 @@
                     <td class="p-2.5">TOTAL GERAL APURADO</td>
                     <td class="p-2.5 text-center">${totalGeralQtd}</td>
                     <td class="p-2.5 text-black font-extrabold">R$ ${totalGeralBruto.toFixed(2)}</td>
-                    <td class="p-2.5 text-red-600 font-extrabold">R$ ${totalGeralTaxa.toFixed(2)}</td>
+                    <td class="p-2.5 text-red-600 font-extrabold">R$ ${totalGeralTaxaMeio.toFixed(2)}</td>
                     <td class="p-2.5 text-green-700 font-extrabold">R$ ${totalGeralLiquido.toFixed(2)}</td>
                 </tr>`;
             }
@@ -2732,7 +2763,7 @@
             const lblDRE = document.getElementById('lblPeriodoDRE');
             if (lblDRE) lblDRE.innerText = textoPeriodo;
 
-            let fatBruto = 0, descontos = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
+            let fatCobradoCliente = 0, descontos = 0, taxasAppRepassadas = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
 
             garantirArray(db.vendas).forEach(vRaw => {
                 let v = normalizarVenda(vRaw);
@@ -2742,8 +2773,11 @@
 
                 if (pertence) {
                     let brutoItens = v.itens.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
-                    fatBruto += brutoItens;
+                    let cobrado = Math.max(0, brutoItens - v.desconto + v.taxaApp);
+                    
+                    fatCobradoCliente += cobrado;
                     descontos += v.desconto;
+                    taxasAppRepassadas += v.taxaApp;
 
                     v.itens.forEach(it => {
                         cmvTotal += it.quantidade * it.custoIngUnitario;
@@ -2785,16 +2819,16 @@
             let despesasFixasMensais = garantirArray(db.despesas).reduce((acc, d) => acc + parseValor(d.valor), 0);
             let despesasFixas = (tipoFiltro === 'anual') ? (despesasFixasMensais * 12) : despesasFixasMensais;
 
-            let fatLiquido = fatBruto - descontos;
-            let lucroBruto = (fatLiquido + outrasReceitasTotal) - cmvTotal - embTotal - custosVarTotal;
+            let fatLiquidoLoja = fatCobradoCliente - taxasAppRepassadas - descontos;
+            let lucroBruto = (fatLiquidoLoja + outrasReceitasTotal) - cmvTotal - embTotal - custosVarTotal;
             let margemContrib = lucroBruto - taxasTotal - entregasTotal;
             let lucroLiquidoOperacional = margemContrib - despesasFixas;
             let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
 
-            // Preenchimento DRE
-            document.getElementById('dreFatBruto').innerText = `R$ ${fatBruto.toFixed(2)}`;
+            document.getElementById('dreFatBruto').innerText = `R$ ${fatCobradoCliente.toFixed(2)}`;
+            document.getElementById('dreTaxasAppRepassadas').innerText = `R$ ${taxasAppRepassadas.toFixed(2)}`;
             document.getElementById('dreDesc').innerText = `R$ ${descontos.toFixed(2)}`;
-            document.getElementById('dreFatLiq').innerText = `R$ ${fatLiquido.toFixed(2)}`;
+            document.getElementById('dreFatLiq').innerText = `R$ ${fatLiquidoLoja.toFixed(2)}`;
             document.getElementById('dreOutrasReceitas').innerText = `R$ ${outrasReceitasTotal.toFixed(2)}`;
             document.getElementById('dreCmv').innerText = `R$ ${cmvTotal.toFixed(2)}`;
             document.getElementById('dreEmb').innerText = `R$ ${embTotal.toFixed(2)}`;
@@ -2808,14 +2842,13 @@
             document.getElementById('dreDespPessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
             document.getElementById('dreCaixaFinal').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
 
-            // KPIs DRE Topo
-            const totalFatComOutras = fatLiquido + outrasReceitasTotal;
+            const totalFatComOutras = fatLiquidoLoja + outrasReceitasTotal;
             document.getElementById('dreFatLiqTop').innerText = `R$ ${totalFatComOutras.toFixed(2)}`;
             document.getElementById('dreMargemTop').innerText = `R$ ${margemContrib.toFixed(2)}`;
             document.getElementById('dreLucroTop').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
             document.getElementById('dreCaixaTop').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
 
-            let receitamTotalGlobal = fatLiquido + outrasReceitasTotal;
+            let receitamTotalGlobal = fatLiquidoLoja + outrasReceitasTotal;
             let margemLiqPerc = receitamTotalGlobal > 0 ? (lucroLiquidoOperacional / receitamTotalGlobal) * 100 : 0;
             let cmvPerc = receitamTotalGlobal > 0 ? ((cmvTotal + embTotal + custosVarTotal) / receitamTotalGlobal) * 100 : 0;
             let indiceMargemContrib = receitamTotalGlobal > 0 ? (margemContrib / receitamTotalGlobal) : 0;
@@ -2825,13 +2858,13 @@
             document.getElementById('indCmvPerc').innerText = `${cmvPerc.toFixed(1)}%`;
             document.getElementById('indPontoEquilibrio').innerText = `R$ ${pontoEquilibrio.toFixed(2)}`;
 
-            document.getElementById('dash-fat').innerText = `R$ ${(fatLiquido + outrasReceitasTotal).toFixed(2)}`;
+            document.getElementById('dash-fat').innerText = `R$ ${(fatLiquidoLoja + outrasReceitasTotal).toFixed(2)}`;
             document.getElementById('dash-cmv').innerText = `R$ ${(cmvTotal + embTotal + custosVarTotal).toFixed(2)}`;
             document.getElementById('dash-fixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
             document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
             document.getElementById('dash-pessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
 
-            renderGraficos(fatLiquido + outrasReceitasTotal, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro, tipoFiltro);
+            renderGraficos(fatLiquidoLoja + outrasReceitasTotal, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro, tipoFiltro);
         }
 
         function renderGraficos(fat, cmv, taxas, fixas, lucro, ano, mes, tipoFiltro) {
