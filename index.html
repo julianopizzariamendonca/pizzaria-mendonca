@@ -1948,4 +1948,1020 @@
             tbody.innerHTML = ingredientesTempProduto.map((item, idx) => {
                 let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
                 if (!ing) return '';
-                let
+                let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
+                let subtotal = custoUnit * item.quantidade;
+                return `<tr class="border-b">
+                    <td class="p-2 font-semibold">${ing.nome}</td>
+                    <td class="p-2">${item.quantidade} ${ing.unidade}</td>
+                    <td class="p-2 font-bold text-green-700">R$ ${subtotal.toFixed(2)}</td>
+                    <td class="p-2 text-center"><button type="button" onclick="removerIngredienteTempProduto(${idx})" class="text-red-600"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function calcularSugestaoPreco() {
+            let custoIngTotal = 0;
+            ingredientesTempProduto.forEach(item => {
+                let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
+                if (ing && ing.qtdEmbalagem > 0) {
+                    custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
+                }
+            });
+
+            let custoEmb = parseValor(document.getElementById('prodCustoEmb').value);
+            let custoTotal = custoIngTotal + custoEmb;
+
+            let cmvMaxConfig = (db.config && db.config.cmvMax) ? parseValor(db.config.cmvMax) : 30;
+            if (cmvMaxConfig <= 0) cmvMaxConfig = 30;
+
+            let precoSugerido = custoTotal / (cmvMaxConfig / 100);
+
+            let precoCobrado = parseValor(document.getElementById('prodPreco').value);
+            let cmvReal = precoCobrado > 0 ? ((custoTotal / precoCobrado) * 100) : 0;
+
+            document.getElementById('prodCustoIng').value = `R$ ${custoIngTotal.toFixed(2)}`;
+            document.getElementById('prodCustoTotal').value = `R$ ${custoTotal.toFixed(2)}`;
+            document.getElementById('prodPrecoSugerido').value = `R$ ${precoSugerido.toFixed(2)}`;
+            
+            const lblCmvMax = document.getElementById('lblCmvMaxCfg');
+            if (lblCmvMax) lblCmvMax.innerText = cmvMaxConfig;
+
+            const elCmvReal = document.getElementById('prodCmvReal');
+            if (elCmvReal) {
+                elCmvReal.value = precoCobrado > 0 ? `${cmvReal.toFixed(1)}%` : '0.0%';
+                
+                if (precoCobrado > 0 && cmvReal > cmvMaxConfig) {
+                    elCmvReal.className = "bg-red-100 font-black text-red-700 border border-red-400 cursor-not-allowed p-2.5 mt-1";
+                } else if (precoCobrado > 0) {
+                    elCmvReal.className = "bg-green-100 font-black text-green-800 border border-green-400 cursor-not-allowed p-2.5 mt-1";
+                } else {
+                    elCmvReal.className = "bg-purple-50 font-black text-purple-900 border border-purple-300 cursor-not-allowed p-2.5 mt-1";
+                }
+            }
+        }
+
+        function salvarProduto(e) {
+            e.preventDefault();
+            let id = document.getElementById('prodId').value;
+            let prodIdFinal = id ? id : Date.now().toString();
+
+            let custoIngTotal = 0;
+            ingredientesTempProduto.forEach(item => {
+                let ing = garantirArray(db.ingredientes).find(i => i.id == item.ingredienteId);
+                if (ing && ing.qtdEmbalagem > 0) custoIngTotal += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
+            });
+
+            let produto = {
+                id: prodIdFinal, nome: document.getElementById('prodNome').value,
+                categoria: document.getElementById('prodCat').value, preco: parseValor(document.getElementById('prodPreco').value),
+                custoIng: Math.round(custoIngTotal * 100) / 100, custoEmb: parseValor(document.getElementById('prodCustoEmb').value)
+            };
+
+            db.produtos = garantirArray(db.produtos);
+            if(id) {
+                let idx = db.produtos.findIndex(x => x.id == id);
+                if(idx !== -1) db.produtos[idx] = produto;
+            } else db.produtos.push(produto);
+
+            if (!db.fichasTecnicas) db.fichasTecnicas = {};
+            db.fichasTecnicas[prodIdFinal] = ingredientesTempProduto;
+            fecharFormProduto();
+            salvarBD();
+        }
+
+        function excluirProduto(id) {
+            if(confirm("Deseja excluir este produto?")) {
+                db.produtos = garantirArray(db.produtos).filter(p => p.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderProdutos() {
+            const tbody = document.querySelector('#tabelaProdutos tbody');
+            if(!tbody) return;
+
+            let produtosOrdenados = [...garantirArray(db.produtos)].sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
+            tbody.innerHTML = produtosOrdenados.map(p => {
+                let custoTotal = (p.custoIng || 0) + (p.custoEmb || 0);
+                let lucro = p.preco - custoTotal;
+                let margem = p.preco > 0 ? (lucro / p.preco) * 100 : 0;
+                return `<tr>
+                    <td class="font-semibold">${p.nome}</td>
+                    <td>${p.categoria}</td>
+                    <td class="font-bold text-green-700">R$ ${p.preco.toFixed(2)}</td>
+                    <td>R$ ${custoTotal.toFixed(2)}</td>
+                    <td>R$ ${lucro.toFixed(2)}</td>
+                    <td class="font-bold">${margem.toFixed(1)}%</td>
+                    <td>
+                        <button onclick="mostrarFormProduto('${p.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirProduto('${p.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // --- LANÇAMENTO DE VENDAS ---
+        function filtrarProdutosVenda() {
+            const busca = (document.getElementById('vendaBuscaProduto')?.value || '').toLowerCase().trim();
+            const sel = document.getElementById('vendaProduto');
+            if (!sel) return;
+            const produtosFiltrados = garantirArray(db.produtos)
+                .filter(p => p.nome.toLowerCase().includes(busca))
+                .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
+            if (produtosFiltrados.length === 0) sel.innerHTML = `<option value="">Nenhum produto</option>`;
+            else sel.innerHTML = produtosFiltrados.map(p => `<option value="${p.id}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`).join('');
+        }
+
+        function preencherSelectProdutos() {
+            const buscaInput = document.getElementById('vendaBuscaProduto');
+            if (buscaInput) buscaInput.value = '';
+            filtrarProdutosVenda();
+        }
+
+        function preencherSelectFormasPagamento() {
+            const sel = document.getElementById('vendaFormaPagamento');
+            if(!sel) return;
+            sel.innerHTML = garantirArray(db.formasPagamento).map(fp => `<option value="${fp.id}">${fp.nome}</option>`).join('');
+        }
+
+        function adicionarItemVendaTemp() {
+            let prodId = document.getElementById('vendaProduto').value;
+            let qtd = parseValor(document.getElementById('vendaQtd').value);
+            if (!prodId || qtd <= 0) return;
+            let prod = garantirArray(db.produtos).find(p => p.id == prodId);
+            if (!prod) return;
+
+            let idx = vendaItensTemp.findIndex(it => it.produtoId == prodId);
+            if (idx !== -1) {
+                vendaItensTemp[idx].quantidade += qtd;
+            } else {
+                vendaItensTemp.push({
+                    produtoId: prod.id,
+                    produtoNome: prod.nome,
+                    quantidade: qtd,
+                    precoUnitario: parseValor(prod.preco),
+                    custoIngUnitario: parseValor(prod.custoIng),
+                    custoEmbUnitario: parseValor(prod.custoEmb)
+                });
+            }
+            document.getElementById('vendaQtd').value = '1';
+            renderVendaItensTemp();
+            atualizarResumoPDV();
+        }
+
+        function removerItemVendaTemp(index) {
+            vendaItensTemp.splice(index, 1);
+            renderVendaItensTemp();
+            atualizarResumoPDV();
+        }
+
+        function renderVendaItensTemp() {
+            let tbody = document.getElementById('tabelaItensVendaTemp');
+            if (!tbody) return;
+            if (vendaItensTemp.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 py-3">Nenhum produto adicionado ao pedido.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = vendaItensTemp.map((it, idx) => {
+                let subtotal = it.quantidade * it.precoUnitario;
+                return `<tr class="border-b">
+                    <td class="p-2 font-semibold text-xs">${it.produtoNome}</td>
+                    <td class="p-2 text-xs">${it.quantidade}</td>
+                    <td class="p-2 text-xs">R$ ${it.precoUnitario.toFixed(2)}</td>
+                    <td class="p-2 text-xs font-bold text-green-700">R$ ${subtotal.toFixed(2)}</td>
+                    <td class="p-2 text-center"><button type="button" onclick="removerItemVendaTemp(${idx})" class="text-red-600"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function adicionarPagamentoVendaTemp() {
+            let fpId = document.getElementById('vendaFormaPagamento').value;
+            let val = parseValor(document.getElementById('vendaValorPagamento').value);
+            if (!fpId || val <= 0) return;
+            let fp = garantirArray(db.formasPagamento).find(x => x.id == fpId);
+            if (!fp) return;
+
+            let idx = vendaPagamentosTemp.findIndex(p => p.formaPagamentoId == fpId);
+            if (idx !== -1) {
+                vendaPagamentosTemp[idx].valor += val;
+            } else {
+                vendaPagamentosTemp.push({
+                    formaPagamentoId: fp.id,
+                    formaNome: fp.nome,
+                    valor: val
+                });
+            }
+            document.getElementById('vendaValorPagamento').value = '';
+            renderVendaPagamentosTemp();
+            atualizarResumoPDV();
+        }
+
+        function removerPagamentoVendaTemp(index) {
+            vendaPagamentosTemp.splice(index, 1);
+            renderVendaPagamentosTemp();
+            atualizarResumoPDV();
+        }
+
+        function renderVendaPagamentosTemp() {
+            let tbody = document.getElementById('tabelaPagamentosVendaTemp');
+            if (!tbody) return;
+            if (vendaPagamentosTemp.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-gray-400 py-3">Nenhuma forma de pagamento adicionada.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = vendaPagamentosTemp.map((p, idx) => {
+                let fp = garantirArray(db.formasPagamento).find(x => x.id == p.formaPagamentoId);
+                let nome = fp ? fp.nome : (p.formaNome || 'Forma');
+                return `<tr class="border-b">
+                    <td class="p-2 font-semibold text-xs">${nome}</td>
+                    <td class="p-2 text-xs font-bold text-green-700">R$ ${p.valor.toFixed(2)}</td>
+                    <td class="p-2 text-center"><button type="button" onclick="removerPagamentoVendaTemp(${idx})" class="text-red-600"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function atualizarResumoPDV() {
+            let totalItens = vendaItensTemp.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
+            let desc = parseValor(document.getElementById('vendaDesconto')?.value);
+            let entrega = parseValor(document.getElementById('vendaEntrega')?.value);
+            let taxaApp = parseValor(document.getElementById('vendaTaxaApp')?.value);
+
+            let totalPedido = Math.max(0, totalItens - desc + taxaApp);
+
+            let totalPago = vendaPagamentosTemp.reduce((acc, p) => acc + p.valor, 0);
+            let diferenca = totalPago - totalPedido;
+
+            let elTotalItens = document.getElementById('pdvTotalItens');
+            let elTotalTaxaApp = document.getElementById('pdvTotalTaxaApp');
+            let elTotalPedido = document.getElementById('pdvTotalPedido');
+            let elTotalPago = document.getElementById('pdvTotalPago');
+            let elStatus = document.getElementById('pdvStatusPagamento');
+
+            if (elTotalItens) elTotalItens.innerText = `R$ ${totalItens.toFixed(2)}`;
+            if (elTotalTaxaApp) elTotalTaxaApp.innerText = `R$ ${taxaApp.toFixed(2)}`;
+            if (elTotalPedido) elTotalPedido.innerText = `R$ ${totalPedido.toFixed(2)}`;
+            if (elTotalPago) elTotalPago.innerText = `R$ ${totalPago.toFixed(2)}`;
+
+            if (elStatus) {
+                if (vendaItensTemp.length === 0) {
+                    elStatus.className = "text-xs font-bold text-gray-500";
+                    elStatus.innerText = "Adicione produtos ao pedido";
+                } else if (diferenca < -0.01) {
+                    elStatus.className = "text-xs font-bold text-red-600";
+                    elStatus.innerText = `Falta pagar: R$ ${Math.abs(diferenca).toFixed(2)}`;
+                } else if (diferenca > 0.01) {
+                    elStatus.className = "text-xs font-bold text-blue-600";
+                    elStatus.innerText = `Troco / Excesso: R$ ${diferenca.toFixed(2)}`;
+                } else {
+                    elStatus.className = "text-xs font-bold text-green-700";
+                    elStatus.innerText = "Pagamento Totalmente Quitado ✓";
+                }
+            }
+        }
+
+        function salvarVenda(e) {
+            e.preventDefault();
+            if (vendaItensTemp.length === 0) {
+                alert("Adicione pelo menos um produto ao pedido antes de salvar.");
+                return;
+            }
+
+            if (vendaPagamentosTemp.length === 0) {
+                alert("Adicione pelo menos uma forma de pagamento ao pedido.");
+                return;
+            }
+
+            let id = document.getElementById('vendaId').value;
+            let venda = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('vendaData').value,
+                canal: document.getElementById('vendaCanal').value,
+                desconto: parseValor(document.getElementById('vendaDesconto').value),
+                entregaLoja: parseValor(document.getElementById('vendaEntrega').value),
+                taxaApp: parseValor(document.getElementById('vendaTaxaApp').value),
+                itens: [...vendaItensTemp],
+                pagamentos: vendaPagamentosTemp.map(p => ({ formaPagamentoId: p.formaPagamentoId, valor: p.valor }))
+            };
+
+            db.vendas = garantirArray(db.vendas);
+            if(id) {
+                let idx = db.vendas.findIndex(x => x.id == id);
+                if(idx !== -1) db.vendas[idx] = venda;
+            } else db.vendas.push(venda);
+
+            cancelarEdicaoVenda();
+            salvarBD();
+        }
+
+        function editarVenda(id) {
+            let vRaw = garantirArray(db.vendas).find(x => x.id == id);
+            if(!vRaw) return;
+            let v = normalizarVenda(vRaw);
+
+            nav('pdv');
+
+            document.getElementById('vendaId').value = v.id;
+            document.getElementById('vendaData').value = v.data;
+            document.getElementById('vendaCanal').value = v.canal;
+            document.getElementById('vendaDesconto').value = v.desconto;
+            document.getElementById('vendaEntrega').value = v.entregaLoja;
+            document.getElementById('vendaTaxaApp').value = v.taxaApp || 0;
+
+            vendaItensTemp = [...v.itens];
+            vendaPagamentosTemp = v.pagamentos.map(p => {
+                let fp = garantirArray(db.formasPagamento).find(x => x.id == p.formaPagamentoId);
+                return { formaPagamentoId: p.formaPagamentoId, formaNome: fp ? fp.nome : 'Forma', valor: p.valor };
+            });
+
+            renderVendaItensTemp();
+            renderVendaPagamentosTemp();
+            atualizarResumoPDV();
+
+            document.getElementById('btnSalvarVenda').innerText = 'Atualizar Venda Completa';
+            document.getElementById('btnCancelarEdicaoVenda').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoVenda() {
+            document.getElementById('formVenda').reset();
+            document.getElementById('vendaId').value = '';
+            document.getElementById('vendaData').valueAsDate = new Date();
+            document.getElementById('vendaEntrega').value = '0';
+            document.getElementById('vendaTaxaApp').value = '0';
+            vendaItensTemp = [];
+            vendaPagamentosTemp = [];
+            renderVendaItensTemp();
+            renderVendaPagamentosTemp();
+            atualizarResumoPDV();
+            document.getElementById('btnSalvarVenda').innerText = 'Registrar Venda Completa';
+            document.getElementById('btnCancelarEdicaoVenda').classList.add('hidden');
+        }
+
+        function excluirVenda(id) {
+            if(confirm("Deseja excluir esta venda?")) {
+                db.vendas = garantirArray(db.vendas).filter(v => v.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderVendas() {
+            let tipoFiltro = document.getElementById('tipoFiltro')?.value || 'mensal';
+            let anoFiltro, mesFiltro, textoPeriodo;
+
+            if (tipoFiltro === 'mensal') {
+                let filtroVal = document.getElementById('filtroMesAno')?.value;
+                if (filtroVal) [anoFiltro, mesFiltro] = filtroVal.split('-');
+                else {
+                    let hoje = new Date();
+                    anoFiltro = hoje.getFullYear().toString();
+                    mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
+                }
+                let nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                textoPeriodo = `${nomesMeses[parseInt(mesFiltro) - 1]} / ${anoFiltro}`;
+            } else {
+                anoFiltro = document.getElementById('filtroAnoOnly')?.value || new Date().getFullYear().toString();
+                textoPeriodo = `Ano Acumulado de ${anoFiltro}`;
+            }
+
+            const lblResumo = document.getElementById('lblPeriodoVendasResumo');
+            if (lblResumo) lblResumo.innerText = textoPeriodo;
+
+            let resumoPagamentos = {};
+            garantirArray(db.formasPagamento).forEach(fp => {
+                resumoPagamentos[fp.id] = { nome: fp.nome, qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
+            });
+
+            let totalGeralQtd = 0, totalGeralBruto = 0, totalGeralTaxaApp = 0, totalGeralTaxaMeio = 0, totalGeralLiquido = 0;
+            const tbodyVendas = document.querySelector('#tabelaVendas tbody');
+            let htmlVendas = '';
+
+            let vendasFiltradas = [];
+
+            garantirArray(db.vendas).forEach(vRaw => {
+                let v = normalizarVenda(vRaw);
+                if (!v.data) return;
+                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
+                let pertence = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
+                if (pertence) vendasFiltradas.push(v);
+            });
+
+            // Ordenação por data descrescente (mais recente primeiro)
+            vendasFiltradas.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+
+            vendasFiltradas.forEach(v => {
+                let valorBrutoItens = v.itens.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
+                let valorTotalCobradoCliente = Math.max(0, valorBrutoItens - v.desconto + v.taxaApp);
+
+                let taxaMeioTotalVenda = 0;
+                let nomesPagamentos = [];
+
+                v.pagamentos.forEach(p => {
+                    let fp = garantirArray(db.formasPagamento).find(x => x.id == p.formaPagamentoId);
+                    let taxaCalculada = fp ? (p.valor * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa) : 0;
+                    let liqComTaxa = p.valor - taxaCalculada;
+
+                    let key = fp ? fp.id : 'outros';
+                    if (!resumoPagamentos[key]) {
+                        resumoPagamentos[key] = { nome: fp ? fp.nome : 'Outros / Não especificado', qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
+                    }
+                    resumoPagamentos[key].qtd += 1;
+                    resumoPagamentos[key].bruto += p.valor;
+                    resumoPagamentos[key].taxa += taxaCalculada;
+                    resumoPagamentos[key].liquido += liqComTaxa;
+
+                    taxaMeioTotalVenda += taxaCalculada;
+                    nomesPagamentos.push(`${fp ? fp.nome : 'Outro'}: R$ ${p.valor.toFixed(2)}`);
+                });
+
+                let liqVendaLoja = (valorTotalCobradoCliente - v.taxaApp) - taxaMeioTotalVenda;
+                let qtdTotalItens = v.itens.reduce((acc, it) => acc + it.quantidade, 0);
+                let descricaoItens = v.itens.map(it => `${it.quantidade}x ${it.produtoNome}`).join(', ');
+
+                totalGeralQtd += qtdTotalItens;
+                totalGeralBruto += valorTotalCobradoCliente;
+                totalGeralTaxaApp += v.taxaApp;
+                totalGeralTaxaMeio += taxaMeioTotalVenda;
+                totalGeralLiquido += liqVendaLoja;
+
+                htmlVendas += `<tr>
+                    <td>${v.data}</td>
+                    <td class="font-semibold text-xs">${descricaoItens}</td>
+                    <td class="text-center">${qtdTotalItens}</td>
+                    <td>${v.canal}</td>
+                    <td class="text-xs font-medium text-gray-700">${nomesPagamentos.join('<br>') || 'N/A'}</td>
+                    <td class="font-semibold">R$ ${valorTotalCobradoCliente.toFixed(2)}</td>
+                    <td class="text-blue-700 font-bold">R$ ${v.taxaApp.toFixed(2)}</td>
+                    <td class="text-red-600">R$ ${taxaMeioTotalVenda.toFixed(2)}</td>
+                    <td class="font-bold text-green-700">R$ ${liqVendaLoja.toFixed(2)}</td>
+                    <td>
+                        <button onclick="editarVenda('${v.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                        <button onclick="excluirVenda('${v.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+
+            if (tbodyVendas) tbodyVendas.innerHTML = htmlVendas || `<tr><td colspan="10" class="text-center py-4 text-gray-500">Nenhuma venda registrada para este período.</td></tr>`;
+
+            const tbodyResumo = document.getElementById('tbodyResumoPagamentos');
+            const tfootResumo = document.getElementById('tfootResumoPagamentos');
+
+            if (tbodyResumo) {
+                let htmlResumo = '';
+                Object.values(resumoPagamentos).forEach(item => {
+                    if (item.qtd > 0 || item.bruto > 0) {
+                        htmlResumo += `<tr class="hover:bg-gray-50">
+                            <td class="font-semibold text-gray-800 p-2.5">${item.nome}</td>
+                            <td class="text-center p-2.5">${item.qtd}</td>
+                            <td class="font-medium p-2.5">R$ ${item.bruto.toFixed(2)}</td>
+                            <td class="text-red-600 font-semibold p-2.5">R$ ${item.taxa.toFixed(2)}</td>
+                            <td class="text-green-700 font-bold p-2.5">R$ ${item.liquido.toFixed(2)}</td>
+                        </tr>`;
+                    }
+                });
+                tbodyResumo.innerHTML = htmlResumo || `<tr><td colspan="5" class="text-center text-gray-400 py-3">Nenhum valor apurado no período.</td></tr>`;
+            }
+
+            if (tfootResumo) {
+                tfootResumo.innerHTML = `<tr>
+                    <td class="p-2.5">TOTAL GERAL APURADO</td>
+                    <td class="p-2.5 text-center">${totalGeralQtd}</td>
+                    <td class="p-2.5 text-black font-extrabold">R$ ${totalGeralBruto.toFixed(2)}</td>
+                    <td class="p-2.5 text-red-600 font-extrabold">R$ ${totalGeralTaxaMeio.toFixed(2)}</td>
+                    <td class="p-2.5 text-green-700 font-extrabold">R$ ${totalGeralLiquido.toFixed(2)}</td>
+                </tr>`;
+            }
+        }
+
+        // --- DESPESAS FIXAS ---
+        function salvarDespesa(e) {
+            e.preventDefault();
+            let id = document.getElementById('despId').value;
+            let despesa = {
+                id: id ? id : Date.now().toString(),
+                nome: document.getElementById('despNome').value,
+                valor: parseValor(document.getElementById('despValor').value)
+            };
+            db.despesas = garantirArray(db.despesas);
+            if(id) {
+                let idx = db.despesas.findIndex(x => x.id == id);
+                if(idx !== -1) db.despesas[idx] = despesa;
+            } else db.despesas.push(despesa);
+            cancelarEdicaoDespesa();
+            salvarBD();
+        }
+
+        function editarDespesa(id) {
+            let d = garantirArray(db.despesas).find(x => x.id == id);
+            if(!d) return;
+            document.getElementById('despId').value = d.id;
+            document.getElementById('despNome').value = d.nome;
+            document.getElementById('despValor').value = d.valor;
+            document.getElementById('btnSalvarDesp').innerText = "Atualizar";
+            document.getElementById('btnCancelarEdicaoDesp').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoDespesa() {
+            document.getElementById('formDespesa').reset();
+            document.getElementById('despId').value = '';
+            document.getElementById('btnSalvarDesp').innerText = "Adicionar Despesa";
+            document.getElementById('btnCancelarEdicaoDesp').classList.add('hidden');
+        }
+
+        function excluirDespesa(id) {
+            if(confirm("Deseja excluir esta despesa?")) {
+                db.despesas = garantirArray(db.despesas).filter(d => d.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderDespesas() {
+            const tbody = document.querySelector('#tabelaDespesas tbody');
+            if(!tbody) return;
+            tbody.innerHTML = garantirArray(db.despesas).map(d => `<tr>
+                <td class="font-semibold">${d.nome}</td>
+                <td>R$ ${parseValor(d.valor).toFixed(2)}</td>
+                <td>
+                    <button onclick="editarDespesa('${d.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirDespesa('${d.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        }
+
+        // --- CUSTOS VARIÁVEIS (ORDENADO POR DATA DESCENDENTE) ---
+        function salvarCustoVariavel(e) {
+            e.preventDefault();
+            let id = document.getElementById('custoVarId').value;
+            let cVar = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('custoVarData').value,
+                local: document.getElementById('custoVarLocal').value,
+                valor: parseValor(document.getElementById('custoVarValor').value)
+            };
+            db.custosVariaveis = garantirArray(db.custosVariaveis);
+            if (id) {
+                let idx = db.custosVariaveis.findIndex(x => x.id == id);
+                if (idx !== -1) db.custosVariaveis[idx] = cVar;
+            } else db.custosVariaveis.push(cVar);
+            cancelarEdicaoCustoVariavel();
+            salvarBD();
+        }
+
+        function editarCustoVariavel(id) {
+            let cv = garantirArray(db.custosVariaveis).find(x => x.id == id);
+            if(!cv) return;
+            document.getElementById('custoVarId').value = cv.id;
+            document.getElementById('custoVarData').value = cv.data;
+            document.getElementById('custoVarLocal').value = cv.local;
+            document.getElementById('custoVarValor').value = cv.valor;
+            document.getElementById('btnSalvarCustoVar').innerText = "Atualizar Cupom";
+            document.getElementById('btnCancelarCustoVar').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoCustoVariavel() {
+            document.getElementById('formCustoVar').reset();
+            document.getElementById('custoVarId').value = '';
+            document.getElementById('custoVarData').valueAsDate = new Date();
+            document.getElementById('btnSalvarCustoVar').innerText = "Registrar Cupom";
+            document.getElementById('btnCancelarCustoVar').classList.add('hidden');
+        }
+
+        function excluirCustoVariavel(id) {
+            if(confirm("Deseja excluir este registro?")) {
+                db.custosVariaveis = garantirArray(db.custosVariaveis).filter(x => x.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderCustosVariaveis() {
+            const tbody = document.querySelector('#tabelaCustosVariaveis tbody');
+            if(!tbody) return;
+            let listaOrdenada = [...garantirArray(db.custosVariaveis)].sort((a, b) => 
+                (b.data || '').localeCompare(a.data || '')
+            );
+            tbody.innerHTML = listaOrdenada.map(cv => `<tr>
+                <td>${cv.data}</td>
+                <td class="font-semibold">${cv.local}</td>
+                <td class="text-red-600 font-bold">R$ ${parseValor(cv.valor).toFixed(2)}</td>
+                <td>
+                    <button onclick="editarCustoVariavel('${cv.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirCustoVariavel('${cv.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        }
+
+        // --- DESPESAS PESSOAIS (ORDENADO POR DATA DESCENDENTE) ---
+        function salvarDespesaPessoal(e) {
+            e.preventDefault();
+            let id = document.getElementById('despPessoalId').value;
+            let dp = {
+                id: id ? id : Date.now().toString(),
+                data: document.getElementById('despPessoalData').value,
+                nome: document.getElementById('despPessoalNome').value,
+                valor: parseValor(document.getElementById('despPessoalValor').value)
+            };
+            db.despesasPessoais = garantirArray(db.despesasPessoais);
+            if (id) {
+                let idx = db.despesasPessoais.findIndex(x => x.id == id);
+                if (idx !== -1) db.despesasPessoais[idx] = dp;
+            } else db.despesasPessoais.push(dp);
+            cancelarEdicaoDespPessoal();
+            salvarBD();
+        }
+
+        function editarDespesaPessoal(id) {
+            let dp = garantirArray(db.despesasPessoais).find(x => x.id == id);
+            if (!dp) return;
+            document.getElementById('despPessoalId').value = dp.id;
+            document.getElementById('despPessoalData').value = dp.data;
+            document.getElementById('despPessoalNome').value = dp.nome;
+            document.getElementById('despPessoalValor').value = dp.valor;
+            document.getElementById('btnSalvarDespPessoal').innerText = "Atualizar";
+            document.getElementById('btnCancelarDespPessoal').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoDespPessoal() {
+            document.getElementById('formDespPessoal').reset();
+            document.getElementById('despPessoalId').value = '';
+            document.getElementById('despPessoalData').valueAsDate = new Date();
+            document.getElementById('btnSalvarDespPessoal').innerText = "Registrar Retirada Pessoal";
+            document.getElementById('btnCancelarDespPessoal').classList.add('hidden');
+        }
+
+        function excluirDespesaPessoal(id) {
+            if (confirm("Deseja excluir esta despesa pessoal?")) {
+                db.despesasPessoais = garantirArray(db.despesasPessoais).filter(x => x.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderDespesasPessoais() {
+            const tbody = document.querySelector('#tabelaDespesasPessoais tbody');
+            if(!tbody) return;
+            let listaOrdenada = [...garantirArray(db.despesasPessoais)].sort((a, b) => 
+                (b.data || '').localeCompare(a.data || '')
+            );
+            tbody.innerHTML = listaOrdenada.map(dp => `<tr>
+                <td>${dp.data}</td>
+                <td class="font-semibold">${dp.nome}</td>
+                <td class="text-red-600 font-bold">R$ ${parseValor(dp.valor).toFixed(2)}</td>
+                <td>
+                    <button onclick="editarDespesaPessoal('${dp.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirDespesaPessoal('${dp.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        }
+
+        // --- FICHA TÉCNICA ---
+        function adicionarItemFicha(e) {
+            e.preventDefault();
+            let prodId = document.getElementById('fichaProdutoSelect').value;
+            let ingId = document.getElementById('fichaIngredienteSelect').value;
+            let qtd = parseValor(document.getElementById('fichaQtd').value);
+            if (!prodId || !ingId || qtd <= 0) return;
+            if (!db.fichasTecnicas) db.fichasTecnicas = {};
+            if (!db.fichasTecnicas[prodId]) db.fichasTecnicas[prodId] = [];
+
+            db.fichasTecnicas[prodId] = garantirArray(db.fichasTecnicas[prodId]);
+            let idx = db.fichasTecnicas[prodId].findIndex(x => x.ingredienteId == ingId);
+            if (idx !== -1) db.fichasTecnicas[prodId][idx].quantidade += qtd;
+            else db.fichasTecnicas[prodId].push({ ingredienteId: ingId, quantidade: qtd });
+
+            recalcularCustoProdutoFicha(prodId);
+            salvarBD();
+            document.getElementById('fichaQtd').value = '';
+        }
+
+        function removerItemFicha(prodId, ingId) {
+            if (db.fichasTecnicas && db.fichasTecnicas[prodId]) {
+                db.fichasTecnicas[prodId] = garantirArray(db.fichasTecnicas[prodId]).filter(x => x.ingredienteId != ingId);
+                recalcularCustoProdutoFicha(prodId);
+                salvarBD();
+            }
+        }
+
+        function recalcularCustoProdutoFicha(prodId) {
+            if (!db.fichasTecnicas || !db.fichasTecnicas[prodId]) return;
+            let custoTotalIng = 0;
+            garantirArray(db.fichasTecnicas[prodId]).forEach(item => {
+                let ing = garantirArray(db.ingredientes).find(x => x.id == item.ingredienteId);
+                if (ing && ing.qtdEmbalagem > 0) custoTotalIng += (ing.precoEmbalagem / ing.qtdEmbalagem) * item.quantidade;
+            });
+            let prod = garantirArray(db.produtos).find(p => p.id == prodId);
+            if (prod) prod.custoIng = Math.round(custoTotalIng * 100) / 100;
+        }
+
+        function renderFichaTecnica() {
+            const selProd = document.getElementById('fichaProdutoSelect');
+            if(!selProd) return;
+            let selectedProdId = selProd.value;
+            let produtos = garantirArray(db.produtos).sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+            selProd.innerHTML = produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+            if (selectedProdId && produtos.some(p => p.id == selectedProdId)) selProd.value = selectedProdId;
+
+            let prodId = selProd.value;
+            const buscaInputFicha = document.getElementById('fichaBuscaIngrediente');
+            if (buscaInputFicha) buscaInputFicha.value = '';
+            filtrarIngredientesFichaTecnica();
+
+            const tbody = document.querySelector('#tabelaFichaTecnica tbody');
+            let totalCusto = 0;
+
+            if (prodId && db.fichasTecnicas && db.fichasTecnicas[prodId] && db.fichasTecnicas[prodId].length > 0) {
+                tbody.innerHTML = garantirArray(db.fichasTecnicas[prodId]).map(item => {
+                    let ing = garantirArray(db.ingredientes).find(x => x.id == item.ingredienteId);
+                    if (!ing) return '';
+                    let custoUnit = ing.qtdEmbalagem > 0 ? (ing.precoEmbalagem / ing.qtdEmbalagem) : 0;
+                    let subtotal = custoUnit * item.quantidade;
+                    totalCusto += subtotal;
+                    return `<tr>
+                        <td class="font-semibold">${ing.nome}</td>
+                        <td>${item.quantidade} ${ing.unidade}</td>
+                        <td>R$ ${custoUnit.toFixed(4)}</td>
+                        <td class="font-bold text-green-700">R$ ${subtotal.toFixed(2)}</td>
+                        <td><button onclick="removerItemFicha('${prodId}', '${ing.id}')" class="text-red-600"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+                }).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 py-4">Nenhum ingrediente vinculado.</td></tr>`;
+            }
+            document.getElementById('fichaTotalCusto').innerText = `R$ ${totalCusto.toFixed(2)}`;
+        }
+
+        // --- FORMAS DE PAGAMENTO & CONFIGURAÇÕES ---
+        function salvarFormaPagamento(e) {
+            e.preventDefault();
+            let id = document.getElementById('fpId').value;
+            let fp = {
+                id: id ? id : Date.now().toString(),
+                nome: document.getElementById('fpNome').value,
+                taxaPerc: parseValor(document.getElementById('fpTaxa').value),
+                taxaFixa: parseValor(document.getElementById('fpTaxaFixa').value)
+            };
+            db.formasPagamento = garantirArray(db.formasPagamento);
+            if (id) {
+                let idx = db.formasPagamento.findIndex(x => x.id == id);
+                if (idx !== -1) db.formasPagamento[idx] = fp;
+            } else db.formasPagamento.push(fp);
+            salvarBD();
+            cancelarEdicaoFP();
+        }
+
+        function editarFormaPagamento(id) {
+            let fp = garantirArray(db.formasPagamento).find(x => x.id == id);
+            if (!fp) return;
+            document.getElementById('fpId').value = fp.id;
+            document.getElementById('fpNome').value = fp.nome;
+            document.getElementById('fpTaxa').value = fp.taxaPerc || 0;
+            document.getElementById('fpTaxaFixa').value = fp.taxaFixa || 0;
+            document.getElementById('btnSalvarFP').innerText = "Atualizar";
+            document.getElementById('btnCancelarFP').classList.remove('hidden');
+        }
+
+        function cancelarEdicaoFP() {
+            document.getElementById('formFormaPagamento').reset();
+            document.getElementById('fpId').value = '';
+            document.getElementById('btnSalvarFP').innerText = "Salvar Forma";
+            document.getElementById('btnCancelarFP').classList.add('hidden');
+        }
+
+        function excluirFormaPagamento(id) {
+            if (confirm("Deseja excluir esta forma de pagamento?")) {
+                db.formasPagamento = garantirArray(db.formasPagamento).filter(x => x.id != id);
+                salvarBD();
+            }
+        }
+
+        function renderFormasPagamento() {
+            const tbody = document.querySelector('#tabelaFormasPagamento tbody');
+            if(!tbody) return;
+            tbody.innerHTML = garantirArray(db.formasPagamento).map(fp => `<tr>
+                <td class="font-semibold">${fp.nome}</td>
+                <td>${(fp.taxaPerc || 0).toFixed(2)}%</td>
+                <td>R$ ${(fp.taxaFixa || 0).toFixed(2)}</td>
+                <td>
+                    <button onclick="editarFormaPagamento('${fp.id}')" class="text-blue-600 mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="excluirFormaPagamento('${fp.id}')" class="text-red-600"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`).join('');
+        }
+
+        function gerarFormasPagamentoPadrao() {
+            if (db.formasPagamento && db.formasPagamento.length > 0) return;
+            db.formasPagamento = [
+                { id: '1', nome: 'Pix', taxaPerc: 0.50, taxaFixa: 0.40 },
+                { id: '2', nome: 'Dinheiro', taxaPerc: 0, taxaFixa: 0 },
+                { id: '3', nome: 'Cartão Crédito', taxaPerc: 3.49, taxaFixa: 0 },
+                { id: '4', nome: 'Cartão Débito', taxaPerc: 1.49, taxaFixa: 0 },
+                { id: '5', nome: 'iFood Online', taxaPerc: 23.00, taxaFixa: 0 }
+            ];
+        }
+
+        // --- DASHBOARD E DRE ---
+        function renderDashboardEDRE() {
+            let tipoFiltro = document.getElementById('tipoFiltro')?.value || 'mensal';
+            let anoFiltro, mesFiltro, textoPeriodo;
+
+            if (tipoFiltro === 'mensal') {
+                let filtroVal = document.getElementById('filtroMesAno')?.value;
+                if (filtroVal) [anoFiltro, mesFiltro] = filtroVal.split('-');
+                else {
+                    let hoje = new Date();
+                    anoFiltro = hoje.getFullYear().toString();
+                    mesFiltro = String(hoje.getMonth() + 1).padStart(2, '0');
+                }
+                let nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                textoPeriodo = `${nomesMeses[parseInt(mesFiltro) - 1]} / ${anoFiltro}`;
+            } else {
+                anoFiltro = document.getElementById('filtroAnoOnly')?.value || new Date().getFullYear().toString();
+                textoPeriodo = `Ano Acumulado de ${anoFiltro}`;
+            }
+
+            const lblDRE = document.getElementById('lblPeriodoDRE');
+            if (lblDRE) lblDRE.innerText = textoPeriodo;
+
+            let fatCobradoCliente = 0, descontos = 0, taxasAppRepassadas = 0, cmvTotal = 0, embTotal = 0, taxasTotal = 0, entregasTotal = 0;
+
+            garantirArray(db.vendas).forEach(vRaw => {
+                let v = normalizarVenda(vRaw);
+                if (!v.data) return;
+                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
+                let pertence = (tipoFiltro === 'mensal') ? (vAno === anoFiltro && vMes === mesFiltro) : (vAno === anoFiltro);
+
+                if (pertence) {
+                    let brutoItens = v.itens.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
+                    let cobrado = Math.max(0, brutoItens - v.desconto + v.taxaApp);
+                    
+                    fatCobradoCliente += cobrado;
+                    descontos += v.desconto;
+                    taxasAppRepassadas += v.taxaApp;
+
+                    v.itens.forEach(it => {
+                        cmvTotal += it.quantidade * it.custoIngUnitario;
+                        embTotal += it.quantidade * it.custoEmbUnitario;
+                    });
+
+                    entregasTotal += v.entregaLoja;
+
+                    v.pagamentos.forEach(p => {
+                        let fp = garantirArray(db.formasPagamento).find(x => x.id == p.formaPagamentoId);
+                        if (fp) {
+                            taxasTotal += (p.valor * (parseValor(fp.taxaPerc) / 100)) + parseValor(fp.taxaFixa);
+                        }
+                    });
+                }
+            });
+
+            let outrasReceitasTotal = garantirArray(db.receitas).reduce((acc, r) => {
+                if (!r.data) return acc;
+                let { ano: rAno, mes: rMes } = extrairAnoMes(r.data);
+                let pertence = (tipoFiltro === 'mensal') ? (rAno === anoFiltro && rMes === mesFiltro) : (rAno === anoFiltro);
+                return pertence ? acc + parseValor(r.valor) : acc;
+            }, 0);
+
+            let custosVarTotal = garantirArray(db.custosVariaveis).reduce((acc, cv) => {
+                if (!cv.data) return acc;
+                let { ano: cAno, mes: cMes } = extrairAnoMes(cv.data);
+                let pertence = (tipoFiltro === 'mensal') ? (cAno === anoFiltro && cMes === mesFiltro) : (cAno === anoFiltro);
+                return pertence ? acc + parseValor(cv.valor) : acc;
+            }, 0);
+
+            let despesasPessoaisTotal = garantirArray(db.despesasPessoais).reduce((acc, dp) => {
+                if (!dp.data) return acc;
+                let { ano: dAno, mes: dMes } = extrairAnoMes(dp.data);
+                let pertence = (tipoFiltro === 'mensal') ? (dAno === anoFiltro && dMes === mesFiltro) : (dAno === anoFiltro);
+                return pertence ? acc + parseValor(dp.valor) : acc;
+            }, 0);
+
+            let despesasFixasMensais = garantirArray(db.despesas).reduce((acc, d) => acc + parseValor(d.valor), 0);
+            let despesasFixas = (tipoFiltro === 'anual') ? (despesasFixasMensais * 12) : despesasFixasMensais;
+
+            let fatLiquidoLoja = fatCobradoCliente - taxasAppRepassadas - descontos;
+            let lucroBruto = (fatLiquidoLoja + outrasReceitasTotal) - cmvTotal - embTotal - custosVarTotal;
+            let margemContrib = lucroBruto - taxasTotal - entregasTotal;
+            let lucroLiquidoOperacional = margemContrib - despesasFixas;
+            let saldoCaixaFinal = lucroLiquidoOperacional - despesasPessoaisTotal;
+
+            document.getElementById('dreFatBruto').innerText = `R$ ${fatCobradoCliente.toFixed(2)}`;
+            document.getElementById('dreTaxasAppRepassadas').innerText = `R$ ${taxasAppRepassadas.toFixed(2)}`;
+            document.getElementById('dreDesc').innerText = `R$ ${descontos.toFixed(2)}`;
+            document.getElementById('dreFatLiq').innerText = `R$ ${fatLiquidoLoja.toFixed(2)}`;
+            document.getElementById('dreOutrasReceitas').innerText = `R$ ${outrasReceitasTotal.toFixed(2)}`;
+            document.getElementById('dreCmv').innerText = `R$ ${cmvTotal.toFixed(2)}`;
+            document.getElementById('dreEmb').innerText = `R$ ${embTotal.toFixed(2)}`;
+            document.getElementById('dreCustosVar').innerText = `R$ ${custosVarTotal.toFixed(2)}`;
+            document.getElementById('dreLucroBruto').innerText = `R$ ${lucroBruto.toFixed(2)}`;
+            document.getElementById('dreTaxas').innerText = `R$ ${taxasTotal.toFixed(2)}`;
+            document.getElementById('dreEntregas').innerText = `R$ ${entregasTotal.toFixed(2)}`;
+            document.getElementById('dreMargemCont').innerText = `R$ ${margemContrib.toFixed(2)}`;
+            document.getElementById('dreFixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
+            document.getElementById('dreLucroLiq').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
+            document.getElementById('dreDespPessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
+            document.getElementById('dreCaixaFinal').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
+
+            const totalFatComOutras = fatLiquidoLoja + outrasReceitasTotal;
+            document.getElementById('dreFatLiqTop').innerText = `R$ ${totalFatComOutras.toFixed(2)}`;
+            document.getElementById('dreMargemTop').innerText = `R$ ${margemContrib.toFixed(2)}`;
+            document.getElementById('dreLucroTop').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
+            document.getElementById('dreCaixaTop').innerText = `R$ ${saldoCaixaFinal.toFixed(2)}`;
+
+            let receitamTotalGlobal = fatLiquidoLoja + outrasReceitasTotal;
+            let margemLiqPerc = receitamTotalGlobal > 0 ? (lucroLiquidoOperacional / receitamTotalGlobal) * 100 : 0;
+            let cmvPerc = receitamTotalGlobal > 0 ? ((cmvTotal + embTotal + custosVarTotal) / receitamTotalGlobal) * 100 : 0;
+            let indiceMargemContrib = receitamTotalGlobal > 0 ? (margemContrib / receitamTotalGlobal) : 0;
+            let pontoEquilibrio = indiceMargemContrib > 0 ? (despesasFixas / indiceMargemContrib) : 0;
+
+            document.getElementById('indMargemLiq').innerText = `${margemLiqPerc.toFixed(1)}%`;
+            document.getElementById('indCmvPerc').innerText = `${cmvPerc.toFixed(1)}%`;
+            document.getElementById('indPontoEquilibrio').innerText = `R$ ${pontoEquilibrio.toFixed(2)}`;
+
+            document.getElementById('dash-fat').innerText = `R$ ${(fatLiquidoLoja + outrasReceitasTotal).toFixed(2)}`;
+            document.getElementById('dash-cmv').innerText = `R$ ${(cmvTotal + embTotal + custosVarTotal).toFixed(2)}`;
+            document.getElementById('dash-fixas').innerText = `R$ ${despesasFixas.toFixed(2)}`;
+            document.getElementById('dash-lucro').innerText = `R$ ${lucroLiquidoOperacional.toFixed(2)}`;
+            document.getElementById('dash-pessoais').innerText = `R$ ${despesasPessoaisTotal.toFixed(2)}`;
+
+            renderGraficos(fatLiquidoLoja + outrasReceitasTotal, cmvTotal + embTotal + custosVarTotal, taxasTotal + entregasTotal, despesasFixas, lucroLiquidoOperacional, anoFiltro, mesFiltro, tipoFiltro);
+        }
+
+        function renderGraficos(fat, cmv, taxas, fixas, lucro, ano, mes, tipoFiltro) {
+            if(chartDistInstance) chartDistInstance.destroy();
+            if(chartTopPizzasInstance) chartTopPizzasInstance.destroy();
+
+            const canvas1 = document.getElementById('chartDist');
+            if(!canvas1) return;
+            const ctx1 = canvas1.getContext('2d');
+            chartDistInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Custos/CMV', 'Taxas/Entrega', 'Fixas', 'Lucro Líq.'],
+                    datasets: [{
+                        data: [cmv, taxas, fixas, Math.max(0, lucro)],
+                        backgroundColor: ['#E63946', '#F9A825', '#1A1A1A', '#2E7D32']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+
+            let lucrosPorProd = {};
+            garantirArray(db.vendas).forEach(vRaw => {
+                let v = normalizarVenda(vRaw);
+                if (!v.data) return;
+                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
+                let pertence = (tipoFiltro === 'mensal') ? (vAno === ano && vMes === mes) : (vAno === ano);
+                
+                if (pertence) {
+                    v.itens.forEach(it => {
+                        let lucroUnit = it.precoUnitario - it.custoIngUnitario - it.custoEmbUnitario;
+                        let totalLucroItem = (lucroUnit * it.quantidade);
+                        lucrosPorProd[it.produtoNome] = (lucrosPorProd[it.produtoNome] || 0) + totalLucroItem;
+                    });
+                }
+            });
+
+            let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            const canvas2 = document.getElementById('chartTopPizzas');
+            if(!canvas2) return;
+            const ctx2 = canvas2.getContext('2d');
+            chartTopPizzasInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(x => x[0]),
+                    datasets: [{
+                        label: 'Lucro (R$)', data: sorted.map(x => x[1]), backgroundColor: '#2E7D32'
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function exportarDados() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `mendonca_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        window.onload = function() {
+            let hoje = new Date();
+            let mesStr = String(hoje.getMonth() + 1).padStart(2, '0');
+            document.getElementById('filtroMesAno').value = `${hoje.getFullYear()}-${mesStr}`;
+            document.getElementById('vendaData').valueAsDate = hoje;
+            document.getElementById('recData').valueAsDate = hoje;
+            document.getElementById('custoVarData').valueAsDate = hoje;
+            document.getElementById('despPessoalData').valueAsDate = hoje;
+            init();
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => console.log('PWA Service Worker Ativo!'))
+                    .catch(err => console.log('Erro PWA:', err));
+            }
+        };
+    </script>
+</body>
+</html>
