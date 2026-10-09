@@ -159,8 +159,10 @@
             <button onclick="nav('dre')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-calculator w-6 text-mendonca-gold"></i> DRE & Resultado</button>
             <button onclick="nav('config')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cog w-6 text-mendonca-gold"></i> Configurações</button>
         </nav>
-        <div class="p-4 border-t border-gray-800">
+        <div class="p-4 border-t border-gray-800 space-y-2">
             <button onclick="exportarDados()" class="w-full text-left p-2.5 rounded hover:bg-gray-800 text-xs font-semibold flex items-center text-gray-300 hover:text-white"><i class="fas fa-download w-6 text-mendonca-gold"></i> Backup JSON</button>
+            <button onclick="document.getElementById('importarJsonInput').click()" class="w-full text-left p-2.5 rounded hover:bg-gray-800 text-xs font-semibold flex items-center text-gray-300 hover:text-white"><i class="fas fa-upload w-6 text-mendonca-gold"></i> Restaurar Backup</button>
+            <input type="file" id="importarJsonInput" accept=".json" class="hidden" onchange="importarDados(event)">
         </div>
     </aside>
 
@@ -241,7 +243,7 @@
             </div>
         </div>
 
-        <!-- VIEW: LANÇAR VENDA (PDV COM TAXA DO APP REESTRUTURADA) -->
+        <!-- VIEW: LANÇAR VENDA (PDV) -->
         <div id="view-pdv" class="tab-content">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3 border-b border-gray-200 pb-4">
                 <div>
@@ -266,7 +268,6 @@
                 <form id="formVenda" onsubmit="salvarVenda(event)">
                     <input type="hidden" id="vendaId">
                     
-                    <!-- Dados Básicos da Venda -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                         <div>
                             <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Data da Venda</label>
@@ -286,11 +287,9 @@
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 1: ITENS DO PEDIDO -->
                     <div class="p-3.5 bg-white rounded-md border border-gray-200 mb-4 shadow-sm">
                         <h4 class="font-bold text-xs text-mendonca-black mb-2 flex items-center">
-                            <i class="fas fa-pizza-slice text-mendonca-red mr-1.5"></i>
-                            1. Adicionar Produtos ao Pedido
+                            <i class="fas fa-pizza-slice text-mendonca-red mr-1.5"></i> 1. Adicionar Produtos ao Pedido
                         </h4>
                         
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
@@ -313,7 +312,6 @@
                             </div>
                         </div>
 
-                        <!-- Tabela de Itens Adicionados -->
                         <div class="overflow-x-auto max-h-48">
                             <table class="text-xs w-full border border-gray-200 rounded">
                                 <thead>
@@ -330,11 +328,9 @@
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 2: FORMAS DE PAGAMENTO -->
                     <div class="p-3.5 bg-white rounded-md border border-gray-200 mb-4 shadow-sm">
                         <h4 class="font-bold text-xs text-mendonca-black mb-2 flex items-center">
-                            <i class="fas fa-wallet text-mendonca-gold mr-1.5"></i>
-                            2. Adicionar Formas de Pagamento (Pode dividir em várias)
+                            <i class="fas fa-wallet text-mendonca-gold mr-1.5"></i> 2. Adicionar Formas de Pagamento
                         </h4>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
@@ -353,7 +349,6 @@
                             </div>
                         </div>
 
-                        <!-- Tabela de Pagamentos Adicionados -->
                         <div class="overflow-x-auto max-h-40">
                             <table class="text-xs w-full border border-gray-200 rounded">
                                 <thead>
@@ -368,7 +363,6 @@
                         </div>
                     </div>
 
-                    <!-- SEÇÃO 3: CUSTO ENTREGA, TAXA DO APP E RESUMO DA VENDA (ALINHAMENTO EM COLUNAS) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center bg-white p-4 rounded-md border border-gray-200 mb-4">
                         <div class="space-y-3">
                             <div>
@@ -384,21 +378,11 @@
                         </div>
 
                         <div class="bg-gray-50 p-4 rounded-md border border-gray-200 text-right flex flex-col justify-center h-full">
-                            <div class="text-xs text-gray-600 font-semibold mb-1">
-                                Subtotal Produtos: <span id="pdvTotalItens" class="font-bold text-gray-800">R$ 0,00</span>
-                            </div>
-                            <div class="text-xs text-blue-700 font-semibold mb-1">
-                                (+) Taxa do APP: <span id="pdvTotalTaxaApp" class="font-bold">R$ 0,00</span>
-                            </div>
-                            <div class="text-xs text-gray-600 font-semibold mb-1">
-                                Total Pedido (Cliente): <span id="pdvTotalPedido" class="font-extrabold text-sm text-mendonca-black">R$ 0,00</span>
-                            </div>
-                            <div class="text-xs text-gray-600 font-semibold mb-1">
-                                Total Pago: <span id="pdvTotalPago" class="font-extrabold text-sm text-mendonca-green">R$ 0,00</span>
-                            </div>
-                            <div id="pdvStatusPagamento" class="text-xs font-bold text-gray-500 mt-1">
-                                Adicione produtos ao pedido
-                            </div>
+                            <div class="text-xs text-gray-600 font-semibold mb-1">Subtotal Produtos: <span id="pdvTotalItens" class="font-bold text-gray-800">R$ 0,00</span></div>
+                            <div class="text-xs text-blue-700 font-semibold mb-1">(+) Taxa do APP: <span id="pdvTotalTaxaApp" class="font-bold">R$ 0,00</span></div>
+                            <div class="text-xs text-gray-600 font-semibold mb-1">Total Pedido (Cliente): <span id="pdvTotalPedido" class="font-extrabold text-sm text-mendonca-black">R$ 0,00</span></div>
+                            <div class="text-xs text-gray-600 font-semibold mb-1">Total Pago: <span id="pdvTotalPago" class="font-extrabold text-sm text-mendonca-green">R$ 0,00</span></div>
+                            <div id="pdvStatusPagamento" class="text-xs font-bold text-gray-500 mt-1">Adicione produtos ao pedido</div>
                         </div>
                     </div>
 
@@ -421,7 +405,6 @@
                 <p class="text-xs text-gray-500 font-medium mt-0.5">Resumo financeiro das vendas apuradas e detalhamento das transações</p>
             </div>
             
-            <!-- Resumo por Forma de Pagamento -->
             <div class="card-mendonca mb-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b border-mendonca-gold/40 pb-2 gap-2">
                     <h3 class="font-bold text-base md:text-lg text-mendonca-black flex items-center">
@@ -446,7 +429,6 @@
                 </div>
             </div>
 
-            <!-- Tabela Detalhada das Vendas -->
             <div class="card overflow-x-auto">
                 <h3 class="font-bold text-base mb-3 text-mendonca-black border-b pb-2">Detalhamento Individual das Vendas</h3>
                 <table id="tabelaVendas">
@@ -478,10 +460,6 @@
                 <p class="text-xs text-gray-500 font-medium mt-0.5">Registre entradas extraordinárias, repasses do iFood/Delivery Much e bônus</p>
             </div>
 
-            <div class="bg-blue-50 border-l-4 border-blue-600 p-3.5 text-xs text-blue-900 mb-6 rounded-lg shadow-sm">
-                <i class="fas fa-info-circle mr-1.5 text-blue-600 text-sm"></i> Utilize esta aba para registrar <strong>repasses de plataformas (ex: Delivery Much, iFood)</strong>, reembolso de cupons promocionais ou outras entradas financeiras que não são vendas diretas de balcão.
-            </div>
-
             <div class="card-mendonca mb-6">
                 <form id="formReceita" onsubmit="salvarReceita(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                     <input type="hidden" id="recId">
@@ -495,7 +473,7 @@
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição</label>
-                        <input type="text" id="recDescricao" placeholder="Ex: Reembolso cupons de incentivo" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        <input type="text" id="recDescricao" placeholder="Ex: Reembolso cupons" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Valor Creditado (R$)</label>
@@ -563,17 +541,15 @@
                     <div class="p-3 bg-white rounded-md border border-gray-200 mb-4 shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="font-bold text-xs text-mendonca-black flex items-center">
-                                <i class="fas fa-cubes mr-1.5 text-mendonca-gold text-sm"></i>
-                                Ingredientes da Pizza / Produto (Ficha Técnica Automática)
+                                <i class="fas fa-cubes mr-1.5 text-mendonca-gold text-sm"></i> Ingredientes do Produto
                             </h4>
-                            <span class="text-xs text-gray-500">Puxa valores cadastrados na aba Ingredientes</span>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end mb-3 bg-gray-50 p-2.5 rounded border">
                             <div>
                                 <label class="text-xs font-semibold text-gray-700">Selecione o Ingrediente</label>
                                 <div class="relative mt-1 mb-1">
-                                    <input type="text" id="prodBuscaIngrediente" oninput="filtrarIngredientesProduto()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white">
+                                    <input type="text" id="prodBuscaIngrediente" oninput="filtrarIngredientesProduto()" placeholder="Pesquisar..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white">
                                     <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
                                 </div>
                                 <select id="prodIngSelect" class="text-xs p-2.5 border rounded bg-white w-full"></select>
@@ -584,7 +560,7 @@
                             </div>
                             <div>
                                 <button type="button" onclick="adicionarIngredienteAoProdutoTemp()" class="btn btn-green text-xs w-full py-2.5 flex justify-center items-center gap-1 font-bold">
-                                    <i class="fas fa-plus-circle"></i> Adicionar à Ficha
+                                    <i class="fas fa-plus-circle"></i> Adicionar
                                 </button>
                             </div>
                         </div>
@@ -594,8 +570,8 @@
                                 <thead>
                                     <tr class="bg-gray-100 border-b">
                                         <th class="p-2">Ingrediente</th>
-                                        <th class="p-2">Quantidade Usada</th>
-                                        <th class="p-2">Custo Subtotal</th>
+                                        <th class="p-2">Quantidade</th>
+                                        <th class="p-2">Subtotal</th>
                                         <th class="p-2 text-center">Ação</th>
                                     </tr>
                                 </thead>
@@ -604,22 +580,21 @@
                         </div>
                     </div>
 
-                    <!-- PRECIFICAÇÃO E CMV REAL (5 COLUNAS) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 bg-white p-3 rounded-md border border-gray-200">
                         <div>
-                            <label class="text-xs font-semibold text-gray-600">Custo Ingredientes (Auto)</label>
+                            <label class="text-xs font-semibold text-gray-600">Custo Ingredientes</label>
                             <input type="text" id="prodCustoIng" readonly class="bg-gray-100 font-bold text-gray-800 cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-600">Custo Total (Ing + Emb)</label>
+                            <label class="text-xs font-semibold text-gray-600">Custo Total</label>
                             <input type="text" id="prodCustoTotal" readonly class="bg-gray-100 font-bold text-mendonca-red cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-blue-700">Preço Sugerido (CMV Max <span id="lblCmvMaxCfg">30</span>%)</label>
+                            <label class="text-xs font-semibold text-blue-700">Preço Sugerido</label>
                             <input type="text" id="prodPrecoSugerido" readonly class="bg-blue-50 font-bold text-blue-800 border-blue-300 cursor-not-allowed p-2.5 mt-1" value="R$ 0,00">
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-green-800">Preço Cobrado Real (R$)</label>
+                            <label class="text-xs font-bold text-green-800">Preço Real (R$)</label>
                             <input type="text" id="prodPreco" oninput="calcularSugestaoPreco()" placeholder="Ex: 49,90" required class="border-green-600 font-bold text-base bg-green-50/30 p-2 mt-1">
                         </div>
                         <div>
@@ -628,12 +603,8 @@
                         </div>
                     </div>
 
-                    <div id="alertaPrecoForaDaFaixa" class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-900 text-xs font-semibold hidden rounded shadow-sm">
-                        <i class="fas fa-exclamation-triangle text-yellow-600 text-sm mr-1"></i> <span id="msgAlertaPreco"></span>
-                    </div>
-
                     <div class="mt-4 flex gap-2">
-                        <button type="submit" class="btn btn-green flex-1 text-xs py-2.5 uppercase font-bold tracking-wider">Guardar Produto e Ficha Técnica</button>
+                        <button type="submit" class="btn btn-green flex-1 text-xs py-2.5 uppercase font-bold tracking-wider">Guardar Produto</button>
                         <button type="button" onclick="fecharFormProduto()" class="btn bg-gray-400 text-white flex-1 text-xs py-2.5 uppercase font-bold">Cancelar</button>
                     </div>
                 </form>
@@ -661,7 +632,7 @@
         <div id="view-despesas" class="tab-content">
             <div class="mb-6 border-b border-gray-200 pb-4">
                 <h2 class="text-xl md:text-2xl font-black text-mendonca-black flex items-center">
-                    <i class="fas fa-file-invoice-dollar text-mendonca-gold mr-2.5"></i> Despesas Fixas (Inclusos Pró-Labore)
+                    <i class="fas fa-file-invoice-dollar text-mendonca-gold mr-2.5"></i> Despesas Fixas
                 </h2>
                 <p class="text-xs text-gray-500 font-medium mt-0.5">Cadastre o custo fixo operacional recorrente da pizzaria</p>
             </div>
@@ -670,8 +641,8 @@
                 <form id="formDespesa" onsubmit="salvarDespesa(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="despId">
                     <div>
-                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição (Ex: Aluguel, Pró-Labore)</label>
-                        <input type="text" id="despNome" placeholder="Ex: Pró-Labore Juliano" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição</label>
+                        <input type="text" id="despNome" placeholder="Ex: Aluguel" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Valor Mensal (R$)</label>
@@ -763,10 +734,6 @@
                 </button>
             </div>
 
-            <div class="bg-purple-50 border-l-4 border-purple-600 p-3.5 text-xs text-purple-900 mb-6 rounded-lg shadow-sm">
-                <i class="fas fa-info-circle mr-1.5 text-purple-600 text-sm"></i> As despesas desta aba representam retiradas particulares dos sócios. Elas <strong>não reduzem o Lucro Operacional</strong> da pizzaria no DRE, sendo abatidas somente no final do caixa acumulado.
-            </div>
-
             <div class="card-mendonca mb-6">
                 <form id="formDespPessoal" onsubmit="salvarDespesaPessoal(event)" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                     <input type="hidden" id="despPessoalId">
@@ -775,7 +742,7 @@
                         <input type="date" id="despPessoalData" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição (Ex: Conta de Luz da Casa)</label>
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Descrição</label>
                         <input type="text" id="despPessoalNome" placeholder="Ex: Mercado Pessoal" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
@@ -834,7 +801,7 @@
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Preço Pago (R$)</label>
-                        <input type="text" id="ingPrecoEmb" placeholder="Ex: 1,90 ou 35,00" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        <input type="text" id="ingPrecoEmb" placeholder="Ex: 35,00" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div class="md:col-span-2 lg:col-span-4 flex gap-2 mt-2">
                         <button type="submit" id="btnSalvarIng" class="btn btn-green flex-1 py-3 text-xs uppercase font-bold tracking-wider">Cadastrar Ingrediente</button>
@@ -878,17 +845,17 @@
                     <div>
                         <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Ingrediente</label>
                         <div class="relative mt-1 mb-1">
-                            <input type="text" id="fichaBuscaIngrediente" oninput="filtrarIngredientesFichaTecnica()" placeholder="Pesquisar ingrediente..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white">
+                            <input type="text" id="fichaBuscaIngrediente" oninput="filtrarIngredientesFichaTecnica()" placeholder="Pesquisar..." class="pl-8 text-xs p-2.5 border rounded w-full bg-white">
                             <i class="fas fa-search absolute left-2.5 top-3.5 text-gray-400 text-xs"></i>
                         </div>
                         <select id="fichaIngredienteSelect" required class="text-xs p-2.5 border rounded bg-white w-full"></select>
                     </div>
                     <div>
                         <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Qtd Utilizada</label>
-                        <input type="text" id="fichaQtd" placeholder="Ex: 250 ou 1" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                        <input type="text" id="fichaQtd" placeholder="Ex: 250" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                     </div>
                     <div>
-                        <button type="submit" class="btn btn-green w-full py-2.5 text-xs font-bold uppercase tracking-wider"><i class="fas fa-plus mr-1"></i>Adicionar à Ficha</button>
+                        <button type="submit" class="btn btn-green w-full py-2.5 text-xs font-bold uppercase tracking-wider"><i class="fas fa-plus mr-1"></i>Adicionar</button>
                     </div>
                 </form>
             </div>
@@ -1067,7 +1034,6 @@
                         <h3 class="text-base font-bold text-mendonca-black flex items-center">
                             <i class="fas fa-credit-card text-mendonca-gold mr-2"></i> Formas de Pagamento & Taxas
                         </h3>
-                        <span class="text-xs font-bold bg-mendonca-black text-mendonca-gold px-2 py-0.5 rounded">Taxas</span>
                     </div>
 
                     <form id="formFormaPagamento" onsubmit="salvarFormaPagamento(event)" class="mb-5 bg-white p-3.5 rounded border shadow-sm">
@@ -1075,7 +1041,7 @@
                         <div class="grid grid-cols-1 gap-3">
                             <div>
                                 <label class="text-xs font-bold text-gray-700 uppercase">Nome da Forma</label>
-                                <input type="text" id="fpNome" placeholder="Ex: Pix, Crédito Múltiplo" required class="p-2.5 mt-1 border rounded bg-white text-xs">
+                                <input type="text" id="fpNome" placeholder="Ex: Pix" required class="p-2.5 mt-1 border rounded bg-white text-xs">
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
@@ -1114,22 +1080,19 @@
                         <h3 class="text-base font-bold text-mendonca-black flex items-center">
                             <i class="fas fa-bullseye text-mendonca-gold mr-2"></i> Metas do Negócio
                         </h3>
-                        <span class="text-xs font-bold bg-mendonca-black text-mendonca-gold px-2 py-0.5 rounded">Parâmetros</span>
                     </div>
 
                     <div class="bg-white p-4 rounded border shadow-sm space-y-4">
                         <div>
                             <label class="text-xs font-bold text-gray-700 uppercase">CMV Máximo Desejado (%)</label>
-                            <p class="text-xs text-gray-500 mb-1">Define o alerta para custos de ingrediente e preço sugerido</p>
                             <input type="text" id="cfgCmv" value="30" class="p-2.5 border rounded font-bold text-mendonca-red">
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-700 uppercase">Meta Margem Líquida (%)</label>
-                            <p class="text-xs text-gray-500 mb-1">Alvo de rentabilidade operacional do negócio</p>
                             <input type="text" id="cfgMargem" value="20" class="p-2.5 border rounded font-bold text-mendonca-green">
                         </div>
                         <button onclick="salvarConfig()" class="btn btn-gold w-full py-3 text-xs uppercase font-bold tracking-wider shadow-sm">
-                            <i class="fas fa-save mr-1.5"></i> Salvar Metas do Negócio
+                            <i class="fas fa-save mr-1.5"></i> Salvar Metas
                         </button>
                     </div>
                 </div>
@@ -1179,8 +1142,10 @@
 
         let dbRef = null;
         try {
-            firebase.initializeApp(firebaseConfig);
-            dbRef = firebase.database().ref('pizzariaMendoncaDB');
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                dbRef = firebase.database().ref('pizzariaMendoncaDB');
+            }
         } catch (e) {
             console.error("Erro Firebase:", e);
         }
@@ -1222,137 +1187,6 @@
         let chartDistInstance = null;
         let chartTopPizzasInstance = null;
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition = null;
-        let estadoVoz = 'INATIVO';
-        let tempVoz = {};
-
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'pt-BR';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onresult = (event) => {
-                const texto = event.results[0][0].transcript.trim();
-                processarVoz(texto);
-            };
-
-            recognition.onerror = () => {
-                falarVoz("Não ouvi. Pode repetir?", estadoVoz);
-            };
-        }
-
-        function getSaudacao() {
-            let h = new Date().getHours();
-            if (h >= 5 && h < 12) return "Bom dia, Juliano!";
-            if (h >= 12 && h < 18) return "Boa tarde, Juliano!";
-            return "Boa noite, Juliano!";
-        }
-
-        function falarVoz(texto, proximoEstado = null) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                estadoVoz = 'FALANDO';
-                document.getElementById('voiceSubtext').innerText = texto;
-
-                const utterance = new SpeechSynthesisUtterance(texto);
-                utterance.lang = 'pt-BR';
-                utterance.rate = 1.25;
-
-                utterance.onend = () => {
-                    if (proximoEstado === 'PERGUNTAR_OUTRO') {
-                        estadoVoz = 'PERGUNTAR_OUTRO';
-                        ouvirVoz();
-                    } else if (proximoEstado === 'FINALIZAR_VOLTAR_DASHBOARD') {
-                        nav('dashboard');
-                        fecharAssistenteVoz();
-                    } else if (proximoEstado) {
-                        estadoVoz = proximoEstado;
-                        ouvirVoz();
-                    }
-                };
-
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        function ouvirVoz() {
-            if (!recognition) return;
-            document.getElementById('voiceSubtext').innerText = "A escutar...";
-            try { recognition.start(); } catch(e) {}
-        }
-
-        function iniciarAssistenteVoz() {
-            document.getElementById('voiceModal').classList.remove('hidden');
-            tempVoz = {};
-            falarVoz(getSaudacao(), 'AGUARDANDO_COMANDO');
-        }
-
-        function fecharAssistenteVoz() {
-            estadoVoz = 'INATIVO';
-            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-            if (recognition) try { recognition.stop(); } catch(e){}
-            document.getElementById('voiceModal').classList.add('hidden');
-        }
-
-        function extrairNumeroDeTexto(texto) {
-            let palavras = texto.replace('reais', '').replace('real', '').replace('r$', '').trim();
-            let num = parseFloat(palavras.replace(',', '.'));
-            if (!isNaN(num)) return num;
-
-            const numerosExtenso = { "um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3, "tres": 3, "quatro": 4, "cinco": 5, "seis": 6, "sete": 7, "oito": 8, "nove": 9, "dez": 10, "vinte": 20, "trinta": 30, "quarenta": 40, "cinquenta": 50, "cem": 100, "oitenta": 80, "noventa": 90 };
-            return numerosExtenso[palavras] || 0;
-        }
-
-        function processarVoz(texto) {
-            const txt = texto.toLowerCase();
-
-            if (estadoVoz === 'PERGUNTAR_OUTRO') {
-                if (txt.includes('não') || txt.includes('nao') || txt.includes('não preciso') || txt.includes('não obrigado') || txt.includes('cancelar')) {
-                    falarVoz("Perfeito!", 'FINALIZAR_VOLTAR_DASHBOARD');
-                    return;
-                } else if (txt.includes('sim') || txt.includes('quero') || txt.includes('outra')) {
-                    falarVoz("Pode falar o próximo comando.", 'AGUARDANDO_COMANDO');
-                    return;
-                }
-            }
-
-            if (txt.includes('dre') || txt.includes('explicar dre') || txt.includes('resultado') || txt.includes('resumo') || txt.includes('como estão os resultados') || txt.includes('como esta o caixa')) {
-                nav('dre');
-                let fat = document.getElementById('dreFatLiq').innerText;
-                let lucro = document.getElementById('dreLucroLiq').innerText;
-                let cmv = document.getElementById('indCmvPerc').innerText;
-                let caixa = document.getElementById('dreCaixaFinal').innerText;
-
-                let resumo = `Neste mês, seu faturamento líquido é de ${fat}, com lucro operacional de ${lucro}. O CMV geral está em ${cmv}, e o saldo restante em caixa é de ${caixa}. Deseja fazer algum lançamento?`;
-                falarVoz(resumo, 'PERGUNTAR_OUTRO');
-                return;
-            }
-
-            if (txt.includes('custo variável') || txt.includes('custo variavel') || txt.includes('cupom') || txt.includes('mercado')) {
-                let valor = extrairNumeroDeTexto(txt);
-                let hoje = new Date().toISOString().slice(0,10);
-
-                if (valor > 0) {
-                    let local = txt.replace('lançar', '').replace('lancar', '').replace('custo variável', '').replace('custo variavel', '').replace(valor.toString(), '').replace('reais', '').trim() || 'Mercado Geral';
-                    db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: local, valor: valor });
-                    salvarBD();
-                    falarVoz(`Lançamento de ${valor} reais confirmado! Deseja lançar outras notas?`, 'PERGUNTAR_OUTRO');
-                } else {
-                    falarVoz("Qual foi o valor do custo variável?", 'CUSTO_VAR_VALOR');
-                }
-                return;
-            }
-
-            if (txt.includes('dashboard') || txt.includes('início')) { nav('dashboard'); fecharAssistenteVoz(); return; }
-            if (txt.includes('produtos')) { nav('produtos'); fecharAssistenteVoz(); return; }
-            if (txt.includes('vendas')) { nav('vendas'); fecharAssistenteVoz(); return; }
-            if (txt.includes('receitas') || txt.includes('repasse')) { nav('receitas'); fecharAssistenteVoz(); return; }
-
-            falarVoz("Não entendi. O que deseja lançar?", 'AGUARDANDO_COMANDO');
-        }
-
         function sanitizarBanco() {
             db.produtos = garantirArray(db.produtos);
             db.vendas = garantirArray(db.vendas);
@@ -1366,77 +1200,37 @@
             db.config = db.config || { cmvMax: 30, margemMin: 20 };
         }
 
-        function normalizarVenda(v) {
-            if (!v) return { id: '', data: '', canal: 'Atendente', desconto: 0, entregaLoja: 0, taxaApp: 0, itens: [], pagamentos: [] };
-
-            let itens = [];
-            if (v.itens && Array.isArray(v.itens) && v.itens.length > 0) {
-                itens = v.itens.map(it => ({
-                    produtoId: it.produtoId || '',
-                    produtoNome: it.produtoNome || 'Produto',
-                    quantidade: parseValor(it.quantidade) || 1,
-                    precoUnitario: parseValor(it.precoUnitario) || 0,
-                    custoIngUnitario: parseValor(it.custoIngUnitario) || 0,
-                    custoEmbUnitario: parseValor(it.custoEmbUnitario) || 0
-                }));
-            } else if (v.produtoId || v.produtoNome) {
-                itens = [{
-                    produtoId: v.produtoId || '',
-                    produtoNome: v.produtoNome || 'Produto',
-                    quantidade: parseValor(v.quantidade) || 1,
-                    precoUnitario: parseValor(v.precoUnitario) || 0,
-                    custoIngUnitario: parseValor(v.custoIngUnitario) || 0,
-                    custoEmbUnitario: parseValor(v.custoEmbUnitario) || 0
-                }];
-            }
-
-            let pagamentos = [];
-            if (v.pagamentos && Array.isArray(v.pagamentos) && v.pagamentos.length > 0) {
-                pagamentos = v.pagamentos.map(p => ({
-                    formaPagamentoId: p.formaPagamentoId,
-                    valor: parseValor(p.valor)
-                }));
-            } else if (v.formaPagamentoId) {
-                let brutoItens = itens.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
-                let valPag = Math.max(0, brutoItens - parseValor(v.desconto) + parseValor(v.taxaApp));
-                pagamentos = [{
-                    formaPagamentoId: v.formaPagamentoId,
-                    valor: valPag
-                }];
-            }
-
-            return {
-                id: v.id,
-                data: v.data,
-                canal: v.canal || 'Atendente',
-                desconto: parseValor(v.desconto) || 0,
-                entregaLoja: parseValor(v.entregaLoja) || 0,
-                taxaApp: parseValor(v.taxaApp) || 0,
-                itens: itens,
-                pagamentos: pagamentos
-            };
-        }
-
         function init() {
+            // 1. Carrega dados salvos no navegador primeiro
             let localData = localStorage.getItem('pizzariaMendoncaDB');
             if (localData) {
-                try { db = JSON.parse(localData); sanitizarBanco(); } catch(e){}
+                try {
+                    let parsed = JSON.parse(localData);
+                    if (parsed && typeof parsed === 'object') {
+                        db = parsed;
+                        sanitizarBanco();
+                    }
+                } catch(e) { console.error("Erro localStorage:", e); }
             }
 
+            // 2. Tenta sincronizar com Firebase sem apagar dados locais
             if (dbRef) {
                 dbRef.on('value', (snapshot) => {
                     const val = snapshot.val();
-                    if (val) {
-                        db = val; sanitizarBanco();
-                        if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
-                        localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
-                        preencherOpcoesAnosFiltro();
-                        atualizarTudo();
-                    } else {
+                    if (val && (garantirArray(val.vendas).length > 0 || garantirArray(val.produtos).length > 0 || garantirArray(val.custosVariaveis).length > 0)) {
+                        db = val;
                         sanitizarBanco();
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
+                        localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
+                    } else if (garantirArray(db.vendas).length > 0 || garantirArray(db.produtos).length > 0 || garantirArray(db.custosVariaveis).length > 0) {
                         salvarBD();
                     }
+                    preencherOpcoesAnosFiltro();
+                    atualizarTudo();
+                }, (err) => {
+                    console.error("Firebase offline:", err);
+                    preencherOpcoesAnosFiltro();
+                    atualizarTudo();
                 });
             } else {
                 sanitizarBanco();
@@ -1451,13 +1245,16 @@
             localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
             preencherOpcoesAnosFiltro();
             atualizarTudo();
-            if (dbRef) dbRef.set(db).catch(err => console.error("Erro Firebase:", err));
+            if (dbRef) dbRef.set(db).catch(err => console.error("Erro ao salvar Firebase:", err));
         }
 
         function nav(viewId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-' + viewId).classList.add('active');
-            if (window.innerWidth < 768) toggleMobileMenu();
+            try {
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                const targetView = document.getElementById('view-' + viewId);
+                if (targetView) targetView.classList.add('active');
+                if (window.innerWidth < 768) toggleMobileMenu();
+            } catch(e) { console.error("Erro na navegação:", e); }
         }
 
         function alternarTipoFiltro() {
@@ -1488,22 +1285,26 @@
         }
 
         function atualizarTudo() {
-            sanitizarBanco();
-            renderIngredientes();
-            renderFichaTecnica();
-            renderProdutos();
-            renderVendas();
-            renderReceitas();
-            renderDespesas();
-            renderCustosVariaveis();
-            renderDespesasPessoais();
-            renderFormasPagamento();
-            renderConfig();
-            renderDashboardEDRE();
-            preencherSelectProdutos();
-            preencherSelectFormasPagamento();
-            preencherSelectIngredientesProduto();
-            verificarAlertas();
+            try {
+                sanitizarBanco();
+                renderIngredientes();
+                renderFichaTecnica();
+                renderProdutos();
+                renderVendas();
+                renderReceitas();
+                renderDespesas();
+                renderCustosVariaveis();
+                renderDespesasPessoais();
+                renderFormasPagamento();
+                renderConfig();
+                renderDashboardEDRE();
+                preencherSelectProdutos();
+                preencherSelectFormasPagamento();
+                preencherSelectIngredientesProduto();
+                verificarAlertas();
+            } catch(e) {
+                console.error("Erro em atualizarTudo:", e);
+            }
         }
 
         function renderConfig() {
@@ -1534,10 +1335,10 @@
 
             const modal = document.getElementById('ocrLoadingModal');
             document.getElementById('ocrModalTitle').innerText = "A ler Comanda...";
-            document.getElementById('ocrModalSub').innerText = "A identificar produtos e pagamentos...";
             modal.classList.remove('hidden');
 
             try {
+                if (typeof Tesseract === 'undefined') throw new Error("Tesseract não carregado.");
                 const result = await Tesseract.recognize(file, 'por');
                 const text = result.data.text;
                 
@@ -1556,7 +1357,7 @@
                     let linhaClean = linha.trim();
                     if (!linhaClean) return;
 
-                    if (linhaClean.toLowerCase().includes('taxa') && (linhaClean.toLowerCase().includes('app') || linhaClean.toLowerCase().includes('plataforma') || linhaClean.toLowerCase().includes('delivery'))) {
+                    if (linhaClean.toLowerCase().includes('taxa') && (linhaClean.toLowerCase().includes('app') || linhaClean.toLowerCase().includes('delivery'))) {
                         let matchVal = linhaClean.match(/(\d+[\.,]\d{2})/);
                         if (matchVal) taxaAppEncontrada = parseValor(matchVal[1]);
                     }
@@ -1612,7 +1413,7 @@
                 }
 
                 atualizarResumoPDV();
-                alert(`Comanda processada!\nItens encontrados: ${itensEncontrados.length}\nPagamentos encontrados: ${pagamentosEncontrados.length}\nTaxa do APP: R$ ${taxaAppEncontrada.toFixed(2)}\nRevise os campos antes de registrar.`);
+                alert(`Comanda processada!\nItens encontrados: ${itensEncontrados.length}\nPagamentos encontrados: ${pagamentosEncontrados.length}`);
             } catch (err) {
                 alert("Erro ao ler a imagem da comanda.");
             } finally {
@@ -1626,10 +1427,10 @@
             if (!file) return;
             const modal = document.getElementById('ocrLoadingModal');
             document.getElementById('ocrModalTitle').innerText = "A ler comprovativo...";
-            document.getElementById('ocrModalSub').innerText = "A identificar valores...";
             modal.classList.remove('hidden');
 
             try {
+                if (typeof Tesseract === 'undefined') throw new Error("Tesseract offline");
                 const result = await Tesseract.recognize(file, 'por');
                 const text = result.data.text;
                 let matchVal = text.match(/(\d+[\.,]\d{2})/);
@@ -1983,9 +1784,6 @@
             document.getElementById('prodCustoTotal').value = `R$ ${custoTotal.toFixed(2)}`;
             document.getElementById('prodPrecoSugerido').value = `R$ ${precoSugerido.toFixed(2)}`;
             
-            const lblCmvMax = document.getElementById('lblCmvMaxCfg');
-            if (lblCmvMax) lblCmvMax.innerText = cmvMaxConfig;
-
             const elCmvReal = document.getElementById('prodCmvReal');
             if (elCmvReal) {
                 elCmvReal.value = precoCobrado > 0 ? `${cmvReal.toFixed(1)}%` : '0.0%';
@@ -2062,6 +1860,41 @@
         }
 
         // --- LANÇAMENTO DE VENDAS ---
+        function normalizarVenda(v) {
+            if (!v) return { id: '', data: '', canal: 'Atendente', desconto: 0, entregaLoja: 0, taxaApp: 0, itens: [], pagamentos: [] };
+
+            let itens = [];
+            if (v.itens && Array.isArray(v.itens) && v.itens.length > 0) {
+                itens = v.itens.map(it => ({
+                    produtoId: it.produtoId || '',
+                    produtoNome: it.produtoNome || 'Produto',
+                    quantidade: parseValor(it.quantidade) || 1,
+                    precoUnitario: parseValor(it.precoUnitario) || 0,
+                    custoIngUnitario: parseValor(it.custoIngUnitario) || 0,
+                    custoEmbUnitario: parseValor(it.custoEmbUnitario) || 0
+                }));
+            }
+
+            let pagamentos = [];
+            if (v.pagamentos && Array.isArray(v.pagamentos) && v.pagamentos.length > 0) {
+                pagamentos = v.pagamentos.map(p => ({
+                    formaPagamentoId: p.formaPagamentoId,
+                    valor: parseValor(p.valor)
+                }));
+            }
+
+            return {
+                id: v.id,
+                data: v.data,
+                canal: v.canal || 'Atendente',
+                desconto: parseValor(v.desconto) || 0,
+                entregaLoja: parseValor(v.entregaLoja) || 0,
+                taxaApp: parseValor(v.taxaApp) || 0,
+                itens: itens,
+                pagamentos: pagamentos
+            };
+        }
+
         function filtrarProdutosVenda() {
             const busca = (document.getElementById('vendaBuscaProduto')?.value || '').toLowerCase().trim();
             const sel = document.getElementById('vendaProduto');
@@ -2185,11 +2018,9 @@
         function atualizarResumoPDV() {
             let totalItens = vendaItensTemp.reduce((acc, it) => acc + (it.quantidade * it.precoUnitario), 0);
             let desc = parseValor(document.getElementById('vendaDesconto')?.value);
-            let entrega = parseValor(document.getElementById('vendaEntrega')?.value);
             let taxaApp = parseValor(document.getElementById('vendaTaxaApp')?.value);
 
             let totalPedido = Math.max(0, totalItens - desc + taxaApp);
-
             let totalPago = vendaPagamentosTemp.reduce((acc, p) => acc + p.valor, 0);
             let diferenca = totalPago - totalPedido;
 
@@ -2216,7 +2047,7 @@
                     elStatus.innerText = `Troco / Excesso: R$ ${diferenca.toFixed(2)}`;
                 } else {
                     elStatus.className = "text-xs font-bold text-green-700";
-                    elStatus.innerText = "Pagamento Totalmente Quitado ✓";
+                    elStatus.innerText = "Pagamento Quitado ✓";
                 }
             }
         }
@@ -2346,7 +2177,7 @@
                 if (pertence) vendasFiltradas.push(v);
             });
 
-            // Ordenação por data descrescente (mais recente primeiro)
+            // Ordenação decrescente por data
             vendasFiltradas.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
 
             vendasFiltradas.forEach(v => {
@@ -2363,7 +2194,7 @@
 
                     let key = fp ? fp.id : 'outros';
                     if (!resumoPagamentos[key]) {
-                        resumoPagamentos[key] = { nome: fp ? fp.nome : 'Outros / Não especificado', qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
+                        resumoPagamentos[key] = { nome: fp ? fp.nome : 'Outros', qtd: 0, bruto: 0, taxa: 0, liquido: 0 };
                     }
                     resumoPagamentos[key].qtd += 1;
                     resumoPagamentos[key].bruto += p.valor;
@@ -2488,7 +2319,7 @@
             </tr>`).join('');
         }
 
-        // --- CUSTOS VARIÁVEIS (ORDENADO POR DATA DESCENDENTE) ---
+        // --- CUSTOS VARIÁVEIS (ORDENADOS POR DATA DECRESCENTE) ---
         function salvarCustoVariavel(e) {
             e.preventDefault();
             let id = document.getElementById('custoVarId').value;
@@ -2550,7 +2381,7 @@
             </tr>`).join('');
         }
 
-        // --- DESPESAS PESSOAIS (ORDENADO POR DATA DESCENDENTE) ---
+        // --- DESPESAS PESSOAIS (ORDENADOS POR DATA DECRESCENTE) ---
         function salvarDespesaPessoal(e) {
             e.preventDefault();
             let id = document.getElementById('despPessoalId').value;
@@ -2885,55 +2716,60 @@
         }
 
         function renderGraficos(fat, cmv, taxas, fixas, lucro, ano, mes, tipoFiltro) {
-            if(chartDistInstance) chartDistInstance.destroy();
-            if(chartTopPizzasInstance) chartTopPizzasInstance.destroy();
+            if (typeof Chart === 'undefined') return;
+            try {
+                if(chartDistInstance) chartDistInstance.destroy();
+                if(chartTopPizzasInstance) chartTopPizzasInstance.destroy();
 
-            const canvas1 = document.getElementById('chartDist');
-            if(!canvas1) return;
-            const ctx1 = canvas1.getContext('2d');
-            chartDistInstance = new Chart(ctx1, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Custos/CMV', 'Taxas/Entrega', 'Fixas', 'Lucro Líq.'],
-                    datasets: [{
-                        data: [cmv, taxas, fixas, Math.max(0, lucro)],
-                        backgroundColor: ['#E63946', '#F9A825', '#1A1A1A', '#2E7D32']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
+                const canvas1 = document.getElementById('chartDist');
+                if(!canvas1) return;
+                const ctx1 = canvas1.getContext('2d');
+                chartDistInstance = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Custos/CMV', 'Taxas/Entrega', 'Fixas', 'Lucro Líq.'],
+                        datasets: [{
+                            data: [cmv, taxas, fixas, Math.max(0, lucro)],
+                            backgroundColor: ['#E63946', '#F9A825', '#1A1A1A', '#2E7D32']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true }
+                });
 
-            let lucrosPorProd = {};
-            garantirArray(db.vendas).forEach(vRaw => {
-                let v = normalizarVenda(vRaw);
-                if (!v.data) return;
-                let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
-                let pertence = (tipoFiltro === 'mensal') ? (vAno === ano && vMes === mes) : (vAno === ano);
-                
-                if (pertence) {
-                    v.itens.forEach(it => {
-                        let lucroUnit = it.precoUnitario - it.custoIngUnitario - it.custoEmbUnitario;
-                        let totalLucroItem = (lucroUnit * it.quantidade);
-                        lucrosPorProd[it.produtoNome] = (lucrosPorProd[it.produtoNome] || 0) + totalLucroItem;
-                    });
-                }
-            });
+                let lucrosPorProd = {};
+                garantirArray(db.vendas).forEach(vRaw => {
+                    let v = normalizarVenda(vRaw);
+                    if (!v.data) return;
+                    let { ano: vAno, mes: vMes } = extrairAnoMes(v.data);
+                    let pertence = (tipoFiltro === 'mensal') ? (vAno === ano && vMes === mes) : (vAno === ano);
+                    
+                    if (pertence) {
+                        v.itens.forEach(it => {
+                            let lucroUnit = it.precoUnitario - it.custoIngUnitario - it.custoEmbUnitario;
+                            let totalLucroItem = (lucroUnit * it.quantidade);
+                            lucrosPorProd[it.produtoNome] = (lucrosPorProd[it.produtoNome] || 0) + totalLucroItem;
+                        });
+                    }
+                });
 
-            let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
+                let sorted = Object.entries(lucrosPorProd).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
-            const canvas2 = document.getElementById('chartTopPizzas');
-            if(!canvas2) return;
-            const ctx2 = canvas2.getContext('2d');
-            chartTopPizzasInstance = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: sorted.map(x => x[0]),
-                    datasets: [{
-                        label: 'Lucro (R$)', data: sorted.map(x => x[1]), backgroundColor: '#2E7D32'
-                    }]
-                },
-                options: { responsive: true, scales: { y: { beginAtZero: true } } }
-            });
+                const canvas2 = document.getElementById('chartTopPizzas');
+                if(!canvas2) return;
+                const ctx2 = canvas2.getContext('2d');
+                chartTopPizzasInstance = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: sorted.map(x => x[0]),
+                        datasets: [{
+                            label: 'Lucro (R$)', data: sorted.map(x => x[1]), backgroundColor: '#2E7D32'
+                        }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                });
+            } catch(e) {
+                console.error("Erro gráficos:", e);
+            }
         }
 
         function exportarDados() {
@@ -2941,27 +2777,3 @@
             let downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
             downloadAnchor.setAttribute("download", `mendonca_backup_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        window.onload = function() {
-            let hoje = new Date();
-            let mesStr = String(hoje.getMonth() + 1).padStart(2, '0');
-            document.getElementById('filtroMesAno').value = `${hoje.getFullYear()}-${mesStr}`;
-            document.getElementById('vendaData').valueAsDate = hoje;
-            document.getElementById('recData').valueAsDate = hoje;
-            document.getElementById('custoVarData').valueAsDate = hoje;
-            document.getElementById('despPessoalData').valueAsDate = hoje;
-            init();
-
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js')
-                    .then(() => console.log('PWA Service Worker Ativo!'))
-                    .catch(err => console.log('Erro PWA:', err));
-            }
-        };
-    </script>
-</body>
-</html>
