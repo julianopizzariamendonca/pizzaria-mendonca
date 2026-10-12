@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pizzaria Mendonça - Gestão</title>
+    <title>Pizzaria Mendonça - Gestão Completa</title>
     
-    <!-- Meta Tags PWA / Mobile & Ícone Oficial -->
+    <!-- Meta Tags PWA & Ícone -->
     <meta name="theme-color" content="#1A1A1A">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -23,7 +23,7 @@
     <!-- OCR / Leitor de Foto de Comprovante e Comanda -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -75,24 +75,9 @@
         table { width: 100%; text-align: left; border-collapse: collapse; font-size: 0.875rem; }
         th, td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
         th { background: #FFF3E0; color: #1A1A1A; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
-        
-        .pulse-mic { animation: pulse 1.2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.8); } 70% { transform: scale(1.1); box-shadow: 0 0 0 18px rgba(230, 57, 70, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 57, 70, 0); } }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden text-gray-800">
-
-    <!-- Modal de Voz Ultrarrápido -->
-    <div id="voiceModal" class="fixed inset-0 bg-black/85 z-50 flex flex-col items-center justify-center text-white hidden p-4">
-        <div class="relative mb-4">
-            <div id="micWave" class="w-20 h-20 rounded-full bg-mendonca-red flex items-center justify-center text-3xl shadow-xl pulse-mic">
-                <i class="fas fa-microphone"></i>
-            </div>
-        </div>
-        <h3 id="voiceTitle" class="text-lg font-bold mb-1 text-center text-mendonca-gold">Assistente Mendonça</h3>
-        <p id="voiceSubtext" class="text-sm text-gray-200 text-center max-w-md mb-6 font-medium">A escutar...</p>
-        <button onclick="fecharAssistenteVoz()" class="bg-gray-800 hover:bg-gray-700 text-white text-xs px-5 py-2 rounded-full uppercase tracking-wider font-semibold border border-gray-600">Fechar</button>
-    </div>
 
     <!-- Modal de Alertas do CMV -->
     <div id="modalAlertasCmv" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center hidden p-4">
@@ -113,8 +98,8 @@
     <!-- Modal de Carregamento OCR -->
     <div id="ocrLoadingModal" class="fixed inset-0 bg-black/70 z-50 flex flex-col items-center justify-center text-white hidden">
         <div class="animate-spin rounded-full h-16 w-16 border-4 border-mendonca-gold border-t-transparent mb-4"></div>
-        <h3 class="text-xl font-bold mb-1" id="ocrModalTitle">A ler documento...</h3>
-        <p class="text-sm text-gray-300" id="ocrModalSub">A identificar dados e valores.</p>
+        <h3 class="text-xl font-bold mb-1" id="ocrModalTitle">Lendo documento...</h3>
+        <p class="text-sm text-gray-300" id="ocrModalSub">Identificando dados e valores.</p>
     </div>
 
     <!-- Inputs Ocultos de Câmera e OCR -->
@@ -136,28 +121,28 @@
     <!-- Overlay Mobile -->
     <div id="mobileOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
 
-    <!-- Sidebar / Nav -->
+    <!-- Sidebar / Navegação Lateral -->
     <aside id="sidebar" class="fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-in-out w-64 bg-mendonca-black text-white flex flex-col h-full shadow-xl z-30">
         <div class="p-6 text-center border-b border-gray-800 hidden md:block">
             <div class="flex items-center justify-center space-x-2 mb-1">
                 <i class="fas fa-pizza-slice text-mendonca-gold text-2xl"></i>
                 <h1 class="text-2xl font-extrabold text-mendonca-gold tracking-wide">Mendonça</h1>
             </div>
-            <p class="text-xs text-gray-400 font-medium">Gestão de Pizzaria</p>
+            <p class="text-xs text-gray-400 font-medium">Gestão Integrada de Pizzaria</p>
         </div>
         <nav class="flex-1 overflow-y-auto p-4 space-y-1">
-            <button onclick="nav('dashboard')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-chart-line w-6 text-mendonca-gold"></i> Dashboard</button>
-            <button onclick="nav('pdv')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cash-register w-6 text-mendonca-gold"></i> Lançar Venda</button>
-            <button onclick="nav('vendas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-shopping-cart w-6 text-mendonca-gold"></i> Histórico Vendas</button>
-            <button onclick="nav('receitas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-hand-holding-usd w-6 text-mendonca-gold"></i> Outras Receitas</button>
-            <button onclick="nav('produtos')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-pizza-slice w-6 text-mendonca-gold"></i> Produtos & CMV</button>
-            <button onclick="nav('despesas')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-file-invoice-dollar w-6 text-mendonca-gold"></i> Despesas Fixas</button>
-            <button onclick="nav('custosVariaveis')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-receipt w-6 text-mendonca-gold"></i> Custos Variáveis</button>
-            <button onclick="nav('despesasPessoais')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-user-tag w-6 text-mendonca-gold"></i> Despesas Pessoais</button>
-            <button onclick="nav('ingredientes')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cubes w-6 text-mendonca-gold"></i> Ingredientes</button>
-            <button onclick="nav('fichaTecnica')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-clipboard-list w-6 text-mendonca-gold"></i> Ficha Técnica</button>
-            <button onclick="nav('dre')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-calculator w-6 text-mendonca-gold"></i> DRE & Resultado</button>
-            <button onclick="nav('config')" class="w-full text-left p-3 rounded hover:bg-gray-800 focus:bg-mendonca-red flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cog w-6 text-mendonca-gold"></i> Configurações</button>
+            <button onclick="nav('dashboard')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-chart-line w-6 text-mendonca-gold"></i> Dashboard</button>
+            <button onclick="nav('pdv')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cash-register w-6 text-mendonca-gold"></i> Lançar Venda</button>
+            <button onclick="nav('vendas')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-shopping-cart w-6 text-mendonca-gold"></i> Histórico Vendas</button>
+            <button onclick="nav('receitas')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-hand-holding-usd w-6 text-mendonca-gold"></i> Outras Receitas</button>
+            <button onclick="nav('produtos')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-pizza-slice w-6 text-mendonca-gold"></i> Produtos & CMV</button>
+            <button onclick="nav('despesas')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-file-invoice-dollar w-6 text-mendonca-gold"></i> Despesas Fixas</button>
+            <button onclick="nav('custosVariaveis')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-receipt w-6 text-mendonca-gold"></i> Custos Variáveis</button>
+            <button onclick="nav('despesasPessoais')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-user-tag w-6 text-mendonca-gold"></i> Despesas Pessoais</button>
+            <button onclick="nav('ingredientes')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cubes w-6 text-mendonca-gold"></i> Ingredientes</button>
+            <button onclick="nav('fichaTecnica')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-clipboard-list w-6 text-mendonca-gold"></i> Ficha Técnica</button>
+            <button onclick="nav('dre')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-calculator w-6 text-mendonca-gold"></i> DRE & Resultado</button>
+            <button onclick="nav('config')" class="w-full text-left p-3 rounded hover:bg-gray-800 flex items-center transition text-xs font-semibold uppercase tracking-wider"><i class="fas fa-cog w-6 text-mendonca-gold"></i> Configurações</button>
         </nav>
         <div class="p-4 border-t border-gray-800 space-y-2">
             <button onclick="exportarDados()" class="w-full text-left p-2.5 rounded hover:bg-gray-800 text-xs font-semibold flex items-center text-gray-300 hover:text-white"><i class="fas fa-download w-6 text-mendonca-gold"></i> Backup JSON</button>
@@ -168,11 +153,6 @@
 
     <!-- Main Content -->
     <main class="flex-1 h-full overflow-y-auto bg-gray-50 p-4 md:p-8 relative">
-        
-        <!-- Botão Flutuante Microfone -->
-        <button onclick="iniciarAssistenteVoz()" class="fixed bottom-6 right-6 z-40 bg-mendonca-red hover:bg-red-700 text-white rounded-full p-4 shadow-2xl flex items-center justify-center border-2 border-mendonca-gold transition transform hover:scale-105" title="Ativar Assistente">
-            <i class="fas fa-microphone text-2xl"></i>
-        </button>
 
         <!-- VIEW: DASHBOARD -->
         <div id="view-dashboard" class="tab-content active">
@@ -502,7 +482,7 @@
             </div>
         </div>
 
-        <!-- VIEW: PRODUTOS -->
+        <!-- VIEW: PRODUTOS & CMV -->
         <div id="view-produtos" class="tab-content">
             <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
                 <div>
@@ -1201,7 +1181,7 @@
         }
 
         function init() {
-            // 1. Carrega dados salvos no navegador primeiro
+            // 1. Carrega dados salvos no navegador local primeiro
             let localData = localStorage.getItem('pizzariaMendoncaDB');
             if (localData) {
                 try {
@@ -1213,7 +1193,7 @@
                 } catch(e) { console.error("Erro localStorage:", e); }
             }
 
-            // 2. Tenta sincronizar com Firebase sem apagar dados locais
+            // 2. Sincroniza com o Firebase sem apagar dados se o Firebase estiver limpo
             if (dbRef) {
                 dbRef.on('value', (snapshot) => {
                     const val = snapshot.val();
@@ -1223,7 +1203,7 @@
                         if (db.formasPagamento.length === 0) gerarFormasPagamentoPadrao();
                         localStorage.setItem('pizzariaMendoncaDB', JSON.stringify(db));
                     } else if (garantirArray(db.vendas).length > 0 || garantirArray(db.produtos).length > 0 || garantirArray(db.custosVariaveis).length > 0) {
-                        salvarBD();
+                        salvarBD(); // Envia o banco local para a nuvem
                     }
                     preencherOpcoesAnosFiltro();
                     atualizarTudo();
@@ -1334,7 +1314,7 @@
             if (!file) return;
 
             const modal = document.getElementById('ocrLoadingModal');
-            document.getElementById('ocrModalTitle').innerText = "A ler Comanda...";
+            document.getElementById('ocrModalTitle').innerText = "Lendo Comanda...";
             modal.classList.remove('hidden');
 
             try {
@@ -1426,7 +1406,7 @@
             const file = event.target.files[0];
             if (!file) return;
             const modal = document.getElementById('ocrLoadingModal');
-            document.getElementById('ocrModalTitle').innerText = "A ler comprovativo...";
+            document.getElementById('ocrModalTitle').innerText = "Lendo comprovante...";
             modal.classList.remove('hidden');
 
             try {
@@ -1441,16 +1421,16 @@
                     if (tipo === 'custoVar') {
                         db.custosVariaveis.push({ id: Date.now().toString(), data: hoje, local: "Comprovante Escaneado", valor: valor });
                         salvarBD();
-                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registrado com sucesso!`);
+                        alert(`Comprovante de R$ ${valor.toFixed(2)} registrado com sucesso!`);
                     } else if (tipo === 'despPessoal') {
                         db.despesasPessoais.push({ id: Date.now().toString(), data: hoje, nome: "Comprovante Escaneado", valor: valor });
                         salvarBD();
-                        alert(`Comprovativo de R$ ${valor.toFixed(2)} registrado com sucesso!`);
+                        alert(`Comprovante de R$ ${valor.toFixed(2)} registrado com sucesso!`);
                     }
                 } else {
                     alert("Não foi possível ler o valor.");
                 }
-            } catch (err) { alert("Erro ao ler comprovativo."); }
+            } catch (err) { alert("Erro ao ler comprovante."); }
             finally { modal.classList.add('hidden'); event.target.value = ''; }
         }
 
@@ -2177,7 +2157,6 @@
                 if (pertence) vendasFiltradas.push(v);
             });
 
-            // Ordenação decrescente por data
             vendasFiltradas.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
 
             vendasFiltradas.forEach(v => {
@@ -2319,7 +2298,7 @@
             </tr>`).join('');
         }
 
-        // --- CUSTOS VARIÁVEIS (ORDENADOS POR DATA DECRESCENTE) ---
+        // --- CUSTOS VARIÁVEIS ---
         function salvarCustoVariavel(e) {
             e.preventDefault();
             let id = document.getElementById('custoVarId').value;
@@ -2381,7 +2360,7 @@
             </tr>`).join('');
         }
 
-        // --- DESPESAS PESSOAIS (ORDENADOS POR DATA DECRESCENTE) ---
+        // --- DESPESAS PESSOAIS ---
         function salvarDespesaPessoal(e) {
             e.preventDefault();
             let id = document.getElementById('despPessoalId').value;
@@ -2777,3 +2756,46 @@
             let downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
             downloadAnchor.setAttribute("download", `mendonca_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importarDados(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data && typeof data === 'object') {
+                        db = data;
+                        salvarBD();
+                        alert("Backup restaurado e sincronizado com sucesso!");
+                    } else {
+                        alert("Arquivo de backup inválido.");
+                    }
+                } catch(err) {
+                    alert("Erro ao ler o arquivo JSON de backup.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        window.onload = function() {
+            try {
+                let hoje = new Date();
+                let mesStr = String(hoje.getMonth() + 1).padStart(2, '0');
+                const elFiltro = document.getElementById('filtroMesAno');
+                if (elFiltro) elFiltro.value = `${hoje.getFullYear()}-${mesStr}`;
+                
+                if (document.getElementById('vendaData')) document.getElementById('vendaData').valueAsDate = hoje;
+                if (document.getElementById('recData')) document.getElementById('recData').valueAsDate = hoje;
+                if (document.getElementById('custoVarData')) document.getElementById('custoVarData').valueAsDate = hoje;
+                if (document.getElementById('despPessoalData')) document.getElementById('despPessoalData').valueAsDate = hoje;
+            } catch(e) { console.error("Erro no onload:", e); }
+            init();
+        };
+    </script>
+</body>
+</html>
